@@ -13,6 +13,7 @@
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`.
 - PR hacia `main` con **squash merge**; el PR cierra el issue (`Closes #<n>`).
 - Revisa con `/code-review` antes de mergear (Standards + Spec).
+- Una **sesión de agente** trabaja en su **propio worktree**; el checkout principal es del humano. Nunca cambies de rama en el checkout principal ni dejes en él cambios sin commitear.
 
 ### Rama de integración
 
