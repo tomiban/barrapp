@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { fetchAthleteProfile, saveAthleteProfile, type AthleteProfile } from '@/api/athleteProfile';
+import {
+  fetchAthleteProfile,
+  saveAthleteProfile,
+  validateAthleteProfileMeasurements,
+  type AthleteProfile,
+  type AthleteProfileFieldErrors,
+} from '@/api/athleteProfile';
 import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { Box, Stack } from '@/design-system/layout';
@@ -11,11 +17,6 @@ import { TextField } from '@/design-system/TextField';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
-type FieldErrors = {
-  weight?: string;
-  height?: string;
-};
-
 type Feedback = {
   role: 'confirmed' | 'error';
   message: string;
@@ -23,12 +24,6 @@ type Feedback = {
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
-}
-
-/** Convierte el texto de un campo a número positivo; `null` si no es válido. */
-function parsePositive(value: string): number | null {
-  const parsed = Number.parseFloat(value.replace(',', '.'));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
 /**
@@ -41,7 +36,7 @@ export default function ProfileScreen() {
   const [loadError, setLoadError] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<AthleteProfileFieldErrors>({});
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [persisted, setPersisted] = useState<AthleteProfile | null>(null);
@@ -85,16 +80,10 @@ export default function ProfileScreen() {
   }, [load]);
 
   const handleSave = useCallback(async () => {
-    const weightKilograms = parsePositive(weight);
-    const heightCentimeters = parsePositive(height);
-
-    const errors: FieldErrors = {};
-    if (weightKilograms === null) {
-      errors.weight = 'Introduce el peso en kg (mayor que 0).';
-    }
-    if (heightCentimeters === null) {
-      errors.height = 'Introduce la altura en cm (mayor que 0).';
-    }
+    const { weightKilograms, heightCentimeters, errors } = validateAthleteProfileMeasurements(
+      weight,
+      height,
+    );
 
     setFieldErrors(errors);
     setFeedback(null);

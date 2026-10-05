@@ -1,4 +1,8 @@
-import { fetchAthleteProfile, saveAthleteProfile } from '../src/api/athleteProfile';
+import {
+  fetchAthleteProfile,
+  saveAthleteProfile,
+  validateAthleteProfileMeasurements,
+} from '../src/api/athleteProfile';
 
 /** Respuesta mínima con la forma que consume el módulo. */
 function jsonResponse(status: number, body: unknown): Response {
@@ -65,5 +69,59 @@ describe('athleteProfile api', () => {
     global.fetch = jest.fn().mockResolvedValue(jsonResponse(500, {})) as unknown as typeof fetch;
 
     await expect(fetchAthleteProfile()).rejects.toThrow('El API respondió 500');
+  });
+
+  it('surfaces the API problem detail so the UI can show it', async () => {
+    const detail = 'El peso debe estar entre 30 y 200 kg.';
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(jsonResponse(400, { detail })) as unknown as typeof fetch;
+
+    await expect(
+      saveAthleteProfile({ weightKilograms: 29.9, heightCentimeters: 180 }),
+    ).rejects.toThrow(detail);
+  });
+});
+
+describe('validateAthleteProfileMeasurements', () => {
+  it('accepts the range boundaries', () => {
+    expect(validateAthleteProfileMeasurements('30', '120')).toEqual({
+      weightKilograms: 30,
+      heightCentimeters: 120,
+      errors: {},
+    });
+
+    expect(validateAthleteProfileMeasurements('200,0', '220')).toEqual({
+      weightKilograms: 200,
+      heightCentimeters: 220,
+      errors: {},
+    });
+  });
+
+  it('rejects values outside the range with a clear message per field', () => {
+    const result = validateAthleteProfileMeasurements('29.9', '220.1');
+
+    expect(result.weightKilograms).toBeNull();
+    expect(result.heightCentimeters).toBeNull();
+    expect(result.errors.weight).toBe('El peso debe estar entre 30 y 200 kg.');
+    expect(result.errors.height).toBe('La altura debe estar entre 120 y 220 cm.');
+  });
+
+  it('asks for a missing or non-numeric value', () => {
+    const result = validateAthleteProfileMeasurements('', 'abc');
+
+    expect(result.weightKilograms).toBeNull();
+    expect(result.heightCentimeters).toBeNull();
+    expect(result.errors.weight).toBe('Introduce el peso en kg.');
+    expect(result.errors.height).toBe('Introduce la altura en cm.');
+  });
+
+  it('rejects trailing junk instead of coercing it', () => {
+    const result = validateAthleteProfileMeasurements('30kg', '120cm');
+
+    expect(result.weightKilograms).toBeNull();
+    expect(result.heightCentimeters).toBeNull();
+    expect(result.errors.weight).toBe('Introduce el peso en kg.');
+    expect(result.errors.height).toBe('Introduce la altura en cm.');
   });
 });

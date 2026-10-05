@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Barrapp.Application.Features.AthleteProfiles;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Barrapp.Api.FunctionalTests;
@@ -39,5 +40,47 @@ public sealed class AthleteProfileEndpointTests(WebApplicationFactory<Program> f
         using var response = await client.PutAsJsonAsync("/profile", new AthleteProfileResponse(0, 180));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(30, 120)]
+    [InlineData(200, 220)]
+    public async Task Put_profile_accepts_the_range_boundaries(double weightKilograms, double heightCentimeters)
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            "/profile",
+            new AthleteProfileResponse(weightKilograms, heightCentimeters));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var saved = await response.Content.ReadFromJsonAsync<AthleteProfileResponse>();
+        Assert.NotNull(saved);
+        Assert.Equal(weightKilograms, saved!.WeightKilograms);
+        Assert.Equal(heightCentimeters, saved.HeightCentimeters);
+    }
+
+    [Theory]
+    [InlineData(29.9, 180, "El peso debe estar entre 30 y 200 kg.")]
+    [InlineData(200.1, 180, "El peso debe estar entre 30 y 200 kg.")]
+    [InlineData(80, 119.9, "La altura debe estar entre 120 y 220 cm.")]
+    [InlineData(80, 220.1, "La altura debe estar entre 120 y 220 cm.")]
+    public async Task Put_profile_rejects_values_out_of_range(
+        double weightKilograms,
+        double heightCentimeters,
+        string expectedDetail)
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            "/profile",
+            new AthleteProfileResponse(weightKilograms, heightCentimeters));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains(expectedDetail, problem!.Detail);
     }
 }

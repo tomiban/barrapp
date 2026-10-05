@@ -19,27 +19,48 @@ public sealed class AthleteProfileTests
     }
 
     [Theory]
+    [InlineData(30, 120)]
+    [InlineData(200, 220)]
+    [InlineData(78.5, 181)]
+    public void Create_accepts_values_within_the_range(double weightKilograms, double heightCentimeters)
+    {
+        var result = AthleteProfile.Create(UserId, weightKilograms, heightCentimeters);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(weightKilograms, result.Value.WeightKilograms);
+        Assert.Equal(heightCentimeters, result.Value.HeightCentimeters);
+    }
+
+    [Theory]
+    [InlineData(29.9)]
     [InlineData(0)]
     [InlineData(-1)]
+    [InlineData(200.1)]
     [InlineData(double.NaN)]
-    public void Create_rejects_a_non_positive_weight(double weightKilograms)
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void Create_rejects_a_weight_out_of_range(double weightKilograms)
     {
         var result = AthleteProfile.Create(UserId, weightKilograms, 181);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(DomainErrors.AthleteProfile.WeightMustBePositive, result.Error);
+        Assert.Equal(DomainErrors.AthleteProfile.WeightOutOfRange, result.Error);
     }
 
     [Theory]
+    [InlineData(119.9)]
     [InlineData(0)]
     [InlineData(-1)]
+    [InlineData(220.1)]
     [InlineData(double.NaN)]
-    public void Create_rejects_a_non_positive_height(double heightCentimeters)
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void Create_rejects_a_height_out_of_range(double heightCentimeters)
     {
         var result = AthleteProfile.Create(UserId, 78, heightCentimeters);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(DomainErrors.AthleteProfile.HeightMustBePositive, result.Error);
+        Assert.Equal(DomainErrors.AthleteProfile.HeightOutOfRange, result.Error);
     }
 
     [Fact]
@@ -55,14 +76,43 @@ public sealed class AthleteProfileTests
     }
 
     [Fact]
-    public void Update_with_an_invalid_measurement_keeps_the_previous_values()
+    public void Update_accepts_the_range_boundaries()
     {
         var profile = AthleteProfile.Create(UserId, 78, 181).Value;
 
-        var result = profile.Update(-5, 182);
+        var result = profile.Update(30, 220);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(30, profile.WeightKilograms);
+        Assert.Equal(220, profile.HeightCentimeters);
+    }
+
+    [Theory]
+    [InlineData(29.9)]
+    [InlineData(200.1)]
+    public void Update_with_a_weight_out_of_range_keeps_the_previous_values(double weightKilograms)
+    {
+        var profile = AthleteProfile.Create(UserId, 78, 181).Value;
+
+        var result = profile.Update(weightKilograms, 182);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(DomainErrors.AthleteProfile.WeightMustBePositive, result.Error);
+        Assert.Equal(DomainErrors.AthleteProfile.WeightOutOfRange, result.Error);
+        Assert.Equal(78, profile.WeightKilograms);
+        Assert.Equal(181, profile.HeightCentimeters);
+    }
+
+    [Theory]
+    [InlineData(119.9)]
+    [InlineData(220.1)]
+    public void Update_with_a_height_out_of_range_keeps_the_previous_values(double heightCentimeters)
+    {
+        var profile = AthleteProfile.Create(UserId, 78, 181).Value;
+
+        var result = profile.Update(80, heightCentimeters);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(DomainErrors.AthleteProfile.HeightOutOfRange, result.Error);
         Assert.Equal(78, profile.WeightKilograms);
         Assert.Equal(181, profile.HeightCentimeters);
     }

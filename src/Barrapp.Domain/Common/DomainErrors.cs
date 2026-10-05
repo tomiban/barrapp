@@ -9,15 +9,15 @@ public static class DomainErrors
     /// <summary>Errores del perfil del atleta.</summary>
     public static class AthleteProfile
     {
-        /// <summary>El peso debe ser un número positivo.</summary>
-        public static readonly Error WeightMustBePositive = Error.Validation(
-            "athlete_profile.weight_must_be_positive",
-            "El peso debe ser mayor que cero.");
+        /// <summary>El peso está fuera del rango admitido (30–200 kg).</summary>
+        public static readonly Error WeightOutOfRange = Error.Validation(
+            "athlete_profile.weight_out_of_range",
+            "El peso debe estar entre 30 y 200 kg.");
 
-        /// <summary>La altura debe ser un número positivo.</summary>
-        public static readonly Error HeightMustBePositive = Error.Validation(
-            "athlete_profile.height_must_be_positive",
-            "La altura debe ser mayor que cero.");
+        /// <summary>La altura está fuera del rango admitido (120–220 cm).</summary>
+        public static readonly Error HeightOutOfRange = Error.Validation(
+            "athlete_profile.height_out_of_range",
+            "La altura debe estar entre 120 y 220 cm.");
 
         /// <summary>Todavía no hay ningún perfil guardado.</summary>
         public static readonly Error NotFound = Error.NotFound(
