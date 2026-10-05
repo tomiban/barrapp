@@ -16,7 +16,7 @@ Validación, seguridad, datos, rendimiento, resiliencia y anti-patrones de arqui
 
 ## Specs
 
-Las especificaciones versionadas viven en `docs/specs/`. La spec vigente es `docs/specs/0001-planificador-calistenia.md`, y de ella salen los tickets del issue tracker. **Léela antes de trabajar un ticket** para conocer el contexto y las decisiones.
+Las especificaciones versionadas viven en `docs/specs/`: `0001-planificador-calistenia.md` (la app) y `0002-design-system.md` (lenguaje visual y componentes). De ellas salen los tickets del issue tracker. **Léelas antes de trabajar un ticket** para conocer el contexto y las decisiones.
 
 ## Dominio
 
