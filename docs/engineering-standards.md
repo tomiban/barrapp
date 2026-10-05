@@ -67,7 +67,7 @@ Guardrails, en positivo:
 
 ## Front (app nativa)
 
-- Estilos con **Unistyles**; colores, espaciado y tipografía salen de los tokens del design system (`docs/specs/0002-design-system.md`), nunca hardcodeados.
+- Estilos con **Uniwind** (Tailwind v4); colores, espaciado y tipografía salen de los tokens en `@theme` del design system (`docs/specs/0002-design-system.md`), nunca hardcodeados.
 - Los componentes de UI se toman del design system, no de `View`/`Text` con estilos ad hoc.
 
 ## Cuando aplique

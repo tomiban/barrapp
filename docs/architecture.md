@@ -66,7 +66,7 @@ Todo lo demás del dominio es interno. Un LLM futuro sería **infraestructura** 
 Expo / React Native (iOS y Android), TypeScript y Expo Router.
 
 - Pantallas, formularios, vista del plan y registro set a set.
-- Estilos con **react-native-unistyles** sobre los tokens del design system (`docs/specs/0002-design-system.md`).
+- Estilos con **Uniwind** (Tailwind CSS v4) sobre los tokens del design system (`docs/specs/0002-design-system.md`).
 - **Almacén local** (`expo-sqlite`) con el plan cacheado y una **outbox** para trabajar sin conexión; sincroniza contra el API (last-write-wins, mono-usuario).
 - No duplica la lógica del dominio: la generación es server-side y requiere conexión.
 
