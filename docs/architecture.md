@@ -1,25 +1,50 @@
 # Arquitectura
 
-Backend .NET con **Clean Architecture + CQRS**: el dominio (el motor de generación) es puro y el resto son adaptadores. La App nativa consume el API.
+Backend **.NET 10** con **Clean Architecture + CQRS (MediatR)**: el dominio (el motor de generación) es puro y el resto son adaptadores. La App nativa consume el API.
 
-## Capas (regla de dependencia hacia dentro)
+## Proyectos y referencias (regla de dependencia hacia dentro)
 
 ```
-      Api  ──▶  Application  ──▶  Domain
-                       ▲
-                Infrastructure
+src/
+  Barrapp.Domain          puro, sin paquetes externos
+  Barrapp.Application     casos de uso, CQRS, validación, behaviors
+  Barrapp.Infrastructure  servicios externos (tiempo, email, caché, auth)
+  Barrapp.Persistence     EF Core + SQLite, repositorios, migraciones
+  Barrapp.Api             Minimal API, composition root
+tests/
+  Barrapp.Domain.UnitTests
+  Barrapp.Application.UnitTests
+  Barrapp.Persistence.IntegrationTests
+  Barrapp.Api.FunctionalTests
+  Barrapp.ArchitectureTests
 ```
 
-- **Domain** (puro): entidades y las reglas de programación — el **motor de generación**. Sin E/S, sin EF, sin HTTP, sin dependencias externas. Es el único lugar con lógica de programación y la **costura de test principal**.
-- **Application** (casos de uso, **CQRS con MediatR**): *commands* y *queries* con sus handlers (`IRequestHandler`), **DTOs**, **puertos** (interfaces de repositorio/servicios), **validadores** y **behaviors**. Devuelve **Result/Error**, no HTTP. Organizada **por feature** (Screaming Architecture).
-- **Infrastructure**: EF Core + SQLite, repositorios, migraciones y la **carga de la base de conocimiento** (datos versionados). Implementa los puertos que declara Application.
-- **Api** (adaptador, Minimal API): **endpoints finos** que inyectan `ISender`, traducen HTTP → command/query y el resultado → respuesta; errores como **Problem Details** (400/404/409/429…).
+```
+Api ─▶ Application ─▶ Domain
+ │         ▲
+ ├▶ Infrastructure ──┘
+ └▶ Persistence ─────┘
+```
+
+- **Domain no depende de nada.** **Application** → Domain.
+- **Infrastructure** y **Persistence** → Application.
+- **Api** compone: referencia a Application, Infrastructure y Persistence.
+- Cada capa expone **un** `AddX()` (`AddApplication`, `AddInfrastructure`, `AddPersistence`).
+
+## Capas
+
+- **Domain** (puro): entidades, *value objects*, *domain errors* y las **reglas de programación** — el **motor de generación**. Primitivas `Result`, `Error`, `IDomainEvent` (marcador puro, **sin MediatR**). **Organizado por concepto**, no por tipo. Sin paquetes externos; es la **costura de test principal**.
+- **Application** (casos de uso, **CQRS con MediatR**): *commands* y *queries* con handlers (`IRequestHandler`), **DTOs**, **puertos** (repositorios, `IUnitOfWork`), **validadores** y **behaviors**. Devuelve **Result/Error**, no HTTP. Organizada **por feature**.
+- **Persistence**: EF Core + SQLite, `ApplicationDbContext`, configuraciones, repositorios (implementan los puertos de Application) y migraciones.
+- **Infrastructure**: servicios externos (tiempo, email, caché, auth).
+- **Api** (Minimal API): **endpoints finos** que inyectan `ISender`, traducen HTTP → command/query y el resultado → respuesta; **Problem Details**, **OpenAPI nativo** y **exception handler global**.
 
 ## Handlers finos y CQRS
 
-- Un handler se lee como una **tabla de contenidos**: cargar → actuar → guardar. La regla de negocio vive en **Domain**; el handler solo orquesta.
-- **Commands** pasan por el modelo de dominio (repositorios + UnitOfWork). **Queries** saltan el dominio y proyectan **directamente a DTO** (vía `IApplicationDbContext`).
-- Los **puertos** (interfaces de repositorio/servicios) se declaran en **Application**.
+- Abstracciones propias: `ICommand`/`IQuery` con `ICommandHandler<,>`/`IQueryHandler<,>`, todas devolviendo `Result`.
+- Un handler se lee como una **tabla de contenidos**: cargar → actuar → guardar. La regla de negocio vive en **Domain**.
+- **Commands** pasan por el modelo de dominio (repositorios + `IUnitOfWork`). **Queries** saltan el dominio y proyectan **directamente a DTO** (vía `IApplicationDbContext`).
+- Los **puertos** se declaran en **Application**.
 
 ## Cross-cutting (pipeline de MediatR)
 
@@ -49,12 +74,12 @@ Catálogo de ejercicios, escaleras de progresión y reglas viven como **datos ve
 
 ## Reglas de dependencia (invariantes)
 
-- **Domain no depende de nadie.**
-- **Application** depende de Domain y de paquetes de **abstracciones** (contratos de MediatR y FluentValidation); **nunca** de EF Core ni ASP.NET Core.
-- **Infrastructure** implementa los puertos de Application; **Api** es el composition root.
+- **Domain no depende de nadie** (ni de paquetes externos).
+- **Application** → Domain + paquetes de abstracciones (contratos de MediatR y FluentValidation); **nunca** EF Core ni ASP.NET Core.
+- **Infrastructure** y **Persistence** → Application. **Api** compone.
 - **Nada depende de Api.**
 - La **lógica de programación solo vive en Domain.**
-- **Architecture tests** bloquean el cruce de capas.
+- **ArchitectureTests** bloquean el cruce de capas en CI.
 
 ## Costura de test
 

@@ -23,9 +23,21 @@ Prácticas permanentes de validación, seguridad, datos, rendimiento y resilienc
 - La transacción pasa por el puerto **`IUnitOfWork`**, no por `DbContext`.
 - Los handlers son `IRequestHandler` de **MediatR**; los endpoints inyectan `ISender`.
 - **Application** no referencia EF Core ni ASP.NET Core; solo Domain y paquetes de abstracciones.
+- Los **puertos** (repositorios, `IUnitOfWork`) se declaran en **Application**; sus implementaciones, en **Persistence**.
 - **Commands** pasan por el dominio; **queries** proyectan directo a DTO.
 - Los handlers leen como **tabla de contenidos** (cargar → actuar → guardar); la regla vive en Domain.
 - **Architecture tests** (NetArchTest) bloquean el cruce de capas y corren en CI.
+
+## Dominio y patrones (Clean Architecture)
+
+- El **Domain no referencia paquetes externos**; `IDomainEvent` es un marcador puro (no hereda de MediatR).
+- Entidades con **constructor privado + factory** que valida invariantes; setters privados; el estado solo cambia por métodos.
+- **Value objects** para conceptos con reglas; **errores de dominio** en `DomainErrors`; usa `Result`/`Error`, no excepciones para el flujo.
+- Organiza el dominio **por concepto/agregado**, no por tipo (`Entidades/`, `Eventos/`…).
+- **Un `AddX()` por capa**; `Program.cs` legible.
+- **OpenAPI nativo** (`AddOpenApi`/`MapOpenApi`), sin Swashbuckle.
+- **Exception handler global** (`IExceptionHandler`) + `AddProblemDetails`; `UseExceptionHandler` arriba del pipeline.
+- Los endpoints inyectan `ISender`.
 
 ## Cuando aplique
 
