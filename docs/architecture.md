@@ -43,7 +43,7 @@ Api ─▶ Application ─▶ Domain
 
 - Abstracciones propias: `ICommand`/`IQuery` con `ICommandHandler<,>`/`IQueryHandler<,>`, todas devolviendo `Result`.
 - Un handler se lee como una **tabla de contenidos**: cargar → actuar → guardar. La regla de negocio vive en **Domain**.
-- **Commands** pasan por el modelo de dominio (repositorios + `IUnitOfWork`). **Queries** saltan el dominio y proyectan **directamente a DTO** a través de un **puerto de lectura** (`I<Feature>ReadService`) que implementa Persistence; así EF Core no entra en Application.
+- **Commands** pasan por el modelo de dominio (repositorios + `IUnitOfWork`). **Queries** saltan el dominio y proyectan **directamente a DTO** (vía `IApplicationDbContext`, que expone `DbSet<T>`; es el compromiso pragmático del lado de lectura).
 - Los **puertos** se declaran en **Application**.
 
 ## Cross-cutting (pipeline de MediatR)
@@ -77,7 +77,7 @@ Catálogo de ejercicios, escaleras de progresión y reglas viven como **datos ve
 ## Reglas de dependencia (invariantes)
 
 - **Domain no depende de nadie** (ni de paquetes externos).
-- **Application** → Domain + paquetes de abstracciones (contratos de MediatR y FluentValidation); **nunca** EF Core ni ASP.NET Core.
+- **Application** → Domain + paquetes de abstracciones (contratos de MediatR y FluentValidation) y EF Core **solo** para `IApplicationDbContext` (lado de lectura); **nunca** ASP.NET Core.
 - **Infrastructure** y **Persistence** → Application. **Api** compone.
 - **Nada depende de Api.**
 - La **lógica de programación solo vive en Domain.**

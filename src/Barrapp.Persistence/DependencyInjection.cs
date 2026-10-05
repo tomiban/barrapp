@@ -1,6 +1,4 @@
 using Barrapp.Application.Abstractions;
-using Barrapp.Application.Features.AthleteProfiles;
-using Barrapp.Persistence.Queries;
 using Barrapp.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -12,8 +10,8 @@ public static class DependencyInjection
 {
     /// <summary>
     /// Registra el acceso a datos: EF Core sobre SQLite y los adaptadores de los puertos de
-    /// Application (repositorios, puertos de lectura y <see cref="IUnitOfWork"/>). La conexión
-    /// sale de configuración, nunca del código (ver <c>docs/engineering-standards.md</c>).
+    /// Application (repositorios, <see cref="IApplicationDbContext"/> y <see cref="IUnitOfWork"/>).
+    /// La conexión sale de configuración, nunca del código (ver <c>docs/engineering-standards.md</c>).
     /// </summary>
     public static IServiceCollection AddPersistence(
         this IServiceCollection services,
@@ -25,7 +23,8 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connectionString));
 
         services.AddScoped<IAthleteProfileRepository, AthleteProfileRepository>();
-        services.AddScoped<IAthleteProfileReadService, AthleteProfileReadService>();
+        services.AddScoped<IApplicationDbContext>(provider =>
+            provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IUnitOfWork>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
 

@@ -58,7 +58,7 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 - **Patrones de la API**: endpoints finos por feature con extension methods `Map*Endpoints()` que inyectan `ISender`; **CQRS con MediatR** (`ICommand`/`IQuery` + handlers + `IPipelineBehavior`); **validación con FluentValidation** por command/query en Application, ejecutada por un `ValidationBehavior`; un `AddX()` por capa; **OpenAPI nativo**; **exception handler global**; **Result/Error** mapeado a códigos HTTP como Problem Details.
 - **Cross-cutting**: behaviors de MediatR (`AddOpenBehavior`) en orden logging → validación → (caché) → (transacción); transacción y caché son opt-in por marcador y usan puertos de Application (`IUnitOfWork`), nunca `DbContext` directo.
 - **Logging**: Serilog estructurado por capa —Domain no loguea (lanza domain events), Application vía `LoggingBehavior`, Infrastructure directo, Api vía request logging + exception handler global; correlation id; sin cuerpos por defecto.
-- **Datos en Application**: puertos (interfaces de repositorio/servicios) en Application; **commands** por repositorios + UnitOfWork y **queries** que proyectan directo a DTO a través de un **puerto de lectura** (`I<Feature>ReadService`) implementado en Persistence.
+- **Datos en Application**: puertos (interfaces de repositorio/servicios) en Application; **commands** por repositorios + UnitOfWork y **queries** que proyectan directo a DTO vía `IApplicationDbContext` (expone `DbSet<T>`).
 - **Motor**: determinista, puro y server-side, sobre una **base de conocimiento curada**. Interfaz pública:
   - `GenerarPlan(perfil, objetivo, frecuencia) → Plan`
   - `GenerarSesionSuelta(perfil, objetivo, parámetros) → Sesión`
@@ -84,7 +84,7 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 - **Costura principal (dominio)**: la interfaz pública del **motor de generación**. Es pura (sin E/S), así que los tests son deterministas y rápidos; el API queda como adaptador fino.
 - **Costura secundaria fina (cliente)**: la **cola de sincronización** (*outbox*), para verificar que encola cambios sin conexión y los sube una sola vez al reconectar. La lógica de sync no entra en el motor; se aísla en el almacén local del cliente.
 - **Módulos a testear**: el motor de generación y su conjunto de reglas; la cola de sincronización del cliente; la carga/validación de la base de conocimiento puede llevar un test fino.
-- **Architecture tests** (NetArchTest) que bloquean el cruce de capas: Domain puro, Application sin EF Core ni ASP.NET Core.
+- **Architecture tests** (NetArchTest) que bloquean el cruce de capas: Domain puro, Application sin ASP.NET Core (EF Core solo para `IApplicationDbContext`).
 - **Casos**: cada frecuencia (3/4/5) produce un reparto válido; máximo 0 → regresión; la semana 4 es deload (~50 % volumen, RIR 4); derivación de cargas desde el máximo; mapeo y avance de etapa de skill; la sesión suelta respeta tiempo/energía/foco; invariantes (cada patrón ≈2×/semana, nunca al fallo); registro de reps/segundos por serie y encolado offline sube sin duplicar.
 - **Prior art**: no hay (greenfield). Se establece **xUnit** para el proyecto de tests, apuntando al motor como librería.
 

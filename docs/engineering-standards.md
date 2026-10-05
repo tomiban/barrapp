@@ -22,7 +22,7 @@ Prácticas permanentes de validación, seguridad, datos, rendimiento y resilienc
 - Orden de behaviors de fuera hacia dentro: **logging → validación → (caché) → (transacción)**; el logging es el más externo y la validación va antes de la caché.
 - La transacción pasa por el puerto **`IUnitOfWork`**, no por `DbContext`.
 - Los handlers son `IRequestHandler` de **MediatR**; los endpoints inyectan `ISender`.
-- **Application** no referencia EF Core ni ASP.NET Core; solo Domain y paquetes de abstracciones.
+- **Application** no referencia ASP.NET Core; referencia EF Core **solo** para `IApplicationDbContext` (el lado de lectura proyecta directo a DTO). El resto, Domain y paquetes de abstracciones.
 - Los **puertos** (repositorios, `IUnitOfWork`) se declaran en **Application**; sus implementaciones, en **Persistence**.
 - **Commands** pasan por el dominio; **queries** proyectan directo a DTO.
 - Los handlers leen como **tabla de contenidos** (cargar → actuar → guardar); la regla vive en Domain.
