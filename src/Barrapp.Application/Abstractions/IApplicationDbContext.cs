@@ -10,4 +10,14 @@ public interface IApplicationDbContext
 {
     /// <summary>Perfiles de atleta.</summary>
     IQueryable<AthleteProfile> AthleteProfiles { get; }
+
+    /// <summary>
+    /// Materializa de forma asíncrona la primera fila de <paramref name="query"/> (o
+    /// <c>null</c>). Permite que la proyección viva en Application sin que esta capa dependa de
+    /// EF Core: la implementación (Persistence) usa el proveedor asíncrono de EF.
+    /// </summary>
+    Task<TResponse?> FirstOrDefaultAsync<TResponse>(
+        IQueryable<TResponse> query,
+        CancellationToken cancellationToken)
+        where TResponse : class;
 }

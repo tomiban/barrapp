@@ -21,6 +21,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     IQueryable<AthleteProfile> IApplicationDbContext.AthleteProfiles => AthleteProfiles;
 
+    Task<TResponse?> IApplicationDbContext.FirstOrDefaultAsync<TResponse>(
+        IQueryable<TResponse> query,
+        CancellationToken cancellationToken)
+        where TResponse : class =>
+        EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(query, cancellationToken);
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
