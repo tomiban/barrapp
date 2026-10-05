@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getApiBaseUrl } from '@/api/client';
 import { fetchPing, type PingResponse } from '@/api/ping';
 import { DesignSystemPreview } from '@/components/DesignSystemPreview';
-import { borders, colors, radius, spacing, typography } from '@/theme/tokens';
 
 type PingState =
   | { status: 'loading' }
@@ -49,40 +48,46 @@ export default function HomeScreen() {
   }, [load]);
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.eyebrow}>Barrapp · esqueleto caminante</Text>
-        <Text style={styles.title}>Conexión con el API</Text>
+    <SafeAreaView className="flex-1 bg-canvas">
+      <ScrollView contentContainerClassName="grow justify-center gap-md px-lg">
+        <Text className="font-mono-semibold text-label-technical text-text-muted">
+          BARRAPP · ESQUELETO CAMINANTE
+        </Text>
+        <Text className="mb-sm font-display text-headline-lg text-text">Conexión con el API</Text>
 
         {state.status === 'loading' && (
-          <View style={styles.statusRow}>
-            <ActivityIndicator color={colors.primary} />
-            <Text style={styles.body}>Consultando {getApiBaseUrl()}/ping…</Text>
+          <View className="flex-row items-center gap-sm">
+            <ActivityIndicator colorClassName="accent-primary" />
+            <Text className="font-body text-body-md text-text">
+              Consultando {getApiBaseUrl()}/ping…
+            </Text>
           </View>
         )}
 
         {state.status === 'success' && (
-          <View style={styles.card}>
-            <Text style={styles.answer}>{state.data.message}</Text>
-            <Text style={styles.meta}>Servidor: {state.data.serverTimeUtc}</Text>
+          <View className="gap-sm rounded-md border border-border bg-surface p-md">
+            <Text className="font-mono-bold text-headline-md text-text">{state.data.message}</Text>
+            <Text className="font-body text-body-sm text-text-muted">
+              Servidor: {state.data.serverTimeUtc}
+            </Text>
           </View>
         )}
 
         {state.status === 'error' && (
-          <View style={[styles.card, styles.cardError]}>
-            <Text style={styles.answer}>Sin conexión</Text>
-            <Text style={styles.meta}>{state.message}</Text>
+          <View className="gap-sm rounded-md border border-error bg-surface p-md">
+            <Text className="font-mono-bold text-headline-md text-text">Sin conexión</Text>
+            <Text className="font-body text-body-sm text-text-muted">{state.message}</Text>
           </View>
         )}
 
-        <Text style={styles.meta}>API: {getApiBaseUrl()}</Text>
+        <Text className="font-body text-body-sm text-text-muted">API: {getApiBaseUrl()}</Text>
 
         <Pressable
           accessibilityRole="button"
           onPress={retry}
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          className="mt-md items-center rounded-base bg-primary py-md active:opacity-80"
         >
-          <Text style={styles.buttonLabel}>Reintentar</Text>
+          <Text className="font-display-semibold text-body-md text-on-primary">Reintentar</Text>
         </Pressable>
 
         <DesignSystemPreview />
@@ -90,67 +95,3 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.canvas,
-  },
-  content: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  eyebrow: {
-    ...typography.eyebrow,
-    color: colors.textMuted,
-  },
-  title: {
-    ...typography.title,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  statusRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: borders.hairline,
-    borderRadius: radius.md,
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  cardError: {
-    borderColor: colors.error,
-  },
-  answer: {
-    ...typography.metric,
-    color: colors.text,
-  },
-  body: {
-    ...typography.body,
-    color: colors.text,
-  },
-  meta: {
-    ...typography.meta,
-    color: colors.textMuted,
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: radius.base,
-    marginTop: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  buttonPressed: {
-    opacity: 0.8,
-  },
-  buttonLabel: {
-    ...typography.bodyBold,
-    color: colors.onPrimary,
-  },
-});
