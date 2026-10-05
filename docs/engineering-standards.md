@@ -51,6 +51,20 @@ Prácticas permanentes de validación, seguridad, datos, rendimiento y resilienc
 - **Niveles**: `Warning` para peticiones lentas (>500 ms); `Error` para fallos; `Critical` para arranque/corrupción.
 - El handler global loguea la **excepción completa** (stack trace) y devuelve un mensaje genérico al cliente.
 
+## Anti-patrones (y su antídoto)
+
+Guardrails, en positivo:
+
+- **Domain puro**: nada de EF Core, atributos de persistencia ni `ILogger` en Domain; la configuración EF va en Persistence (`IEntityTypeConfiguration`) y los invariantes se validan en el constructor. Lo vigilan los architecture tests.
+- **Dominio rico, no anémico**: las entidades exponen comportamiento (métodos) con setters privados; la regla vive en la entidad o en el motor, no en un servicio que la manipula desde fuera.
+- **Casos de uso que solo orquestan**: cargar → actuar → guardar; ninguna regla inline en el handler.
+- **Abstrae solo en la frontera**: interfaces para base de datos, APIs externas, tiempo y sistema de ficheros; la lógica interna no necesita interfaz (`IDateTimeProvider` sí; un `IGuidGenerator` no).
+- **Infraestructura dividida por preocupación**: cada proyecto de infraestructura referencia solo sus paquetes (hoy `Persistence`; cuando lleguen caché o mensajería, se separan).
+- **Sin "mapping mania"**: los commands/queries **son** los DTO de entrada; las respuestas se proyectan directo en la query y el dominio se mapea a persistencia por configuración EF. No un mapper por frontera.
+- **Lee por el camino corto**: las queries no cargan agregados; proyectan a DTO (ver CQRS).
+- **Dependencias solo hacia dentro**: Application nunca referencia Infrastructure; los architecture tests lo bloquean en CI.
+- **Pragmatismo**: Clean Architecture es un medio, no un fin; se aplica con criterio y se evita la ceremonia por la ceremonia.
+
 ## Cuando aplique
 
 - **Cuando llegue el login (auth):** hashea las contraseñas con un algoritmo lento y sal; pon rate limit en el login; nunca compares en claro.

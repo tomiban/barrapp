@@ -1,6 +1,6 @@
 # Arquitectura
 
-Backend **.NET 10** con **Clean Architecture + CQRS (MediatR)**: el dominio (el motor de generación) es puro y el resto son adaptadores. La App nativa consume el API.
+Backend **.NET 10** con **Clean Architecture + CQRS (MediatR)**: el dominio (el motor de generación) es puro y el resto son adaptadores. La App nativa consume el API. Clean Architecture es un **medio, no un fin**: se aplica con pragmatismo (el dominio tiene reglas reales; nada de abstracción ni mapeo por ceremonia).
 
 ## Proyectos y referencias (regla de dependencia hacia dentro)
 

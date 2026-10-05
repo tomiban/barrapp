@@ -12,7 +12,7 @@ Flujo de tickets, ramas, commits, testing y estándares. **Léelo antes de empez
 
 ## Estándares de ingeniería
 
-Validación, seguridad, datos, rendimiento y resiliencia (reglas permanentes y las que se activan por feature). **Léelo antes de escribir código de API o tocar la base de datos.** Ver `docs/engineering-standards.md`.
+Validación, seguridad, datos, rendimiento, resiliencia y anti-patrones de arquitectura (reglas permanentes y las que se activan por feature). **Léelo antes de escribir código de API o tocar la base de datos.** Ver `docs/engineering-standards.md`.
 
 ## Dominio
 
