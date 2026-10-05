@@ -32,6 +32,7 @@
 - Backend: `.editorconfig` + analizadores Roslyn, con warnings como errores.
 - Front: ESLint + Prettier, TypeScript en modo estricto.
 - CI: formato + lint + tests **bloquean** el merge.
+- Las prácticas de validación, seguridad, datos, rendimiento y resiliencia están en `docs/engineering-standards.md`.
 
 ## Definition of done
 

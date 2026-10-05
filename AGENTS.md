@@ -10,6 +10,10 @@ La forma del código —Engine puro, API adaptador, App nativa— y las reglas d
 
 Flujo de tickets, ramas, commits, testing y estándares. **Léelo antes de empezar un ticket o abrir un PR.** Ver `docs/working-rules.md`.
 
+## Estándares de ingeniería
+
+Validación, seguridad, datos, rendimiento y resiliencia (reglas permanentes y las que se activan por feature). **Léelo antes de escribir código de API o tocar la base de datos.** Ver `docs/engineering-standards.md`.
+
 ## Dominio
 
 El vocabulario del proyecto (*objetivo*, *skill*, *mesociclo*, *deload*, *registro*…) y los términos a evitar. Ver `GLOSSARY.md`. Las decisiones técnicas duraderas, en `docs/adr/`.
