@@ -50,6 +50,20 @@ public static class DomainErrors
             "No hay ningún perfil guardado para este atleta.");
     }
 
+    /// <summary>Errores del objetivo del mesociclo.</summary>
+    public static class Objective
+    {
+        /// <summary>El skill indicado no existe en el catálogo.</summary>
+        public static readonly Error UnknownSkill = Error.Validation(
+            "objective.unknown_skill",
+            "El skill indicado no existe en el catálogo.");
+
+        /// <summary>Todavía no hay ningún objetivo guardado.</summary>
+        public static readonly Error NotFound = Error.NotFound(
+            "objective.not_found",
+            "No hay ningún objetivo guardado para este atleta.");
+    }
+
     /// <summary>Errores de la base de conocimiento (catálogo, escaleras y rutinas).</summary>
     public static class Knowledge
     {
