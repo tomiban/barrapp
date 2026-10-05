@@ -21,3 +21,21 @@ export function getApiBaseUrl(): string {
 
   return `http://localhost:${DEFAULT_API_PORT}`;
 }
+
+/**
+ * Error uniforme cuando el API responde algo distinto de un 2xx. Si el cuerpo es
+ * un Problem Details con `detail`, se propaga ese mensaje (el API ya lo redacta
+ * para la persona); si no, se cae a un mensaje genérico.
+ */
+export async function apiError(response: Response): Promise<Error> {
+  try {
+    const problem = (await response.json()) as { detail?: unknown } | null;
+    if (problem && typeof problem.detail === 'string' && problem.detail.length > 0) {
+      return new Error(problem.detail);
+    }
+  } catch {
+    // El cuerpo no era JSON: se usa el mensaje genérico.
+  }
+
+  return new Error(`El API respondió ${response.status} ${response.statusText}`.trim());
+}

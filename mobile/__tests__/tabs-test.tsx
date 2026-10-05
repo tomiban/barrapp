@@ -4,7 +4,7 @@ import TabsLayout from '../src/app/(tabs)/_layout';
 import ShowcaseRoute from '../src/app/showcase';
 
 /**
- * Pestañas de la app (ticket #65): el TabBar queda en Entrenar · Plan · Perfil.
+ * Pestañas de la app: el TabBar queda en Entrenar · Plan · Biblioteca · Perfil.
  *
  * `Showcase` deja de ser pestaña pero se conserva como ruta de desarrollo en
  * `/showcase`, fuera del grupo `(tabs)`. `renderRouter` aísla un mini-árbol con
@@ -13,6 +13,7 @@ import ShowcaseRoute from '../src/app/showcase';
  */
 const Home = () => null;
 const Plan = () => null;
+const Library = () => null;
 const Profile = () => null;
 
 function renderApp(initialUrl: string) {
@@ -21,6 +22,7 @@ function renderApp(initialUrl: string) {
       '(tabs)/_layout': TabsLayout,
       '(tabs)/index': Home,
       '(tabs)/plan': Plan,
+      '(tabs)/biblioteca': Library,
       '(tabs)/profile': Profile,
       showcase: ShowcaseRoute,
     },
@@ -29,11 +31,12 @@ function renderApp(initialUrl: string) {
 }
 
 describe('pestañas de la app', () => {
-  it('muestra Entrenar, Plan y Perfil, y ninguna pestaña Showcase', async () => {
+  it('muestra Entrenar, Plan, Biblioteca y Perfil, y ninguna pestaña Showcase', async () => {
     await renderApp('/');
 
     expect(screen.getByRole('tab', { name: 'Entrenar', selected: true })).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Plan', selected: false })).toBeOnTheScreen();
+    expect(screen.getByRole('tab', { name: 'Biblioteca', selected: false })).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Perfil', selected: false })).toBeOnTheScreen();
     expect(screen.queryByRole('tab', { name: 'Catálogo' })).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Showcase' })).toBeNull();
