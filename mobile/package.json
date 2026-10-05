@@ -43,5 +43,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
 }

@@ -10,6 +10,10 @@ La forma del código —Engine puro, API adaptador, App nativa— y las reglas d
 
 Flujo de tickets, ramas, commits, testing y estándares. **Léelo antes de empezar un ticket o abrir un PR.** Ver `docs/working-rules.md`.
 
+## Entorno de desarrollo
+
+Montar el toolchain (.NET 10, JDK, Android SDK + NDK, Node) y verificar en emulador. Ver `docs/dev-setup.md`.
+
 ## Estándares de ingeniería
 
 Validación, seguridad, datos, rendimiento, resiliencia y anti-patrones de arquitectura (reglas permanentes y las que se activan por feature). **Léelo antes de escribir código de API o tocar la base de datos.** Ver `docs/engineering-standards.md`.
