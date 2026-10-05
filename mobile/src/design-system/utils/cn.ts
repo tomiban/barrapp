@@ -35,6 +35,10 @@ const twMerge = extendTailwindMerge({
     },
     classGroups: {
       'font-size': [{ text: TYPE_SCALE }],
+      // `border-active` (1.5 px) es un utility propio; sin registrarlo,
+      // tailwind-merge lo clasifica como color de borde y lo descarta al
+      // fusionarlo con `border-<color>`.
+      'border-w': [{ border: ['active'] }],
     },
   },
 });

@@ -87,16 +87,16 @@ Barra o anillo de progreso sobre los tokens de color, para series y para el
 avance del mesociclo. Sin sombras: la pista es una capa tonal (`surface-muted`)
 y la profundidad sale de bordes y radios.
 
-| Prop        | Tipo                 | Default    | Uso                                                             |
-| ----------- | -------------------- | ---------- | --------------------------------------------------------------- |
-| `value`     | `number`             | —          | Progreso actual; se recorta a `[0, max]`.                       |
-| `max`       | `number`             | `1`        | Total de la escala; el ratio es `value / max`.                  |
-| `tone`      | `ProgressTone`       | `'active'` | Rol semántico de estado.                                        |
-| `label`     | `string`             | —          | Etiqueta textual; el estado nunca se comunica solo por color.   |
-| `variant`   | `'bar' \| 'ring'`    | `'bar'`    | Forma del indicador.                                            |
-| `size`      | `number`             | `64`       | Lado del anillo en dp (solo `ring`).                            |
-| `className` | `string`             | —          | Clases del contenedor (se combinan con `cn()`).                 |
-| `testID`    | `string`             | —          | Identificador; barra/anillo derivan `<testID>-fill` / `-ring`.  |
+| Prop        | Tipo              | Default    | Uso                                                            |
+| ----------- | ----------------- | ---------- | -------------------------------------------------------------- |
+| `value`     | `number`          | —          | Progreso actual; se recorta a `[0, max]`.                      |
+| `max`       | `number`          | `1`        | Total de la escala; el ratio es `value / max`.                 |
+| `tone`      | `ProgressTone`    | `'active'` | Rol semántico de estado.                                       |
+| `label`     | `string`          | —          | Etiqueta textual; el estado nunca se comunica solo por color.  |
+| `variant`   | `'bar' \| 'ring'` | `'bar'`    | Forma del indicador.                                           |
+| `size`      | `number`          | `64`       | Lado del anillo en dp (solo `ring`).                           |
+| `className` | `string`          | —          | Clases del contenedor (se combinan con `cn()`).                |
+| `testID`    | `string`          | —          | Identificador; barra/anillo derivan `<testID>-fill` / `-ring`. |
 
 `ProgressTone` mapea los roles semánticos de la spec a tokens:
 

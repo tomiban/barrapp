@@ -14,6 +14,11 @@ describe('cn', () => {
     expect(cn('p-md', 'px-lg')).toBe('p-md px-lg');
   });
 
+  it('clasifica border-active como ancho, no como color', () => {
+    expect(cn('border-active', 'border-primary')).toBe('border-active border-primary');
+    expect(cn('border-active', 'border')).toBe('border');
+  });
+
   it('trata la escala tipográfica como tamaño, no como color', () => {
     // `text-body-md` (tamaño) y `text-primary` (color) son grupos distintos:
     // deben sobrevivir ambos.
