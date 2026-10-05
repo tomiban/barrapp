@@ -30,9 +30,9 @@ _Avoid_: variante fácil, adaptación
 Movimiento del catálogo, de acondicionamiento o variante de un skill, con su unidad de medida (repeticiones o segundos).
 _Avoid_: movimiento, drill
 
-**Rutina de apoyo**:
-Prescripción de acondicionamiento que acompaña a un skill para entrenar su patrón de movimiento: series, rango de repeticiones o de segundos y descanso.
-_Avoid_: accesorio, extra
+**Rutina de patrón**:
+Prescripción de acondicionamiento, específica de un skill, que entrena el patrón de movimiento de ese skill: series, rango de repeticiones o de segundos, y descanso.
+_Avoid_: rutina de apoyo, accesorio, extra
 
 **Acondicionamiento general**:
 Trabajo de fuerza general repartido en los tres patrones básicos: empuje, tirón y pierna.
