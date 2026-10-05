@@ -1,0 +1,10 @@
+// mobile/metro.config.js
+const { getDefaultConfig } = require('expo/metro-config');
+const { withUniwindConfig } = require('uniwind/metro');
+
+const config = getDefaultConfig(__dirname);
+
+module.exports = withUniwindConfig(config, {
+  cssEntryFile: './global.css', // ruta relativa, no path.resolve()
+  dtsFile: './src/uniwind-types.d.ts', // tipados autogenerados al arrancar Metro
+});

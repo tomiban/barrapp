@@ -1,0 +1,133 @@
+@import 'tailwindcss';
+@import 'uniwind';
+
+/*
+ * Tokens del design system (docs/specs/0002-design-system.md).
+ *
+ * Fuente única de verdad: colores, espaciado, radios, tipografía y motion son
+ * variables CSS en un `@theme` plano. Al ser plano (sin condicionar por
+ * variantes de tema), los tokens son independientes del tema y la app queda
+ * **dark-only** por construcción: `bg-canvas` siempre resuelve `#111214`.
+ *
+ * La convención kebab-case del token define el utility: `--color-surface-muted`
+ * → `bg-surface-muted`, `--color-on-primary` → `text-on-primary`,
+ * `--spacing-md` → `p-md`, `--radius-md` → `rounded-md`, `--font-display` →
+ * `font-display`, `--text-headline-md` → `text-headline-md`.
+ *
+ * Los valores `--font-*` deben coincidir EXACTAMENTE con las claves de
+ * `useFonts()` (ticket #33), porque en SDK 57 cada peso es una familia propia.
+ */
+@theme {
+    /* ---- Color (dark-only) ---- */
+    --color-canvas: #111214;
+    --color-surface: #1e2022;
+    --color-surface-muted: #26292c;
+    --color-border: #33373b;
+    --color-text: #e2e4e9;
+    --color-text-muted: #8a9099;
+    --color-primary: #ffcc00;
+    --color-on-primary: #111214;
+    --color-secondary: #0055ff;
+    --color-on-secondary: #ffffff;
+    --color-error: #ffb4ab;
+    --color-error-container: #93000a;
+    --color-on-error-container: #ffdad6;
+    --color-scrim: rgb(0 0 0 / 0.8);
+
+    /* ---- Espaciado (dp, base 8) ---- */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 40px;
+    --spacing-gutter: 16px;
+    --spacing-margin: 20px;
+
+    /* ---- Tamaños físicos (dp) ----
+     * Los tamaños que no caen en la escala base (alturas táctiles y lados de
+     * controles) también son tokens: `h-control-primary` (56 dp),
+     * `h-control-secondary`/`min-h-control-secondary` (48 dp),
+     * `h-checkbox w-checkbox` (20 dp) y `h-radio-dot w-radio-dot` (10 dp). */
+    --spacing-control-primary: 56px;
+    --spacing-control-secondary: 48px;
+    --spacing-checkbox: 20px;
+    --spacing-radio-dot: 10px;
+
+    /* ---- Radios (dp); prohibidas las pills ---- */
+    --radius-sm: 2px;
+    --radius-base: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+
+    /* ---- Familias tipográficas (valores = claves de useFonts) ---- */
+    --font-display: SpaceGrotesk_700Bold;
+    --font-display-semibold: SpaceGrotesk_600SemiBold;
+    --font-body: Chivo_400Regular;
+    --font-mono-medium: JetBrainsMono_500Medium;
+    --font-mono-semibold: JetBrainsMono_600SemiBold;
+    --font-mono-bold: JetBrainsMono_700Bold;
+
+    /* ---- Escala tipográfica (tamaño / línea / letterSpacing) ----
+     * Cada `--text-*` puede llevar sub-tokens `--line-height`,
+     * `--letter-spacing` y `--font-weight` que aplica el utility `text-*`. */
+    --text-display-hero: 56px;
+    --text-display-hero--line-height: 56px;
+    --text-display-hero--letter-spacing: -1.7px;
+
+    --text-headline-metric: 44px;
+    --text-headline-metric--line-height: 44px;
+    --text-headline-metric--letter-spacing: -1.8px;
+
+    --text-headline-lg: 28px;
+    --text-headline-lg--line-height: 32px;
+    --text-headline-lg--letter-spacing: -0.6px;
+
+    --text-headline-md: 24px;
+    --text-headline-md--line-height: 28px;
+    --text-headline-md--letter-spacing: -0.5px;
+
+    --text-headline-sm: 18px;
+    --text-headline-sm--line-height: 24px;
+    --text-headline-sm--letter-spacing: -0.2px;
+
+    --text-body-lg: 16px;
+    --text-body-lg--line-height: 24px;
+    --text-body-lg--letter-spacing: 0;
+
+    --text-body-md: 14px;
+    --text-body-md--line-height: 20px;
+    --text-body-md--letter-spacing: 0;
+
+    --text-body-sm: 12px;
+    --text-body-sm--line-height: 16px;
+    --text-body-sm--letter-spacing: 0;
+
+    --text-label-technical: 11px;
+    --text-label-technical--line-height: 14px;
+    --text-label-technical--letter-spacing: 0.9px;
+    --text-label-technical--font-weight: 600;
+
+    --text-label-code: 13px;
+    --text-label-code--line-height: 18px;
+    --text-label-code--letter-spacing: 0.3px;
+
+    /* ---- Motion ----
+     * La spec dejó motion «a definir con la implementación». Set mínimo y no
+     * decorativo (sin rebotes ni springs): transiciones de opacidad/color para
+     * feedback de estado. El namespace de duración de Tailwind v4 es
+     * `--transition-duration-*` → utility `duration-*`; el de easing es
+     * `--ease-*` → `ease-*`. */
+    --transition-duration-fast: 120ms;
+    --transition-duration-base: 200ms;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/*
+ * Bordes: Tailwind no tiene namespace `--border-width-*`. Se usan `border`
+ * (hairline 1px, por defecto), `border-active` (1.5px, estados focused/active)
+ * y `border-2` (marco de overlays, nivel 3). El color sale de `border-<color>`.
+ */
+@utility border-active {
+    border-width: 1.5px;
+}
