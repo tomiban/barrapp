@@ -1,0 +1,519 @@
+{
+  "schemaVersion": 1,
+  "programs": [
+    {
+      "id": "ponte-en-forma",
+      "name": "Ponte en forma",
+      "type": "circuit",
+      "description": "Rutinas por tiempo para acondicionamiento general, sin apenas material. Series por tiempo: mantener la actividad durante los segundos indicados.",
+      "routines": [
+        {
+          "id": "ponte-en-forma-r1",
+          "name": "Rutina 1",
+          "intensity": 2,
+          "durationMinutes": 14,
+          "blocks": [
+            {
+              "name": "SET 1",
+              "rounds": 3,
+              "restSeconds": 0,
+              "notes": "Sin descanso.",
+              "items": [
+                { "exerciseId": "shoulder-tap-plank", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "mountain-climbers", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "crunch", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "wall-sit", "sets": 1, "holdSecondsMin": 30, "holdSecondsMax": 30, "restSeconds": 0 }
+              ]
+            },
+            {
+              "name": "SET 2",
+              "rounds": 3,
+              "restSeconds": 0,
+              "notes": "Sin descanso.",
+              "items": [
+                { "exerciseId": "balance-lunge", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "jump-squat", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "plank", "sets": 1, "holdSecondsMin": 30, "holdSecondsMax": 30, "restSeconds": 0 }
+              ]
+            },
+            {
+              "name": "SET 3",
+              "rounds": 2,
+              "restSeconds": 0,
+              "notes": "Sin descanso.",
+              "items": [
+                { "exerciseId": "pike-to-plank", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "pike-leg-raise", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "lumbar-extension", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "jumping-jacks", "sets": 1, "holdSecondsMin": 30, "holdSecondsMax": 30, "restSeconds": 0 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ponte-en-forma-r2",
+          "name": "Rutina 2",
+          "intensity": 3,
+          "durationMinutes": 8,
+          "blocks": [
+            {
+              "name": "SET 1",
+              "rounds": 1,
+              "restSeconds": 60,
+              "items": [
+                { "exerciseId": "jumping-jacks", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "plank-to-push-up", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "side-plank-t", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0, "notes": "Ambos brazos." },
+                { "exerciseId": "single-leg-glute-bridge", "sets": 1, "holdSecondsMin": 30, "holdSecondsMax": 30, "restSeconds": 0 },
+                { "exerciseId": "crunch", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "impossible-lift", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "seated-leg-raise", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 }
+              ]
+            },
+            {
+              "name": "SET 2",
+              "rounds": 2,
+              "restSeconds": 30,
+              "notes": "Con descanso.",
+              "items": [
+                { "exerciseId": "pike-to-plank", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "mountain-climbers", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "dynamic-lunge", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "squat", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "lying-leg-raise", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "lumbar-extension", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ponte-en-forma-r3",
+          "name": "Rutina 3",
+          "intensity": 2,
+          "durationMinutes": 10,
+          "blocks": [
+            {
+              "name": "SET 1",
+              "rounds": 1,
+              "restSeconds": 30,
+              "items": [
+                { "exerciseId": "push-up-t-rotation", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "burpees", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "mountain-climbers", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "jumping-lunge", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 }
+              ]
+            },
+            {
+              "name": "SET 2",
+              "rounds": 1,
+              "restSeconds": 30,
+              "items": [
+                { "exerciseId": "crunch", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "hollow-body-dynamic", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "plank", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 }
+              ]
+            },
+            {
+              "name": "SET 3",
+              "rounds": 3,
+              "restSeconds": 40,
+              "notes": "Con descanso.",
+              "items": [
+                { "exerciseId": "push-up", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "spiderman-static", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "plank-to-push-up", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 }
+              ]
+            },
+            {
+              "name": "SET 4",
+              "rounds": 2,
+              "restSeconds": 20,
+              "notes": "Con descanso.",
+              "items": [
+                { "exerciseId": "impossible-hip-flexion", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "impossible-lift", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "reverse-plank", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ponte-en-forma-r4",
+          "name": "Rutina 4",
+          "intensity": 2,
+          "durationMinutes": 15,
+          "blocks": [
+            {
+              "name": "SET 1",
+              "rounds": 3,
+              "restSeconds": 30,
+              "items": [
+                { "exerciseId": "balance-lunge", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0, "notes": "Ritmo rápido." },
+                { "exerciseId": "jumping-lunge", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "preacher-squat", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "single-leg-glute-bridge", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "glute-bridge", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "glute-extension", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0, "notes": "Lateral y frontal." }
+              ]
+            },
+            {
+              "name": "SET 2",
+              "rounds": 2,
+              "restSeconds": 30,
+              "notes": "Con descanso.",
+              "items": [
+                { "exerciseId": "seated-leg-raise", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "lying-leg-raise", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "oblique-crunch", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0, "notes": "Ambos lados." },
+                { "exerciseId": "lumbar-extension", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "crunch", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ponte-en-forma-r5",
+          "name": "Rutina 5",
+          "intensity": 3,
+          "durationMinutes": 15,
+          "blocks": [
+            {
+              "name": "SET 1",
+              "rounds": 3,
+              "restSeconds": 60,
+              "notes": "Con descanso.",
+              "items": [
+                { "exerciseId": "pike-leg-raise", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "pike-to-plank", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "side-plank-dynamic", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "planche-lean", "sets": 1, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 0 }
+              ]
+            },
+            {
+              "name": "SET 2",
+              "rounds": 3,
+              "restSeconds": 60,
+              "notes": "Con descanso.",
+              "items": [
+                { "exerciseId": "impossible-hang-leg-raise", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "reverse-plank", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "lumbar-extension", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "planche-lean", "sets": 1, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 0 }
+              ]
+            },
+            {
+              "name": "SET 3",
+              "rounds": 3,
+              "restSeconds": 60,
+              "notes": "Con descanso.",
+              "items": [
+                { "exerciseId": "preacher-squat", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "jump-squat", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "single-leg-glute-bridge", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
+                { "exerciseId": "dynamic-lunge", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "base-perfecta",
+      "name": "Base Perfecta",
+      "type": "strength",
+      "description": "Rutinas de fuerza y explosividad de nivel medio-alto, orientadas al muscle up y a reforzar la estabilidad de hombro.",
+      "routines": [
+        {
+          "id": "base-perfecta-b1",
+          "name": "Modelo B1",
+          "intensity": 2,
+          "blocks": [
+            {
+              "name": "Rutina",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "pull-up-to-hip", "sets": 4, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "notes": "Explosivas con banda." },
+                { "exerciseId": "partial-wall-handstand-push-up", "sets": 4, "repsMin": 6, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "push-up", "sets": 4, "repsMin": 10, "repsMax": 15, "restSeconds": 120, "supersetGroup": 1, "notes": "Codos ligeramente pegados al cuerpo." },
+                { "exerciseId": "biceps-curl-supine", "sets": 2, "repsMin": 3, "repsMax": 5, "restSeconds": 120, "supersetGroup": 2, "notes": "Isometría arriba 1–2 s." },
+                { "exerciseId": "biceps-curl-prone", "sets": 2, "repsMin": 3, "repsMax": 5, "restSeconds": 120, "supersetGroup": 2, "notes": "Isometría arriba 1–2 s." },
+                { "exerciseId": "pull-up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 2 },
+                { "exerciseId": "hanging-leg-raise", "sets": 3, "repsMin": 6, "repsMax": 10, "restSeconds": 90, "supersetGroup": 3, "notes": "Isometría arriba 2 s." },
+                { "exerciseId": "supine-lean-hold", "sets": 3, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 90, "supersetGroup": 3 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "base-perfecta-b2",
+          "name": "Modelo B2",
+          "intensity": 2,
+          "blocks": [
+            {
+              "name": "Rutina",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "pull-up", "sets": 5, "repsMin": 10, "repsMax": 15, "restSeconds": 120 },
+                { "exerciseId": "pike-push-up", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "one-arm-leg-raise", "sets": 2, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 120, "supersetGroup": 2, "notes": "A 1 mano, segundos por brazo." },
+                { "exerciseId": "hanging-leg-raise", "sets": 2, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 120, "supersetGroup": 2 },
+                { "exerciseId": "diamond-push-up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 3 },
+                { "exerciseId": "push-up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 3, "notes": "Manos a la altura de los hombros." },
+                { "exerciseId": "wide-push-up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 3 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "base-perfecta-b3",
+          "name": "Modelo B3",
+          "intensity": 2,
+          "blocks": [
+            {
+              "name": "Rutina",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "handstand-push-up", "sets": 4, "repsMin": 4, "repsMax": 8, "restSeconds": 150, "notes": "En pared, buscando profundidad." },
+                { "exerciseId": "pike-to-lean-push-up", "sets": 3, "repsMin": 4, "repsMax": 6, "restSeconds": 120, "notes": "Buscando inclinación." },
+                { "exerciseId": "supine-push-up", "sets": 2, "repsMin": 8, "repsMax": 12, "restSeconds": 120, "notes": "Explosivas, isometría abajo." },
+                { "exerciseId": "reverse-planche-lean", "sets": 2, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 60, "supersetGroup": 1 },
+                { "exerciseId": "push-up", "sets": 2, "repsMin": 10, "repsMax": 10, "restSeconds": 60, "supersetGroup": 1 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "base-perfecta-b4",
+          "name": "Modelo B4",
+          "intensity": 2,
+          "blocks": [
+            {
+              "name": "Rutina",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "supine-bar-dip", "sets": 4, "repsMin": 8, "repsMax": 15, "restSeconds": 120, "notes": "Explosivos." },
+                { "exerciseId": "supine-push-up", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1, "notes": "Ligera inclinación." },
+                { "exerciseId": "supine-lean-hold", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "pull-up-below-chest", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "notes": "Explosivas por debajo del pecho." },
+                { "exerciseId": "l-to-v", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "supersetGroup": 2, "notes": "En paralelas." },
+                { "exerciseId": "hanging-leg-raise", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "supersetGroup": 2 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "base-perfecta-b5",
+          "name": "Modelo B5",
+          "intensity": 3,
+          "blocks": [
+            {
+              "name": "Rutina",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "pull-up-to-hip", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "notes": "Explosivas con banda." },
+                { "exerciseId": "pull-up-to-chest", "sets": 3, "repsMin": 6, "repsMax": 10, "restSeconds": 120, "notes": "Explosivas." },
+                { "exerciseId": "supine-bar-dip", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1, "notes": "Explosivos." },
+                { "exerciseId": "dip", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "hanging-leg-raise", "sets": 3, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 90, "supersetGroup": 2, "notes": "Lanzadas de L a leg raises en barra alta." },
+                { "exerciseId": "hanging-leg-raise", "sets": 3, "repsMin": 5, "repsMax": 5, "restSeconds": 90, "supersetGroup": 2, "notes": "Completas." }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "base-perfecta-b6",
+          "name": "Modelo B6",
+          "intensity": 3,
+          "blocks": [
+            {
+              "name": "Rutina",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "pull-up-below-chest", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "notes": "Explosivas." },
+                { "exerciseId": "archer-pull-up", "sets": 3, "repsMin": 2, "repsMax": 4, "restSeconds": 120, "notes": "Reps por brazo." },
+                { "exerciseId": "biceps-curl-supine", "sets": 2, "repsMin": 4, "repsMax": 6, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "close-pull-up", "sets": 2, "repsMin": 5, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "pull-up", "sets": 2, "repsMin": 5, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "hefesto", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 90, "supersetGroup": 2, "notes": "Pies en suelo." },
+                { "exerciseId": "supine-lean-hold", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 90, "supersetGroup": 2 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "base-perfecta-b7",
+          "name": "Modelo B7",
+          "intensity": 3,
+          "blocks": [
+            {
+              "name": "Rutina",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "handstand-push-up", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "wall-handstand-hold", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 15, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "elevated-pike-push-up", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "supersetGroup": 2, "notes": "Pies elevados." },
+                { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 120, "supersetGroup": 2, "notes": "Pies elevados." },
+                { "exerciseId": "explosive-push-up", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 90, "supersetGroup": 3, "notes": "Isometría abajo." },
+                { "exerciseId": "push-up", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 90, "supersetGroup": 3, "notes": "Codos ligeramente pegados al cuerpo." },
+                { "exerciseId": "knee-to-leg-raise", "sets": 2, "repsMin": 4, "repsMax": 6, "restSeconds": 120, "supersetGroup": 4, "notes": "Subir al máximo posible." },
+                { "exerciseId": "plank", "sets": 2, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 120, "supersetGroup": 4 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "base-perfecta-b8",
+          "name": "Modelo B8",
+          "intensity": 3,
+          "blocks": [
+            {
+              "name": "Rutina",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "archer-pull-up", "sets": 4, "repsMin": 2, "repsMax": 3, "restSeconds": 120, "supersetGroup": 1, "notes": "Reps por brazo." },
+                { "exerciseId": "pull-up", "sets": 4, "repsMin": 4, "repsMax": 6, "restSeconds": 120, "supersetGroup": 1, "notes": "Explosivas pasando barbilla." },
+                { "exerciseId": "one-arm-leg-raise", "sets": 3, "repsMin": 3, "repsMax": 5, "restSeconds": 120, "supersetGroup": 2, "notes": "A 1 mano, reps por brazo." },
+                { "exerciseId": "hanging-leg-raise", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "supersetGroup": 2 },
+                { "exerciseId": "supine-bar-dip", "sets": 3, "repsMin": 6, "repsMax": 10, "restSeconds": 120, "supersetGroup": 3, "notes": "Parada abajo 2 s." },
+                { "exerciseId": "supine-push-up", "sets": 3, "repsMin": 10, "repsMax": 12, "restSeconds": 120, "supersetGroup": 3 },
+                { "exerciseId": "pike-to-lean-push-up", "sets": 2, "repsMin": 5, "repsMax": 5, "restSeconds": 90, "supersetGroup": 4, "notes": "De lean a pica y volver." },
+                { "exerciseId": "planche-lean", "sets": 2, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 90, "supersetGroup": 4, "notes": "Buscando inclinación." }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "home-workout",
+      "name": "Home Workout Avanzados",
+      "type": "strength",
+      "description": "Planificación completa de empuje, tirón y pierna orientada a planche y front lever.",
+      "routines": [
+        {
+          "id": "home-workout-d1",
+          "name": "Día 1 — Empuje",
+          "intensity": 3,
+          "blocks": [
+            {
+              "name": "Empuje",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "lean-planche-walk", "sets": 2, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 60, "notes": "Hacia adelante y hacia atrás." },
+                { "exerciseId": "tuck-planche-press", "sets": 4, "repsMin": 4, "repsMax": 4, "restSeconds": 210, "supersetGroup": 1, "notes": "Controlar negativa y positiva." },
+                { "exerciseId": "planche-tuck", "sets": 4, "holdSecondsMin": 1, "holdSecondsMax": 3, "restSeconds": 210, "supersetGroup": 1, "notes": "Cadera a la altura del hombro." },
+                { "exerciseId": "tuck-planche-push-up", "sets": 4, "repsMin": 4, "repsMax": 6, "restSeconds": 210, "supersetGroup": 2 },
+                { "exerciseId": "planche-tuck", "sets": 4, "holdSecondsMin": 1, "holdSecondsMax": 3, "restSeconds": 210, "supersetGroup": 2, "notes": "Cadera a la altura del hombro." },
+                { "exerciseId": "pike-to-lean-push-up", "sets": 4, "repsMin": 4, "repsMax": 4, "restSeconds": 180, "supersetGroup": 3, "notes": "Pies en suelo marcando lean." },
+                { "exerciseId": "planche-lean", "sets": 4, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 180, "supersetGroup": 3 },
+                { "exerciseId": "lean-planche-push-up", "sets": 4, "repsMin": 8, "repsMax": 8, "restSeconds": 210, "supersetGroup": 4, "notes": "Pies en suelo marcando lean." },
+                { "exerciseId": "pike-push-up", "sets": 4, "repsMin": 4, "repsMax": 4, "restSeconds": 210, "supersetGroup": 4, "notes": "Pies en suelo." }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "home-workout-d2",
+          "name": "Día 2 — Tirón",
+          "intensity": 3,
+          "blocks": [
+            {
+              "name": "Tirón",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "front-lever-one-leg", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 90, "notes": "Intentos de semi full." },
+                { "exerciseId": "front-lever-full", "sets": 2, "holdSecondsMin": 5, "holdSecondsMax": 5, "restSeconds": 180, "supersetGroup": 1, "notes": "Con banda en cadera." },
+                { "exerciseId": "front-lever-press", "sets": 2, "repsMin": 3, "repsMax": 3, "restSeconds": 180, "supersetGroup": 1, "notes": "Banda en cadera." },
+                { "exerciseId": "touch-to-bar", "sets": 4, "holdSecondsMin": 5, "holdSecondsMax": 5, "restSeconds": 240, "supersetGroup": 2, "notes": "Banda en cadera." },
+                { "exerciseId": "front-lever-full-pull-up", "sets": 4, "repsMin": 3, "repsMax": 4, "restSeconds": 240, "supersetGroup": 2, "notes": "Banda en cadera." },
+                { "exerciseId": "front-lever-full", "sets": 4, "holdSecondsMin": 5, "holdSecondsMax": 10, "restSeconds": 240, "supersetGroup": 2, "notes": "Banda en cadera." },
+                { "exerciseId": "front-lever-one-leg", "sets": 3, "holdSecondsMin": 5, "holdSecondsMax": 10, "restSeconds": 240, "supersetGroup": 3, "notes": "Intentos de semi full al máximo." },
+                { "exerciseId": "tuck-adv-to-full-press", "sets": 3, "repsMin": 1, "repsMax": 3, "restSeconds": 240, "supersetGroup": 3, "notes": "Desde tuck advanced a full." },
+                { "exerciseId": "front-lever-tuck-pull-up", "sets": 4, "repsMin": 5, "repsMax": 8, "restSeconds": 210, "supersetGroup": 4, "notes": "Explosivas." },
+                { "exerciseId": "front-lever-advanced-tuck", "sets": 4, "holdSecondsMin": 6, "holdSecondsMax": 10, "restSeconds": 210, "supersetGroup": 4 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "home-workout-d3",
+          "name": "Día 3 — Pierna",
+          "intensity": 3,
+          "blocks": [
+            {
+              "name": "Pierna",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "squat", "sets": 10, "repsMin": 20, "repsMax": 20, "restSeconds": 90 },
+                { "exerciseId": "lunge", "sets": 5, "repsMin": 10, "repsMax": 10, "restSeconds": 90, "notes": "Cada pierna." },
+                { "exerciseId": "glute-bridge", "sets": 4, "repsMin": 20, "repsMax": 20, "restSeconds": 90 },
+                { "exerciseId": "calf-raise", "sets": 5, "repsMin": 30, "repsMax": 30, "restSeconds": 30, "notes": "Cada pierna." }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "home-workout-d4",
+          "name": "Día 4 — Empuje",
+          "intensity": 3,
+          "blocks": [
+            {
+              "name": "Empuje",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "lean-planche-walk", "sets": 2, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 60, "notes": "Hacia adelante y hacia atrás." },
+                { "exerciseId": "lean-planche-knees", "sets": 4, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 180, "notes": "Rodillas en suelo." },
+                { "exerciseId": "tuck-planche-press", "sets": 4, "repsMin": 4, "repsMax": 4, "restSeconds": 210, "supersetGroup": 1, "notes": "Controlar negativa y positiva." },
+                { "exerciseId": "planche-tuck", "sets": 4, "holdSecondsMin": 1, "holdSecondsMax": 3, "restSeconds": 210, "supersetGroup": 1 },
+                { "exerciseId": "tuck-planche-push-up", "sets": 4, "repsMin": 3, "repsMax": 3, "restSeconds": 240, "supersetGroup": 2 },
+                { "exerciseId": "tuck-planche-press", "sets": 4, "repsMin": 3, "repsMax": 3, "restSeconds": 240, "supersetGroup": 2 },
+                { "exerciseId": "lean-planche-push-up", "sets": 3, "repsMin": 7, "repsMax": 7, "restSeconds": 120, "supersetGroup": 3, "notes": "Hollow bien puesto." },
+                { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 120, "supersetGroup": 3 },
+                { "exerciseId": "handstand-push-up", "sets": 4, "repsMin": 4, "repsMax": 8, "restSeconds": 180, "notes": "En pared, pies en suelo." },
+                { "exerciseId": "diamond-push-up", "sets": 3, "repsMin": 20, "repsMax": 20, "restSeconds": 120, "supersetGroup": 4 },
+                { "exerciseId": "push-up", "sets": 3, "repsMin": 20, "repsMax": 20, "restSeconds": 120, "supersetGroup": 4 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "home-workout-d5",
+          "name": "Día 5 — Tirón",
+          "intensity": 3,
+          "blocks": [
+            {
+              "name": "Tirón",
+              "rounds": 1,
+              "restSeconds": 0,
+              "items": [
+                { "exerciseId": "front-lever-one-leg", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 90, "notes": "Intentos de semi full." },
+                { "exerciseId": "front-lever-full", "sets": 2, "holdSecondsMin": 5, "holdSecondsMax": 5, "restSeconds": 180, "supersetGroup": 1, "notes": "Con banda en cadera." },
+                { "exerciseId": "front-lever-press", "sets": 2, "repsMin": 3, "repsMax": 3, "restSeconds": 180, "supersetGroup": 1 },
+                { "exerciseId": "touch-to-bar", "sets": 4, "holdSecondsMin": 5, "holdSecondsMax": 5, "restSeconds": 240, "supersetGroup": 2, "notes": "Banda en cadera." },
+                { "exerciseId": "front-lever-full-pull-up", "sets": 4, "repsMin": 3, "repsMax": 4, "restSeconds": 240, "supersetGroup": 2, "notes": "Banda en cadera." },
+                { "exerciseId": "front-lever-full", "sets": 4, "holdSecondsMin": 5, "holdSecondsMax": 10, "restSeconds": 240, "supersetGroup": 2, "notes": "Banda en cadera." },
+                { "exerciseId": "front-lever-one-leg", "sets": 3, "holdSecondsMin": 5, "holdSecondsMax": 10, "restSeconds": 240, "supersetGroup": 3, "notes": "Intentos de semi full al máximo." },
+                { "exerciseId": "tuck-adv-to-full-press", "sets": 3, "repsMin": 1, "repsMax": 3, "restSeconds": 240, "supersetGroup": 3, "notes": "Desde tuck advanced a full." },
+                { "exerciseId": "front-lever-tuck-pull-up", "sets": 4, "repsMin": 5, "repsMax": 8, "restSeconds": 210, "supersetGroup": 4, "notes": "Explosivas." },
+                { "exerciseId": "front-lever-advanced-tuck", "sets": 4, "holdSecondsMin": 6, "holdSecondsMax": 10, "restSeconds": 210, "supersetGroup": 4 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
