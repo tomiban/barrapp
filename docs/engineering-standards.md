@@ -4,7 +4,7 @@ Prácticas permanentes de validación, seguridad, datos, rendimiento y resilienc
 
 ## Aplican siempre (API .NET)
 
-- **Validá toda entrada.** Body, ruta y query se validan antes de usarse, en el borde (endpoint filters). Nunca confíes en el cliente.
+- **Validá toda entrada.** Cada command/query tiene su **validador de FluentValidation** en Application, que corre en un **decorador** sobre el handler; el API traduce el fallo a Problem Details. Nunca confíes en el cliente.
 - **No concatenes SQL.** Cero SQL armado con strings; EF Core parametriza. El SQL crudo solo como consulta parametrizada.
 - **Sacá los secretos del repo.** Claves y cadenas de conexión por variables de entorno o *user-secrets*; `.env` en `.gitignore`; el repo solo lleva `.env.example`.
 - **Transacciones donde haya más de una escritura.** Una operación que escribe en más de un sitio va dentro de una transacción.
@@ -15,6 +15,14 @@ Prácticas permanentes de validación, seguridad, datos, rendimiento y resilienc
 - **Logs con request id.** Cada log lleva el identificador de la petición para poder correlacionar.
 - **Health check que revise la base.** Un endpoint de salud que comprueba también la conexión a la base de datos.
 - **429, no 500.** Al limitar la tasa o saturar, responde `429` (con `Retry-After`); nunca `500` por throttling.
+
+## Límites de capas (Clean Architecture)
+
+- La **validación** y demás cross-cutting van en **decoradores** sobre los handlers, no dentro de ellos.
+- **Application** no referencia EF Core ni ASP.NET Core; solo Domain y paquetes de abstracciones.
+- **Commands** pasan por el dominio; **queries** proyectan directo a DTO.
+- Los handlers leen como **tabla de contenidos** (cargar → actuar → guardar); la regla vive en Domain.
+- **Architecture tests** (NetArchTest) bloquean el cruce de capas y corren en CI.
 
 ## Cuando aplique
 
