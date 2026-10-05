@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Barrapp.Application\Barrapp.Application.csproj" />
+    <ProjectReference Include="..\Barrapp.Infrastructure\Barrapp.Infrastructure.csproj" />
+    <ProjectReference Include="..\Barrapp.Persistence\Barrapp.Persistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Serilog.AspNetCore" />
+  </ItemGroup>
+
+</Project>
