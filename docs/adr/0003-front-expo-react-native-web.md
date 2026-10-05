@@ -1,5 +1,7 @@
 # Front en Expo (React Native + react-native-web)
 
+**Status**: superseded by ADR-0005 — la PWA sale del MVP; la v1 se entrega como **app nativa iOS/Android**.
+
 El front se construye con **Expo (React Native + `react-native-web`) y TypeScript**, con Expo Router, apuntando a **PWA** en el MVP. Elegimos un stack React Native aunque el MVP solo necesite una web app porque el **roadmap incluye apps nativas iOS/Android**: así un único código sirve para PWA y nativo sin reescribir. Se descarta React + Vite —más simple y con control fino del service worker/manifest— porque obligaría a rehacer el front al añadir el nativo, y se descarta una app nativa directa porque el MVP debe instalarse desde el navegador.
 
 ## Considered Options

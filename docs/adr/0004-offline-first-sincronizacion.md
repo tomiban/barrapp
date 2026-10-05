@@ -1,6 +1,6 @@
 # Offline-first con almacén local y sincronización
 
-La PWA funciona sin conexión para **leer el plan y registrar sesiones**: el cliente mantiene un almacén local (**SQLite en el dispositivo**, `expo-sqlite`) y una **cola de sincronización** que sube los cambios al backend cuando vuelve la red. La **generación** de plan y de sesión suelta, al depender del motor server-side (ADR-0002), **requiere conexión** en el MVP. La sincronización usa **last-write-wins**, válido porque el MVP es mono-usuario; el backend sigue siendo la fuente de verdad para el futuro multi-usuario (ADR-0001). Se descarta duplicar el motor en el cliente (offline total) por ser más trabajo y arriesgar la divergencia con el motor del servidor.
+La app funciona sin conexión para **leer el plan y registrar sesiones**: el cliente mantiene un almacén local (**SQLite en el dispositivo**, `expo-sqlite`) y una **cola de sincronización** que sube los cambios al backend cuando vuelve la red. La **generación** de plan y de sesión suelta, al depender del motor server-side (ADR-0002), **requiere conexión** en el MVP. La sincronización usa **last-write-wins**, válido porque el MVP es mono-usuario; el backend sigue siendo la fuente de verdad para el futuro multi-usuario (ADR-0001). Se descarta duplicar el motor en el cliente (offline total) por ser más trabajo y arriesgar la divergencia con el motor del servidor.
 
 ## Considered Options
 
