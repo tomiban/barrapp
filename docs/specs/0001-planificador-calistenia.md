@@ -62,7 +62,7 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 - **Motor**: determinista, puro y server-side, sobre una **base de conocimiento curada**. Interfaz pública:
   - `GenerarPlan(perfil, objetivo, frecuencia) → Plan`
   - `GenerarSesionSuelta(perfil, objetivo, parámetros) → Sesión`
-- **Base de conocimiento**: datos versionados separados del código en **JSON embebido** (`knowledge/exercises.json` y `knowledge/skills.json`), cargados al arrancar a un **catálogo en memoria** y validados con **fail-fast**; el catálogo **no** vive en tablas. Incluye el catálogo de ejercicios agrupados (empuje/tirón/pierna más core) con su acondicionamiento de apoyo por skill, las escaleras de progresión de cada skill (4–6 etapas) con su criterio y su **rutina de patrón** (la prescripción, específica del skill, que entrena su patrón: series, reps o segundos y descanso), plantillas de sesión y reglas de progresión. Añadir un ejercicio o retocar una escalera no recompila el dominio ni genera una migración (ADR-0009).
+- **Base de conocimiento**: datos versionados separados del código en **JSON embebido** (`knowledge/exercises.json`, `knowledge/skills.json` y `knowledge/routines.json`), cargados al arrancar a un **catálogo en memoria** y validados con **fail-fast**; el catálogo **no** vive en tablas. Incluye el catálogo de ejercicios agrupados (empuje/tirón/pierna más core y cardio) con su acondicionamiento de apoyo por skill, las escaleras de progresión de cada skill (4–6 etapas) con su criterio y sus **rutinas de patrón** (varios modelos por intensidad y material, con series, reps o segundos, descanso, biseries/superseries y cadencia), y los **programas generales** de acondicionamiento (circuitos por tiempo y rutinas de fuerza por reps). Añadir un ejercicio o retocar una escalera no recompila el dominio ni genera una migración (ADR-0009).
 - **LLM**: solo como **capa posterior** que traduce/variar y que el motor valida (ADR-0002). Nada de IA en la v1.
 - **Offline-first**: la app mantiene **almacén local en el dispositivo** (SQLite vía `expo-sqlite`) con el plan cacheado y una **cola de sincronización** (*outbox*); los cambios suben al backend al recuperar la red. Sincronización **last-write-wins**, válida por ser mono-usuario. La **generación** de plan y de sesión suelta **requiere conexión**, porque el motor es server-side (ADR-0002, ADR-0003).
 - **Modelo de registro**: `SessionLog` guarda, **por serie**, el valor real ejecutado —**reps** en fuerza o **segundos** en holds/skill— con la unidad derivada del tipo de ejercicio y **RIR/RPE real opcional**; editable y borrable. Alimenta el avance de etapa del skill y el ajuste de máximos del siguiente mesociclo.
@@ -76,8 +76,8 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 - **Criterio de etapa de skill**: cada etapa mide una marca en **segundos mantenidos** (holds: pino, front lever, planche) o en **repeticiones** (pistol squat), con sus series. Es dato de la escalera, no regla.
 - **Avance de skill**: se sube de etapa al cumplir el criterio de la etapa actual en dos sesiones consecutivas.
 - **Sesión suelta**: parámetros tiempo (15/30/45/60 min), energía (baja/media/alta), foco (patrón o skill) y «sorpréndeme». El motor mapea tiempo+energía a ejercicios/series/RIR, filtra el catálogo por el foco y respeta la escalera del skill si aparece. Se guarda en historial y **no** altera el mesociclo ni los máximos.
-- **API** (contractos): perfil (crear/leer) y **objetivo** (skill objetivo: leer/fijar), catálogo (ejercicios, skills y **progreso** por skill), generar plan, leer plan e historial, registrar sesión, generar sesión suelta. El prompt en lenguaje natural queda para después.
-- **Pantallas**: onboarding (perfil y objetivo), sesión del día, vista del plan (semana/sesión), biblioteca (catálogo de ejercicios y escaleras de skill), registro de sesión, generador de sesión suelta, historial.
+- **API** (contractos): perfil (crear/leer) y **objetivo** (skill objetivo: leer/fijar), catálogo (ejercicios, skills, **progreso** por skill y **rutinas generales**), generar plan, leer plan e historial, registrar sesión, generar sesión suelta. El prompt en lenguaje natural queda para después.
+- **Pantallas**: onboarding (perfil y objetivo), sesión del día, vista del plan (semana/sesión), biblioteca (catálogo de ejercicios, escaleras de skill y rutinas generales), registro de sesión, generador de sesión suelta, historial.
 
 ## Testing Decisions
 
@@ -95,7 +95,6 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 - **Generación sin conexión** (motor en el cliente): la generación de plan y sesión suelta requiere red en el MVP (ADR-0003).
 - Auth/login y multi-usuario real (esquema preparado, funcionalidad pospuesta).
 - Nutrición, IMC y objetivos de pérdida de grasa.
-- Cardio y acondicionamiento metabólico.
 - Skills más allá de los cuatro iniciales y escaleras de más de 4–6 etapas.
 - Adaptación del plan en vivo dentro del mes.
 - PWA / versión web (la v1 es solo nativa; ADR-0004).

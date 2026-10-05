@@ -31,8 +31,12 @@ Movimiento del catálogo, de acondicionamiento o variante de un skill, con su un
 _Avoid_: movimiento, drill
 
 **Rutina de patrón**:
-Prescripción de acondicionamiento, específica de un skill, que entrena el patrón de movimiento de ese skill: series, rango de repeticiones o de segundos, y descanso.
+Prescripción de acondicionamiento, específica de un skill, que entrena el patrón de movimiento de ese skill; se compone de uno o más *modelos de rutina* (series, rango de repeticiones o de segundos, descanso, biseries/superseries y cadencia).
 _Avoid_: rutina de apoyo, accesorio, extra
+
+**Modelo de rutina**:
+Variante concreta de una *rutina de patrón*, definida por su intensidad y material (p. ej. Planche R1–R5, Base Perfecta B1–B8).
+_Avoid_: rutina, plan, variación
 
 **Acondicionamiento general**:
 Trabajo de fuerza general repartido en los tres patrones básicos: empuje, tirón y pierna.
@@ -41,6 +45,10 @@ _Avoid_: preparación física, GPP, cardio
 **Patrón**:
 Categoría de movimiento de fuerza general: empuje, tirón o pierna.
 _Avoid_: grupo muscular, categoría
+
+**Cardio**:
+Movimientos metabólicos del catálogo (burpees, jumping jacks, mountain climbers); es un *grupo de catálogo* aparte, no un *patrón*.
+_Avoid_: HIIT, metabólico, GPP
 
 ### Programación
 
@@ -71,6 +79,18 @@ _Avoid_: entrenamiento, workout, día
 **Sesión suelta**:
 Sesión puntual generada a demanda, fuera del mesociclo, para adaptarse al tiempo, la energía o las ganas del atleta; no altera la progresión.
 _Avoid_: entrenamiento libre, rutina rápida
+
+**Biserie**:
+Dos ejercicios encadenados sin descanso entre sí; el descanso llega al final del par.
+_Avoid_: superserie, pareja
+
+**Superserie**:
+Tres o más ejercicios encadenados sin descanso entre sí; el descanso llega al final del grupo.
+_Avoid_: biserie, circuito
+
+**Cadencia**:
+Ritmo de una repetición, expresado como los tiempos de las fases positiva : isométrica : excéntrica (p. ej. 2:1:3).
+_Avoid_: tempo, velocidad
 
 ### Atleta
 
