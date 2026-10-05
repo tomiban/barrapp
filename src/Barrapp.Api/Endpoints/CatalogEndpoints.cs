@@ -39,6 +39,20 @@ internal static class CatalogEndpoints
             .WithSummary("Devuelve los skills con su escalera de progresión y sus rutinas de patrón.")
             .Produces<IReadOnlyList<SkillResponse>>();
 
+        group.MapGet(
+                "/routines",
+                async (ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(new GetRoutinesQuery(), cancellationToken);
+
+                    return result.IsSuccess
+                        ? Results.Ok(result.Value)
+                        : result.Error.ToProblemDetails();
+                })
+            .WithName("GetRoutines")
+            .WithSummary("Devuelve los programas generales de acondicionamiento con sus rutinas.")
+            .Produces<IReadOnlyList<RoutineProgramResponse>>();
+
         return app;
     }
 }
