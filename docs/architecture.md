@@ -43,7 +43,7 @@ Api ─▶ Application ─▶ Domain
 
 - Abstracciones propias: `ICommand`/`IQuery` con `ICommandHandler<,>`/`IQueryHandler<,>`, todas devolviendo `Result`.
 - Un handler se lee como una **tabla de contenidos**: cargar → actuar → guardar. La regla de negocio vive en **Domain**.
-- **Commands** pasan por el modelo de dominio (repositorios + `IUnitOfWork`). **Queries** saltan el dominio y proyectan **directamente a DTO** (vía `IApplicationDbContext`).
+- **Commands** pasan por el modelo de dominio (repositorios + `IUnitOfWork`). **Queries** saltan el dominio y proyectan **directamente a DTO** a través de un **puerto de lectura** (`I<Feature>ReadService`) que implementa Persistence; así EF Core no entra en Application.
 - Los **puertos** se declaran en **Application**.
 
 ## Cross-cutting (pipeline de MediatR)

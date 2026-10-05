@@ -58,7 +58,7 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 - **Patrones de la API**: endpoints finos por feature con extension methods `Map*Endpoints()` que inyectan `ISender`; **CQRS con MediatR** (`ICommand`/`IQuery` + handlers + `IPipelineBehavior`); **validación con FluentValidation** por command/query en Application, ejecutada por un `ValidationBehavior`; un `AddX()` por capa; **OpenAPI nativo**; **exception handler global**; **Result/Error** mapeado a códigos HTTP como Problem Details.
 - **Cross-cutting**: behaviors de MediatR (`AddOpenBehavior`) en orden logging → validación → (caché) → (transacción); transacción y caché son opt-in por marcador y usan puertos de Application (`IUnitOfWork`), nunca `DbContext` directo.
 - **Logging**: Serilog estructurado por capa —Domain no loguea (lanza domain events), Application vía `LoggingBehavior`, Infrastructure directo, Api vía request logging + exception handler global; correlation id; sin cuerpos por defecto.
-- **Datos en Application**: puertos (interfaces de repositorio/servicios) en Application; **commands** por repositorios + UnitOfWork y **queries** que proyectan directo a DTO vía `IApplicationDbContext`.
+- **Datos en Application**: puertos (interfaces de repositorio/servicios) en Application; **commands** por repositorios + UnitOfWork y **queries** que proyectan directo a DTO a través de un **puerto de lectura** (`I<Feature>ReadService`) implementado en Persistence.
 - **Motor**: determinista, puro y server-side, sobre una **base de conocimiento curada**. Interfaz pública:
   - `GenerarPlan(perfil, objetivo, frecuencia) → Plan`
   - `GenerarSesionSuelta(perfil, objetivo, parámetros) → Sesión`

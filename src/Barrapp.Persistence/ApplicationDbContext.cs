@@ -6,26 +6,18 @@ using Microsoft.EntityFrameworkCore;
 namespace Barrapp.Persistence;
 
 /// <summary>
-/// Contexto de EF Core sobre SQLite. Además de exponer las entidades para EF, implementa los
-/// puertos de Application: <see cref="IApplicationDbContext"/> para las queries y
-/// <see cref="IUnitOfWork"/> para confirmar las escrituras.
+/// Contexto de EF Core sobre SQLite. Expone las entidades para EF e implementa
+/// <see cref="IUnitOfWork"/> para confirmar las escrituras; las lecturas van por los puertos de
+/// lectura de Application y las escrituras, por los repositorios.
 /// </summary>
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-    : DbContext(options), IApplicationDbContext, IUnitOfWork
+    : DbContext(options), IUnitOfWork
 {
     /// <summary>Usuarios propietarios de los datos; en el MVP, uno solo.</summary>
     public DbSet<User> Users => Set<User>();
 
     /// <summary>Perfiles de atleta.</summary>
     public DbSet<AthleteProfile> AthleteProfiles => Set<AthleteProfile>();
-
-    IQueryable<AthleteProfile> IApplicationDbContext.AthleteProfiles => AthleteProfiles;
-
-    Task<TResponse?> IApplicationDbContext.FirstOrDefaultAsync<TResponse>(
-        IQueryable<TResponse> query,
-        CancellationToken cancellationToken)
-        where TResponse : class =>
-        EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(query, cancellationToken);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
