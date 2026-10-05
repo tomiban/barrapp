@@ -132,7 +132,9 @@ Toggle controlado de etiqueta visible. `selected` (default `false`) +
 ### SegmentedControl
 
 Selección única controlada. `options: { value, label }[]`, `value`, `onChange`,
-`disabled`, `label` accesible. Segmento activo invertido a `primary`.
+`disabled`, `label` accesible, `error?`. Segmento activo invertido a `primary`.
+Si llega `error`, se muestra bajo el control como texto `error` anunciable
+(`alert`), igual que `TextField`.
 
 ### Checkbox / Radio
 

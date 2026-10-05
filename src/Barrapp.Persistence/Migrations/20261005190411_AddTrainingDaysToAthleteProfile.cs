@@ -1,3 +1,4 @@
+using Barrapp.Domain.Athlete;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -15,7 +16,7 @@ namespace Barrapp.Persistence.Migrations
                 table: "AthleteProfiles",
                 type: "INTEGER",
                 nullable: false,
-                defaultValue: 0);
+                defaultValue: AthleteProfile.MinTrainingDays);
         }
 
         /// <inheritdoc />

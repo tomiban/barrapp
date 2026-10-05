@@ -2,7 +2,7 @@ import {
   BASIC_EXERCISES,
   fetchAthleteProfile,
   saveAthleteProfile,
-  validateAthleteProfileMeasurements,
+  validateAthleteProfileDraft,
   validateMaximumDrafts,
 } from '../src/api/athleteProfile';
 
@@ -119,16 +119,16 @@ describe('athleteProfile api', () => {
   });
 });
 
-describe('validateAthleteProfileMeasurements', () => {
+describe('validateAthleteProfileDraft', () => {
   it('accepts the range boundaries', () => {
-    expect(validateAthleteProfileMeasurements('30', '120', 3)).toEqual({
+    expect(validateAthleteProfileDraft('30', '120', 3)).toEqual({
       weightKilograms: 30,
       heightCentimeters: 120,
       trainingDays: 3,
       errors: {},
     });
 
-    expect(validateAthleteProfileMeasurements('200,0', '220', 5)).toEqual({
+    expect(validateAthleteProfileDraft('200,0', '220', 5)).toEqual({
       weightKilograms: 200,
       heightCentimeters: 220,
       trainingDays: 5,
@@ -137,7 +137,7 @@ describe('validateAthleteProfileMeasurements', () => {
   });
 
   it('rejects values outside the range with a clear message per field', () => {
-    const result = validateAthleteProfileMeasurements('29.9', '220.1', 4);
+    const result = validateAthleteProfileDraft('29.9', '220.1', 4);
 
     expect(result.weightKilograms).toBeNull();
     expect(result.heightCentimeters).toBeNull();
@@ -147,7 +147,7 @@ describe('validateAthleteProfileMeasurements', () => {
   });
 
   it('asks for a missing or non-numeric value', () => {
-    const result = validateAthleteProfileMeasurements('', 'abc', 4);
+    const result = validateAthleteProfileDraft('', 'abc', 4);
 
     expect(result.weightKilograms).toBeNull();
     expect(result.heightCentimeters).toBeNull();
@@ -156,7 +156,7 @@ describe('validateAthleteProfileMeasurements', () => {
   });
 
   it('rejects trailing junk instead of coercing it', () => {
-    const result = validateAthleteProfileMeasurements('30kg', '120cm', 4);
+    const result = validateAthleteProfileDraft('30kg', '120cm', 4);
 
     expect(result.weightKilograms).toBeNull();
     expect(result.heightCentimeters).toBeNull();
@@ -165,11 +165,11 @@ describe('validateAthleteProfileMeasurements', () => {
   });
 
   it('rejects training days outside the 3–5 range with a clear message', () => {
-    const below = validateAthleteProfileMeasurements('30', '120', 2);
+    const below = validateAthleteProfileDraft('30', '120', 2);
     expect(below.trainingDays).toBeNull();
     expect(below.errors.trainingDays).toBe('Los días de entrenamiento deben estar entre 3 y 5.');
 
-    const above = validateAthleteProfileMeasurements('30', '120', 6);
+    const above = validateAthleteProfileDraft('30', '120', 6);
     expect(above.trainingDays).toBeNull();
     expect(above.errors.trainingDays).toBe('Los días de entrenamiento deben estar entre 3 y 5.');
   });

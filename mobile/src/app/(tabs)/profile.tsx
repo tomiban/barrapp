@@ -6,7 +6,7 @@ import {
   EXERCISE_PATTERNS,
   fetchAthleteProfile,
   saveAthleteProfile,
-  validateAthleteProfileMeasurements,
+  validateAthleteProfileDraft,
   validateMaximumDrafts,
   TRAINING_DAYS_LIMITS,
   type AthleteProfile,
@@ -124,7 +124,7 @@ export default function ProfileScreen() {
       heightCentimeters,
       trainingDays: selectedTrainingDays,
       errors,
-    } = validateAthleteProfileMeasurements(weight, height, Number(trainingDays));
+    } = validateAthleteProfileDraft(weight, height, Number(trainingDays));
 
     const drafts: MaximumDraft[] = BASIC_EXERCISES.map((exercise) => ({
       exerciseCode: exercise.code,
@@ -216,18 +216,9 @@ export default function ProfileScreen() {
                   value={trainingDays}
                   onChange={setTrainingDays}
                   label="Días de entrenamiento por semana"
+                  error={fieldErrors.trainingDays}
                   testID="profile-training-days"
                 />
-                {fieldErrors.trainingDays ? (
-                  <Text
-                    variant="bodySm"
-                    className="text-error"
-                    accessibilityRole="alert"
-                    accessibilityLiveRegion="polite"
-                  >
-                    {fieldErrors.trainingDays}
-                  </Text>
-                ) : null}
               </Stack>
             </Stack>
 

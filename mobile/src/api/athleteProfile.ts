@@ -45,11 +45,11 @@ export type AthleteProfile = {
 };
 
 /**
- * Límites que valida el API (spec 0001): peso 30–200 kg, altura 120–220 cm y
- * días de entrenamiento 3–5. El cliente los replica para avisar antes de
- * enviar; el API sigue siendo la fuente de verdad.
+ * Límites de peso y altura que valida el API (spec 0001): 30–200 kg y 120–220 cm. Los
+ * días de entrenamiento viven aparte, en `TRAINING_DAYS_LIMITS`. El cliente los replica
+ * para avisar antes de enviar; el API sigue siendo la fuente de verdad.
  */
-export const ATHLETE_PROFILE_LIMITS = {
+export const BODY_MEASUREMENT_LIMITS = {
   weightKilograms: { min: 30, max: 200 },
   heightCentimeters: { min: 120, max: 220 },
 } as const;
@@ -64,8 +64,8 @@ export type AthleteProfileFieldErrors = {
   trainingDays?: string;
 };
 
-/** Resultado de validar el borrador del formulario de perfil. */
-export type AthleteProfileMeasurements = {
+/** Borrador del formulario de perfil: medidas, días de entrenamiento y errores por campo. */
+export type AthleteProfileDraft = {
   weightKilograms: number | null;
   heightCentimeters: number | null;
   trainingDays: number | null;
@@ -138,12 +138,13 @@ function validateTrainingDays(trainingDays: number): { value: number | null; err
  * por campo cuando no: distingue un valor ausente o no numérico de uno fuera de
  * rango. Los días de entrenamiento se validan contra 3–5.
  */
-export function validateAthleteProfileMeasurements(
+export function validateAthleteProfileDraft(
   weight: string,
   height: string,
   trainingDays: number,
-): AthleteProfileMeasurements {
-  const { weightKilograms: weightLimits, heightCentimeters: heightLimits } = ATHLETE_PROFILE_LIMITS;
+): AthleteProfileDraft {
+  const { weightKilograms: weightLimits, heightCentimeters: heightLimits } =
+    BODY_MEASUREMENT_LIMITS;
 
   const weightResult = validateMeasurement(
     weight,

@@ -89,6 +89,18 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
     }
 
     [Fact]
+    public async Task The_training_days_column_defaults_to_the_domain_minimum()
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText =
+            "SELECT dflt_value FROM pragma_table_info('AthleteProfiles') WHERE name = 'TrainingDays'";
+
+        var defaultValue = await command.ExecuteScalarAsync();
+
+        Assert.Equal(AthleteProfile.MinTrainingDays.ToString(), Convert.ToString(defaultValue));
+    }
+
+    [Fact]
     public async Task Updating_a_profile_overwrites_the_stored_measurements_and_maximums()
     {
         var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4, Maximums()).Value;

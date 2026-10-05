@@ -4,6 +4,11 @@ namespace Barrapp.Domain.Athlete;
 /// Catálogo de ejercicios básicos del MVP (M1): uno por patrón. Es la fuente única de la
 /// lista; la validación y la UI la leen de aquí, no la duplican.
 /// </summary>
+/// <remarks>
+/// Estos tres códigos son <b>anclas estables</b> para derivar cargas, no el catálogo completo:
+/// el catálogo data-driven (ticket #7) debe incluirlos y reutilizarlos. Ver
+/// <c>docs/adr/0009-maximos-anclados-a-ejercicios-basicos.md</c>.
+/// </remarks>
 public static class BasicExercises
 {
     /// <summary>Flexión (empuje).</summary>

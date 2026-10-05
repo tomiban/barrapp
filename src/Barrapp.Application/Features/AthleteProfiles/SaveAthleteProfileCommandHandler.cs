@@ -56,9 +56,6 @@ internal sealed class SaveAthleteProfileCommandHandler(
             profile.WeightKilograms,
             profile.HeightCentimeters,
             profile.TrainingDays,
-            profile.Maximums
-                .OrderBy(maximum => maximum.ExerciseCode, StringComparer.Ordinal)
-                .Select(maximum => new MaximumResponse(maximum.ExerciseCode, maximum.Repetitions))
-                .ToList());
+            MaximumResponses.From(profile.Maximums));
     }
 }

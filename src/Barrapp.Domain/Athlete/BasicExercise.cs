@@ -5,8 +5,9 @@ namespace Barrapp.Domain.Athlete;
 /// un <b>nombre</b> para la UI en español y su <see cref="ExercisePattern"/>.
 /// </summary>
 /// <remarks>
-/// El catálogo completo de ejercicios llega en un ticket posterior; este es el conjunto
-/// pequeño y estable que necesita el perfil en M1.
+/// El catálogo completo de ejercicios llega en el ticket #7; este es el conjunto pequeño y
+/// estable que necesita el perfil en M1 como ancla para derivar cargas. Ver
+/// <c>docs/adr/0009-maximos-anclados-a-ejercicios-basicos.md</c>.
 /// </remarks>
 /// <param name="Code">Código estable en inglés, usado como clave entre capas.</param>
 /// <param name="Name">Nombre para mostrar en la UI, en español.</param>
