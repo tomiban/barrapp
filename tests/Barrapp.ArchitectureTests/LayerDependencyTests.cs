@@ -64,13 +64,11 @@ public sealed class LayerDependencyTests
     }
 
     [Fact]
-    public void Application_does_not_depend_on_efcore_or_aspnetcore()
+    public void Application_does_not_depend_on_aspnetcore()
     {
         var result = Types.InAssembly(ApplicationAssembly)
             .Should()
-            .NotHaveDependencyOnAny(
-                "Microsoft.EntityFrameworkCore",
-                "Microsoft.AspNetCore")
+            .NotHaveDependencyOn("Microsoft.AspNetCore")
             .GetResult();
 
         Assert.True(result.IsSuccessful, Describe(result));

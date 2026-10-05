@@ -1,0 +1,19 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: barrapp-api
+    ports:
+      # Mismo puerto que en desarrollo, para que la app no cambie de URL.
+      - "5213:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # La base vive en el volumen, no dentro de la imagen.
+      ConnectionStrings__Default: "Data Source=/data/barrapp.db"
+    volumes:
+      - barrapp-data:/data
+    restart: unless-stopped
+
+volumes:
+  barrapp-data:
