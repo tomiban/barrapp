@@ -2,12 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using Barrapp.Application.Features.AthleteProfiles;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Barrapp.Api.FunctionalTests;
 
-public sealed class AthleteProfileEndpointTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
+    : IClassFixture<BarrappApiFactory>
 {
     [Fact]
     public async Task Put_profile_then_get_profile_returns_the_saved_values()
