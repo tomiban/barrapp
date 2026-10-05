@@ -19,6 +19,11 @@ public static class DomainErrors
             "athlete_profile.height_out_of_range",
             "La altura debe estar entre 120 y 220 cm.");
 
+        /// <summary>Los días de entrenamiento están fuera del rango admitido (3–5).</summary>
+        public static readonly Error TrainingDaysOutOfRange = Error.Validation(
+            "athlete_profile.training_days_out_of_range",
+            "Los días de entrenamiento deben estar entre 3 y 5.");
+
         /// <summary>Todavía no hay ningún perfil guardado.</summary>
         public static readonly Error NotFound = Error.NotFound(
             "athlete_profile.not_found",

@@ -3,8 +3,9 @@ using Barrapp.Domain.Common;
 namespace Barrapp.Domain.Athlete;
 
 /// <summary>
-/// Perfil del atleta: sus datos corporales. Hoy guarda <b>peso</b> (kg) y <b>altura</b> (cm);
-/// los máximos por ejercicio y los días de entrenamiento llegan en tickets posteriores.
+/// Perfil del atleta: sus datos corporales y de entrenamiento. Hoy guarda <b>peso</b> (kg),
+/// <b>altura</b> (cm) y <b>días de entrenamiento</b> por semana (3–5); los máximos por
+/// ejercicio llegan en tickets posteriores.
 /// </summary>
 /// <remarks>
 /// El estado solo cambia por sus métodos (<see cref="Create"/>, <see cref="Update"/>), que
@@ -25,12 +26,24 @@ public sealed class AthleteProfile
     /// <summary>Altura máxima admitida, en centímetros.</summary>
     public const double MaxHeightCentimeters = 220;
 
-    private AthleteProfile(Guid id, Guid userId, double weightKilograms, double heightCentimeters)
+    /// <summary>Número mínimo de días de entrenamiento por semana.</summary>
+    public const int MinTrainingDays = 3;
+
+    /// <summary>Número máximo de días de entrenamiento por semana.</summary>
+    public const int MaxTrainingDays = 5;
+
+    private AthleteProfile(
+        Guid id,
+        Guid userId,
+        double weightKilograms,
+        double heightCentimeters,
+        int trainingDays)
     {
         Id = id;
         UserId = userId;
         WeightKilograms = weightKilograms;
         HeightCentimeters = heightCentimeters;
+        TrainingDays = trainingDays;
     }
 
     // Requerido por EF Core para materializar la entidad; nunca se usa desde el dominio.
@@ -50,28 +63,37 @@ public sealed class AthleteProfile
     /// <summary>Altura del atleta en centímetros.</summary>
     public double HeightCentimeters { get; private set; }
 
+    /// <summary>Días de entrenamiento por semana (3–5).</summary>
+    public int TrainingDays { get; private set; }
+
     /// <summary>
-    /// Crea un perfil para <paramref name="userId"/>. Falla si el peso (30–200 kg) o la
-    /// altura (120–220 cm) están fuera de rango.
+    /// Crea un perfil para <paramref name="userId"/>. Falla si el peso (30–200 kg), la
+    /// altura (120–220 cm) o los días de entrenamiento (3–5) están fuera de rango.
     /// </summary>
     public static Result<AthleteProfile> Create(
         Guid userId,
         double weightKilograms,
-        double heightCentimeters)
+        double heightCentimeters,
+        int trainingDays)
     {
-        var validation = ValidateMeasurements(weightKilograms, heightCentimeters);
+        var validation = ValidateProfile(weightKilograms, heightCentimeters, trainingDays);
         return validation.IsFailure
             ? Result.Failure<AthleteProfile>(validation.Error)
-            : new AthleteProfile(Guid.NewGuid(), userId, weightKilograms, heightCentimeters);
+            : new AthleteProfile(
+                Guid.NewGuid(),
+                userId,
+                weightKilograms,
+                heightCentimeters,
+                trainingDays);
     }
 
     /// <summary>
-    /// Actualiza las medidas del perfil. Falla si el peso (30–200 kg) o la altura
-    /// (120–220 cm) están fuera de rango; en ese caso no se modifica nada.
+    /// Actualiza los datos del perfil. Falla si el peso (30–200 kg), la altura (120–220 cm)
+    /// o los días de entrenamiento (3–5) están fuera de rango; en ese caso no se modifica nada.
     /// </summary>
-    public Result Update(double weightKilograms, double heightCentimeters)
+    public Result Update(double weightKilograms, double heightCentimeters, int trainingDays)
     {
-        var validation = ValidateMeasurements(weightKilograms, heightCentimeters);
+        var validation = ValidateProfile(weightKilograms, heightCentimeters, trainingDays);
         if (validation.IsFailure)
         {
             return validation;
@@ -79,22 +101,33 @@ public sealed class AthleteProfile
 
         WeightKilograms = weightKilograms;
         HeightCentimeters = heightCentimeters;
+        TrainingDays = trainingDays;
 
         return Result.Success();
     }
 
-    private static Result ValidateMeasurements(double weightKilograms, double heightCentimeters)
+    private static Result ValidateProfile(
+        double weightKilograms,
+        double heightCentimeters,
+        int trainingDays)
     {
         if (!IsWithinRange(weightKilograms, MinWeightKilograms, MaxWeightKilograms))
         {
             return Result.Failure(DomainErrors.AthleteProfile.WeightOutOfRange);
         }
 
-        return !IsWithinRange(heightCentimeters, MinHeightCentimeters, MaxHeightCentimeters)
-            ? Result.Failure(DomainErrors.AthleteProfile.HeightOutOfRange)
-            : Result.Success();
+        if (!IsWithinRange(heightCentimeters, MinHeightCentimeters, MaxHeightCentimeters))
+        {
+            return Result.Failure(DomainErrors.AthleteProfile.HeightOutOfRange);
+        }
+
+        return IsWithinRange(trainingDays, MinTrainingDays, MaxTrainingDays)
+            ? Result.Success()
+            : Result.Failure(DomainErrors.AthleteProfile.TrainingDaysOutOfRange);
     }
 
     private static bool IsWithinRange(double value, double min, double max) =>
         double.IsFinite(value) && value >= min && value <= max;
+
+    private static bool IsWithinRange(int value, int min, int max) => value >= min && value <= max;
 }

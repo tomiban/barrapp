@@ -38,7 +38,7 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
     [Fact]
     public async Task A_new_profile_is_written_and_read_back_with_the_same_measurements()
     {
-        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181).Value;
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4).Value;
         _dbContext.AthleteProfiles.Add(profile);
         await _dbContext.SaveChangesAsync();
 
@@ -48,16 +48,17 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
         Assert.Equal(profile.Id, reloaded!.Id);
         Assert.Equal(78.5, reloaded.WeightKilograms);
         Assert.Equal(181, reloaded.HeightCentimeters);
+        Assert.Equal(4, reloaded.TrainingDays);
     }
 
     [Fact]
     public async Task Updating_a_profile_overwrites_the_stored_measurements()
     {
-        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181).Value;
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4).Value;
         _dbContext.AthleteProfiles.Add(profile);
         await _dbContext.SaveChangesAsync();
 
-        profile.Update(82, 181.5);
+        profile.Update(82, 181.5, 5);
         await _dbContext.SaveChangesAsync();
 
         var reloaded = await ReadProfileAsync();
@@ -65,6 +66,7 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
         Assert.NotNull(reloaded);
         Assert.Equal(82, reloaded!.WeightKilograms);
         Assert.Equal(181.5, reloaded.HeightCentimeters);
+        Assert.Equal(5, reloaded.TrainingDays);
     }
 
     private async Task<AthleteProfile?> ReadProfileAsync()

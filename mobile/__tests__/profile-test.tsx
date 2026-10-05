@@ -57,7 +57,34 @@ describe('ProfileScreen', () => {
     await fireEvent.changeText(screen.getByTestId('profile-height'), '120');
     await fireEvent.press(screen.getByTestId('profile-save'));
 
-    await waitFor(() => expect(screen.getByText('30 kg · 120 cm')).toBeOnTheScreen());
+    await waitFor(() =>
+      expect(screen.getByText('30 kg · 120 cm · 3 días/semana')).toBeOnTheScreen(),
+    );
+  });
+
+  it('saves the selected training days and shows them in the summary', async () => {
+    let saved: unknown = null;
+    const fetchMock = jest.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        saved = JSON.parse(String(init.body));
+        return Promise.resolve(jsonResponse(200, saved));
+      }
+      return Promise.resolve(saved ? jsonResponse(200, saved) : jsonResponse(404, {}));
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await render(<ProfileScreen />);
+    await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
+
+    await fireEvent.changeText(screen.getByTestId('profile-weight'), '30');
+    await fireEvent.changeText(screen.getByTestId('profile-height'), '120');
+    await fireEvent.press(screen.getByTestId('profile-training-days-5'));
+    await fireEvent.press(screen.getByTestId('profile-save'));
+
+    await waitFor(() =>
+      expect(screen.getByText('30 kg · 120 cm · 5 días/semana')).toBeOnTheScreen(),
+    );
+    expect(saved).toEqual({ weightKilograms: 30, heightCentimeters: 120, trainingDays: 5 });
   });
 
   it('shows the API problem detail when the server rejects the save', async () => {

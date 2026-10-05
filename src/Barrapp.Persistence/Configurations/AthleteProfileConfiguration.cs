@@ -20,6 +20,7 @@ internal sealed class AthleteProfileConfiguration : IEntityTypeConfiguration<Ath
         builder.Property(profile => profile.UserId).IsRequired();
         builder.Property(profile => profile.WeightKilograms).IsRequired();
         builder.Property(profile => profile.HeightCentimeters).IsRequired();
+        builder.Property(profile => profile.TrainingDays).IsRequired();
 
         builder.HasIndex(profile => profile.UserId).IsUnique();
 

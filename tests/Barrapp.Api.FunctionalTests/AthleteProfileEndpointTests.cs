@@ -13,7 +13,7 @@ public sealed class AthleteProfileEndpointTests(WebApplicationFactory<Program> f
     public async Task Put_profile_then_get_profile_returns_the_saved_values()
     {
         using var client = factory.CreateClient();
-        var payload = new AthleteProfileResponse(77.5, 180);
+        var payload = new AthleteProfileResponse(77.5, 180, 4);
 
         using var putResponse = await client.PutAsJsonAsync("/profile", payload);
         Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
@@ -22,6 +22,7 @@ public sealed class AthleteProfileEndpointTests(WebApplicationFactory<Program> f
         Assert.NotNull(saved);
         Assert.Equal(77.5, saved!.WeightKilograms);
         Assert.Equal(180, saved.HeightCentimeters);
+        Assert.Equal(4, saved.TrainingDays);
 
         using var getResponse = await client.GetAsync("/profile");
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
@@ -30,6 +31,7 @@ public sealed class AthleteProfileEndpointTests(WebApplicationFactory<Program> f
         Assert.NotNull(loaded);
         Assert.Equal(77.5, loaded!.WeightKilograms);
         Assert.Equal(180, loaded.HeightCentimeters);
+        Assert.Equal(4, loaded.TrainingDays);
     }
 
     [Fact]
@@ -37,7 +39,7 @@ public sealed class AthleteProfileEndpointTests(WebApplicationFactory<Program> f
     {
         using var client = factory.CreateClient();
 
-        using var response = await client.PutAsJsonAsync("/profile", new AthleteProfileResponse(0, 180));
+        using var response = await client.PutAsJsonAsync("/profile", new AthleteProfileResponse(0, 180, 4));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -51,7 +53,7 @@ public sealed class AthleteProfileEndpointTests(WebApplicationFactory<Program> f
 
         using var response = await client.PutAsJsonAsync(
             "/profile",
-            new AthleteProfileResponse(weightKilograms, heightCentimeters));
+            new AthleteProfileResponse(weightKilograms, heightCentimeters, 4));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -75,12 +77,48 @@ public sealed class AthleteProfileEndpointTests(WebApplicationFactory<Program> f
 
         using var response = await client.PutAsJsonAsync(
             "/profile",
-            new AthleteProfileResponse(weightKilograms, heightCentimeters));
+            new AthleteProfileResponse(weightKilograms, heightCentimeters, 4));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         Assert.NotNull(problem);
         Assert.Contains(expectedDetail, problem!.Detail);
+    }
+
+    [Theory]
+    [InlineData(3)]
+    [InlineData(5)]
+    public async Task Put_profile_accepts_the_training_days_boundaries(int trainingDays)
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            "/profile",
+            new AthleteProfileResponse(77.5, 180, trainingDays));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var saved = await response.Content.ReadFromJsonAsync<AthleteProfileResponse>();
+        Assert.NotNull(saved);
+        Assert.Equal(trainingDays, saved!.TrainingDays);
+    }
+
+    [Theory]
+    [InlineData(2)]
+    [InlineData(6)]
+    public async Task Put_profile_rejects_training_days_out_of_range(int trainingDays)
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            "/profile",
+            new AthleteProfileResponse(77.5, 180, trainingDays));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains("Los días de entrenamiento deben estar entre 3 y 5.", problem!.Detail);
     }
 }

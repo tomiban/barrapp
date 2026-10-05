@@ -19,7 +19,7 @@ internal static class AthleteProfileEndpoints
                     : result.Error.ToProblemDetails();
             })
             .WithName("GetAthleteProfile")
-            .WithSummary("Devuelve el perfil del atleta (peso y altura).")
+            .WithSummary("Devuelve el perfil del atleta (peso, altura y días de entrenamiento).")
             .Produces<AthleteProfileResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
@@ -37,7 +37,7 @@ internal static class AthleteProfileEndpoints
                         : result.Error.ToProblemDetails();
                 })
             .WithName("SaveAthleteProfile")
-            .WithSummary("Crea o actualiza el perfil del atleta (peso y altura).")
+            .WithSummary("Crea o actualiza el perfil del atleta (peso, altura y días de entrenamiento).")
             .Produces<AthleteProfileResponse>()
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
