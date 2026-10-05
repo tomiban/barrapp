@@ -69,3 +69,7 @@ _Avoid_: 1RM, récord, PR
 **Progresión de skill**:
 Etapa actual del atleta dentro de la escalera de progresión de un skill; se mide en segundos mantenidos.
 _Avoid_: nivel, avance
+
+**Registro**:
+Anotación de lo realmente ejecutado en una sesión, serie a serie: reps en ejercicios de fuerza y segundos en holds, con el RIR/RPE real opcional.
+_Avoid_: log, tracking
