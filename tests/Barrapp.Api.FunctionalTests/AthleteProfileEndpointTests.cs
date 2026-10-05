@@ -2,12 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using Barrapp.Application.Features.AthleteProfiles;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Barrapp.Api.FunctionalTests;
 
-public sealed class AthleteProfileEndpointTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
+    : IClassFixture<BarrappApiFactory>
 {
     private static MaximumResponse[] Maximums(int pushUp = 10, int pullUp = 0, int squat = 20) =>
     [

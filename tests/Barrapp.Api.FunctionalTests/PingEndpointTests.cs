@@ -1,13 +1,28 @@
 using System.Net;
 using System.Net.Http.Json;
 using Barrapp.Application.Features.Ping;
-using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 
 namespace Barrapp.Api.FunctionalTests;
 
-public sealed class PingEndpointTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class PingEndpointTests(BarrappApiFactory factory)
+    : IClassFixture<BarrappApiFactory>
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Should_apply_migrations_only_when_configured(bool enabled)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Database:ApplyMigrationsOnStartup"] = enabled.ToString()
+            })
+            .Build();
+
+        Assert.Equal(enabled, Program.ShouldApplyMigrations(configuration));
+    }
+
     [Fact]
     public async Task Get_ping_returns_200_with_pong()
     {
