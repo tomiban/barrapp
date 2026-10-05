@@ -15,13 +15,18 @@ Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
 ```bash
 npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
 npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
+npm run lint                # lint
+npm run typecheck           # typecheck (tsc --noEmit)
+npm test                    # tests (Jest + Testing Library)
+npm run format:check        # format check (Prettier)
 npx expo-doctor             # diagnose dependency and config issues
+npx expo install --check    # verify dependency versions match the SDK
 npx expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+Run lint, format check, typecheck and tests before declaring any task done.
+
+`typecheck` falla si `.expo/types/router.d.ts` (typed routes, generado y git-ignored) quedó obsoleto tras añadir o mover una ruta: regeneralo con `npx expo start` y reintentá.
 
 ## Navigation & Routing
 

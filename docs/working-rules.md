@@ -2,7 +2,7 @@
 
 ## Flujo de ticket
 
-- El trabajo (tickets) vive en GitHub Issues. La spec es **`docs/specs/0001-planificador-calistenia.md`** (archivo versionado); los tickets son **#2–#30**, agrupados en milestones (M1–M7).
+- El trabajo (tickets) vive en GitHub Issues, agrupado por **milestones**. Las specs son archivos versionados bajo `docs/specs/` (hoy `0001-planificador-calistenia.md` y `0002-design-system.md`).
 - Trabaja la **frontera**: solo tickets sin bloqueadores abiertos (`blocked_by` en GitHub).
 - Un ticket = **una rama corta + un PR**. Arranca con `/implement <n>`.
 - El ticket termina cuando sus **criterios de aceptación** se cumplen y los tests pasan.
@@ -13,6 +13,15 @@
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`.
 - PR hacia `main` con **squash merge**; el PR cierra el issue (`Closes #<n>`).
 - Revisa con `/code-review` antes de mergear (Standards + Spec).
+- Una **sesión de agente** trabaja en su **propio worktree**; el checkout principal es del humano. Nunca cambies de rama en el checkout principal ni dejes en él cambios sin commitear.
+
+### Rama de integración
+
+Una spec con muchos tickets acoplados (p. ej. un design system por componentes) puede implementarse en **una rama de integración** con **un PR conjunto**, en vez de rama + PR por ticket:
+
+- La rama nace de su **base apilada** (p. ej. `feat/2-walking-skeleton`); cada ticket se trabaja en su worktree/rama y se mergea a ella.
+- El PR conjunto apunta a esa base apilada y lista `Closes #<n>` por ticket.
+- Como la base **no es `main`**, GitHub no autocierra los issues: se cierran a mano con un comentario que referencia el PR.
 
 ## Idiomas
 

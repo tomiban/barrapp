@@ -69,6 +69,8 @@ Guardrails, en positivo:
 
 - Estilos con **Uniwind** (Tailwind v4); colores, espaciado y tipografía salen de los tokens en `@theme` del design system (`docs/specs/0002-design-system.md`), nunca hardcodeados.
 - Los componentes de UI se toman del design system, no de `View`/`Text` con estilos ad hoc.
+- El design system usa **un** vocabulario de roles semánticos (módulo `semantic.ts`): la prop que lo expone se llama siempre **`role`**, y los mapas rol→token viven en ese módulo, no duplicados por componente.
+- Los módulos compartidos (`semantic.ts`, `utils/cn.ts`, tokens) se entregan en el ticket de **fundaciones**, antes de los componentes que los consumen; así el trabajo paralelo no diverge en nombres ni en mapas.
 
 ## Cuando aplique
 
