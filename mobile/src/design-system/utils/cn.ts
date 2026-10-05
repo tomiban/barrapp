@@ -13,7 +13,19 @@ import { extendTailwindMerge } from 'tailwind-merge';
  *
  * Los radios, colores y bordes sí los conoce por defecto.
  */
-const SPACING_SCALE = ['xs', 'sm', 'md', 'lg', 'xl', 'gutter', 'margin'];
+const SPACING_SCALE = [
+  'xs',
+  'sm',
+  'md',
+  'lg',
+  'xl',
+  'gutter',
+  'margin',
+  'control-primary',
+  'control-secondary',
+  'checkbox',
+  'radio-dot',
+];
 
 const TYPE_SCALE = [
   'display-hero',

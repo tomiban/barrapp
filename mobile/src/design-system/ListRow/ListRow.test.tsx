@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
+import type { SemanticRole } from '../semantic';
 import { Text } from '../Text';
-import { ListRow, type ListRowState } from './ListRow';
+import { ListRow } from './ListRow';
 
 /**
  * `ListRow` del design system (ticket #44): fila de semanas, sesiones y
@@ -18,21 +19,21 @@ import { ListRow, type ListRowState } from './ListRow';
  * mano como fuente de verdad independiente: rol semántico → token de acento.
  * Regla de la spec: el estado **nunca** se comunica solo por color.
  */
-const STATE_MARK: Record<ListRowState, string> = {
+const STATE_MARK: Record<SemanticRole, string> = {
   active: 'bg-primary',
   confirmed: 'bg-secondary',
   error: 'bg-error',
   inactive: 'bg-text-muted',
 };
 
-const DEFAULT_LABEL: Record<ListRowState, string> = {
+const DEFAULT_LABEL: Record<SemanticRole, string> = {
   active: 'En curso',
   confirmed: 'Confirmado',
   error: 'Fallo',
   inactive: 'Inactivo',
 };
 
-const STATES = Object.keys(STATE_MARK) as ListRowState[];
+const STATES = Object.keys(STATE_MARK) as SemanticRole[];
 
 describe('ListRow', () => {
   it('renderiza título y subtítulo', async () => {
@@ -74,7 +75,7 @@ describe('ListRow', () => {
   });
 
   it.each(STATES)('aplica el token de acento del estado %s al marcador', async (state) => {
-    await render(<ListRow title="Semana 1" state={state} testID="row" />);
+    await render(<ListRow title="Semana 1" role={state} testID="row" />);
 
     expect(
       screen.getByTestId('row-state', { includeHiddenElements: true }).props.className,
@@ -82,7 +83,7 @@ describe('ListRow', () => {
   });
 
   it.each(STATES)('anuncia el estado %s textualmente, nunca solo por color', async (state) => {
-    await render(<ListRow title="Semana 1" state={state} testID="row" />);
+    await render(<ListRow title="Semana 1" role={state} testID="row" />);
 
     // Etiqueta visible: el estado no depende del color.
     expect(screen.getByText(DEFAULT_LABEL[state])).toBeOnTheScreen();
@@ -91,7 +92,7 @@ describe('ListRow', () => {
   });
 
   it('acepta una etiqueta de estado propia', async () => {
-    await render(<ListRow title="Semana 1" state="error" stateLabel="Sobrecarga" testID="row" />);
+    await render(<ListRow title="Semana 1" role="error" stateLabel="Sobrecarga" testID="row" />);
 
     expect(screen.getByText('Sobrecarga')).toBeOnTheScreen();
     expect(screen.queryByText(DEFAULT_LABEL.error)).not.toBeOnTheScreen();
@@ -99,7 +100,7 @@ describe('ListRow', () => {
   });
 
   it('ignora una etiqueta de estado en blanco y usa la del rol', async () => {
-    await render(<ListRow title="Semana 1" state="active" stateLabel="   " testID="row" />);
+    await render(<ListRow title="Semana 1" role="active" stateLabel="   " testID="row" />);
 
     expect(screen.getByText(DEFAULT_LABEL.active)).toBeOnTheScreen();
   });
@@ -107,7 +108,7 @@ describe('ListRow', () => {
   it('respeta el tamaño táctil secundario de la spec (48 dp)', async () => {
     await render(<ListRow title="Semana 1" testID="row" />);
 
-    expect(screen.getByTestId('row').props.className).toContain('min-h-12');
+    expect(screen.getByTestId('row').props.className).toContain('min-h-control-secondary');
   });
 
   it('no muestra marcador ni etiqueta de estado si no hay state', async () => {
@@ -134,7 +135,7 @@ describe('ListRow', () => {
   });
 
   it('no usa sombras: la profundidad sale de bordes y capas tonales', async () => {
-    await render(<ListRow title="Semana 1" state="active" testID="row" />);
+    await render(<ListRow title="Semana 1" role="active" testID="row" />);
 
     expect(screen.getByTestId('row').props.className).not.toContain('shadow');
     expect(

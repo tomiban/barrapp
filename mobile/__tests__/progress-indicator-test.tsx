@@ -57,8 +57,8 @@ describe('ProgressIndicator', () => {
     ['confirmed', 'bg-secondary'],
     ['error', 'bg-error'],
     ['inactive', 'bg-text-muted'],
-  ] as const)('aplica el color del tono %s', async (tone, expectedClass) => {
-    await render(<ProgressIndicator value={0.5} tone={tone} testID="progress" />);
+  ] as const)('aplica el color del rol %s', async (role, expectedClass) => {
+    await render(<ProgressIndicator value={0.5} role={role} testID="progress" />);
 
     expect(screen.getByTestId('progress-fill')).toHaveProp(
       'className',
@@ -66,7 +66,7 @@ describe('ProgressIndicator', () => {
     );
   });
 
-  it('usa primary como tono por defecto (estado activo/en curso)', async () => {
+  it('usa primary como rol por defecto (estado activo/en curso)', async () => {
     await render(<ProgressIndicator value={0.5} testID="progress" />);
 
     expect(screen.getByTestId('progress-fill')).toHaveProp(

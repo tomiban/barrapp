@@ -41,8 +41,8 @@ describe('Radio', () => {
     await render(<Radio checked={false} testID="choice" />);
 
     const className = getControl().props.className as string;
-    expect(className).toContain('h-[20px]');
-    expect(className).toContain('w-[20px]');
+    expect(className).toContain('h-checkbox');
+    expect(className).toContain('w-checkbox');
     expect(className).toContain('border-active');
     expect(className).toContain('rounded-none');
     for (const radius of [
@@ -61,8 +61,8 @@ describe('Radio', () => {
     await render(<Radio checked testID="choice" />);
 
     const innerClassName = queryInner()?.props.className as string;
-    expect(innerClassName).toContain('h-[10px]');
-    expect(innerClassName).toContain('w-[10px]');
+    expect(innerClassName).toContain('h-radio-dot');
+    expect(innerClassName).toContain('w-radio-dot');
     expect(innerClassName).toContain('rounded-none');
     expect(innerClassName).toContain('bg-primary');
     expect(innerClassName).not.toContain('rounded-full');

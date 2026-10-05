@@ -10,15 +10,16 @@ La **fuente única de verdad** es `mobile/global.css`, en un único bloque
 Ningún componente escribe colores, espaciado, radios ni tipografía a mano; todo
 sale de un utility.
 
-| Categoría      | Variables                                                                                                                                                                                                                                                                                             | Utilities                                                           |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Color          | `--color-canvas`, `--color-surface`, `--color-surface-muted`, `--color-border`, `--color-text`, `--color-text-muted`, `--color-primary`, `--color-on-primary`, `--color-secondary`, `--color-on-secondary`, `--color-error`, `--color-error-container`, `--color-on-error-container`, `--color-scrim` | `bg-canvas`, `text-text-muted`, `border-border`, `text-on-primary`… |
-| Espaciado (dp) | `--spacing-xs/sm/md/lg/xl`, `--spacing-gutter`, `--spacing-margin`                                                                                                                                                                                                                                    | `p-md`, `gap-sm`, `px-lg`, `mt-md`…                                 |
-| Radios (dp)    | `--radius-sm/base/md/lg/xl`                                                                                                                                                                                                                                                                           | `rounded-sm`, `rounded-base`, `rounded-md`…                         |
-| Bordes         | `border` (hairline 1px), `@utility border-active` (1.5px), `border-2` (marco de overlay)                                                                                                                                                                                                              | color con `border-<color>`                                          |
-| Familias       | `--font-display`, `--font-display-semibold`, `--font-body`, `--font-mono-medium`, `--font-mono-semibold`, `--font-mono-bold`                                                                                                                                                                          | `font-display`, `font-mono-bold`…                                   |
-| Tipografía     | `--text-display-hero`, `--text-headline-metric/lg/md/sm`, `--text-body-lg/md/sm`, `--text-label-technical`, `--text-label-code` (+ `--line-height` / `--letter-spacing` / `--font-weight`)                                                                                                            | `text-headline-md`, `text-label-technical`…                         |
-| Motion         | `--transition-duration-fast/base`, `--ease-standard`                                                                                                                                                                                                                                                  | `duration-fast`, `duration-base`, `ease-standard`                   |
+| Categoría      | Variables                                                                                                                                                                                                                                                                                             | Utilities                                                                   |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Color          | `--color-canvas`, `--color-surface`, `--color-surface-muted`, `--color-border`, `--color-text`, `--color-text-muted`, `--color-primary`, `--color-on-primary`, `--color-secondary`, `--color-on-secondary`, `--color-error`, `--color-error-container`, `--color-on-error-container`, `--color-scrim` | `bg-canvas`, `text-text-muted`, `border-border`, `text-on-primary`…         |
+| Espaciado (dp) | `--spacing-xs/sm/md/lg/xl`, `--spacing-gutter`, `--spacing-margin`                                                                                                                                                                                                                                    | `p-md`, `gap-sm`, `px-lg`, `mt-md`…                                         |
+| Tamaños (dp)   | `--spacing-control-primary` (56), `--spacing-control-secondary` (48), `--spacing-checkbox` (20), `--spacing-radio-dot` (10)                                                                                                                                                                           | `h-control-primary`, `min-h-control-secondary`, `h-checkbox`, `w-radio-dot` |
+| Radios (dp)    | `--radius-sm/base/md/lg/xl`                                                                                                                                                                                                                                                                           | `rounded-sm`, `rounded-base`, `rounded-md`…                                 |
+| Bordes         | `border` (hairline 1px), `@utility border-active` (1.5px), `border-2` (marco de overlay)                                                                                                                                                                                                              | color con `border-<color>`                                                  |
+| Familias       | `--font-display`, `--font-display-semibold`, `--font-body`, `--font-mono-medium`, `--font-mono-semibold`, `--font-mono-bold`                                                                                                                                                                          | `font-display`, `font-mono-bold`…                                           |
+| Tipografía     | `--text-display-hero`, `--text-headline-metric/lg/md/sm`, `--text-body-lg/md/sm`, `--text-label-technical`, `--text-label-code` (+ `--line-height` / `--letter-spacing` / `--font-weight`)                                                                                                            | `text-headline-md`, `text-label-technical`…                                 |
+| Motion         | `--transition-duration-fast/base`, `--ease-standard`                                                                                                                                                                                                                                                  | `duration-fast`, `duration-base`, `ease-standard`                           |
 
 Convención: el nombre del token en kebab-case es el sufijo del utility
 (`--color-surface-muted` → `bg-surface-muted`). Las familias `--font-*` deben
@@ -111,6 +112,8 @@ Envuelve un icono de Lucide con los defaults del DS.
 
 - `variant`: `primary` (56 dp, `primary`/`on-primary`) · `secondary` (48 dp,
   `secondary`/`on-secondary`) · `tertiary` (48 dp, `surface`/`text`).
+- Las tres variantes llevan borde activo de 1.5 px (`border-active`) con su
+  color: `primary`, `secondary` y `border`.
 - `disabled`: fondo `surface`, borde y texto `text-muted`, sin inversión.
 - Estado pulsado: inversión de fondo y texto.
 
@@ -141,8 +144,8 @@ interior. El estado se anuncia por accesibilidad, no solo por color.
 
 Superficie nivel 1 con notch de estado y compartimentos separados por hairline.
 
-- `title`, `header?` (encabezado a medida), `status?` (`active` · `confirmed` ·
-  `error` · `inactive`), `statusLabel?`.
+- `title`, `header?` (encabezado a medida), `role?` (`active` · `confirmed` ·
+  `error` · `inactive`), `statusLabel?` (por defecto, la del rol).
 - `CardHeader` / `CardSection` para composición modular.
 
 ### MetricCounter
@@ -150,7 +153,8 @@ Superficie nivel 1 con notch de estado y compartimentos separados por hairline.
 Readout monolítico tabular con micro-label, índice y unidad.
 
 - `label`, `value`, `unit?`, `index?`/`indexPrefix?`.
-- `tone`: `neutral` · `active` · `confirmed` · `error` · `inactive`.
+- `role?`: `active` · `confirmed` · `error` · `inactive`; sin rol, el dato
+  principal se pinta neutro (`text`).
 
 ### Timer / Countdown
 
@@ -168,23 +172,23 @@ mesociclo. Sin sombras: la pista es `surface-muted`.
 | ----------- | ----------------- | ---------- | ------------------------------------------------------------- |
 | `value`     | `number`          | —          | Progreso actual; se recorta a `[0, max]`.                     |
 | `max`       | `number`          | `1`        | Total de la escala; el ratio es `value / max`.                |
-| `tone`      | `ProgressTone`    | `'active'` | Rol semántico de estado.                                      |
+| `role`      | `SemanticRole`    | `'active'` | Rol semántico de estado.                                      |
 | `label`     | `string`          | —          | Etiqueta textual; el estado nunca se comunica solo por color. |
 | `variant`   | `'bar' \| 'ring'` | `'bar'`    | Forma del indicador.                                          |
 | `size`      | `number`          | `64`       | Lado del anillo en dp (solo `ring`).                          |
 | `className` | `string`          | —          | Clases del contenedor (se combinan con `cn()`).               |
 | `testID`    | `string`          | —          | Identificador; barra/anillo derivan `<testID>-fill`/`-ring`.  |
 
-`ProgressTone` mapea los roles semánticos: `active`→`primary`,
-`confirmed`→`secondary`, `error`→`error`, `inactive`→`textMuted`.
-Accesibilidad: `accessibilityRole="progressbar"` con
-`accessibilityValue={{ min: 0, max, now }}`.
+`SemanticRole` (definido en `semantic.ts`) mapea los roles: `active`→`primary`,
+`confirmed`→`secondary`, `error`→`error`, `inactive`→`textMuted`. El grosor del
+anillo sale del token `--spacing-sm`. Accesibilidad:
+`accessibilityRole="progressbar"` con `accessibilityValue={{ min: 0, max, now }}`.
 
 ### StatusBadge
 
 Comunica estado con rol semántico explícito **y** etiqueta textual.
 
-- `role` (o `status`): `active` · `confirmed` · `error` · `inactive`.
+- `role`: `active` · `confirmed` · `error` · `inactive`.
 - `label?` (por defecto la del rol), `variant`: `solid` (default) · `outline`,
   `showDot?`.
 - Etiquetas por defecto: En curso · Confirmado · Fallo · Inactivo.
@@ -194,7 +198,7 @@ Comunica estado con rol semántico explícito **y** etiqueta textual.
 Fila de semanas, sesiones y ejercicios, con separador hairline.
 
 - `title`, `subtitle?`, `leading?`, `trailing?`, `onPress?`, `last?`.
-- `state?`: `active` · `confirmed` · `error` · `inactive`; `stateLabel?`.
+- `role?`: `active` · `confirmed` · `error` · `inactive`; `stateLabel?`.
 - Tamaño táctil secundario (48 dp).
 
 ### SectionHeader
@@ -223,8 +227,9 @@ scrim negro 80 %, sin blur.
 
 Aviso inline persistente (`Banner`) y transitorio (`Toast`).
 
-- `message`, `tone`: `info` · `active` · `confirmed` · `error`; `icon?`.
+- `message`, `role`: `active` · `confirmed` · `error` · `inactive`; `icon?`.
 - `Toast` añade `visible?` y `onDismiss?`.
+- El icono por defecto de cada rol vive en `Feedback/roleIcon.ts`.
 
 ### Loading / Skeleton
 
@@ -246,6 +251,8 @@ la librería.
 
 ## Estructura
 
+- `semantic.ts` — roles semánticos compartidos: tipo `SemanticRole`, etiquetas
+  por defecto y mapas rol → token (texto, fondo, borde, punto, variable CSS).
 - `utils/` — infraestructura compartida (`cn()`).
 - `layout/` — primitivas de layout (`Box`, `Stack`, `Spacer`, `Grid`,
   `GridItem`) con su `index.ts` local.

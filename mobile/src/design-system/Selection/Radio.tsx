@@ -6,8 +6,8 @@ import { SelectionBase, type SelectionBaseProps } from './SelectionBase';
 /** Props públicas de `Radio`: las compartidas por los controles de selección. */
 export type RadioProps = SelectionBaseProps;
 
-/** Lado del bloque interior del radio cuando está activo. */
-const RADIO_INNER_SIZE_CLASS = 'h-[10px] w-[10px]';
+/** Lado del bloque interior del radio cuando está activo (token `--spacing-radio-dot`). */
+const RADIO_INNER_SIZE_CLASS = 'h-radio-dot w-radio-dot';
 
 /**
  * `Radio` del design system (spec 0002, ticket #38).

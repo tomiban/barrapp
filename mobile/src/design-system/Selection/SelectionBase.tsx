@@ -5,10 +5,10 @@ import { Text } from '../Text';
 import { cn } from '../utils/cn';
 
 /**
- * Lado del control de selección (spec 0002): 20×20 dp. Va como clase arbitraria
- * porque la escala de espaciado del design system no tiene un paso de 20 dp.
+ * Lado del control de selección (spec 0002): 20×20 dp. Sale del token
+ * `--spacing-checkbox` (utility `h-checkbox w-checkbox`), no de un valor suelto.
  */
-export const SELECTION_SIZE_CLASS = 'h-[20px] w-[20px]';
+export const SELECTION_SIZE_CLASS = 'h-checkbox w-checkbox';
 
 /**
  * Props compartidas por `Checkbox` y `Radio` (ticket #38). Ambos son controles

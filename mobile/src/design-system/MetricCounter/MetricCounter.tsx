@@ -1,25 +1,15 @@
 import { Box, type BoxProps } from '@/design-system/layout';
+import { ROLE_TEXT_CLASS, type SemanticRole } from '@/design-system/semantic';
 import { Text } from '@/design-system/Text';
 import { cn } from '@/design-system/utils/cn';
 
 /**
- * Rol semántico de estado (spec 0002): define el color del readout, nunca al
- * revés.
- *
- * `neutral` es el dato principal sin estado (`text`); `active` → `primary`
- * (activo/en curso) · `confirmed` → `secondary` (calibrado/confirmado) ·
- * `error` → `error` (sobrecarga/fallo) · `inactive` → `textMuted` (inactivo).
+ * Rol semántico del readout. Sin rol, el dato principal se pinta neutro
+ * (`text`): no es un estado y por eso no lleva acento. Con un rol canónico de
+ * `semantic.ts` (`active` · `confirmed` · `error` · `inactive`) el color sale
+ * del token del rol.
  */
-export type MetricTone = 'neutral' | 'active' | 'confirmed' | 'error' | 'inactive';
-
-/** Clases del readout por rol; contrato que consume el build. */
-const TONE_CLASS: Record<MetricTone, string> = {
-  neutral: 'text-text',
-  active: 'text-primary',
-  confirmed: 'text-secondary',
-  error: 'text-error',
-  inactive: 'text-text-muted',
-};
+const NEUTRAL_TEXT_CLASS = 'text-text';
 
 /**
  * Formatea el índice de la celda como `[SEC.01]`.
@@ -61,7 +51,7 @@ function accessibilityText(label: string, value: string, unit: string | undefine
 }
 
 /** Props públicas de `MetricCounter`. */
-export type MetricCounterProps = Omit<BoxProps, 'children'> & {
+export type MetricCounterProps = Omit<BoxProps, 'children' | 'role'> & {
   /** Micro-label de la celda (se renderiza en `labelTechnical`). */
   label: string;
   /** Readout monolítico; admite número o texto ya formateado. */
@@ -72,8 +62,8 @@ export type MetricCounterProps = Omit<BoxProps, 'children'> & {
   index?: string | number;
   /** Prefijo del índice numérico (`SEC` → `[SEC.01]`). Ignorado si `index` es texto. */
   indexPrefix?: string;
-  /** Rol semántico de estado que colorea el readout. Default `neutral`. */
-  tone?: MetricTone;
+  /** Rol semántico de estado que colorea el readout. Sin rol, neutro (`text`). */
+  role?: SemanticRole;
   /** `className` del contenedor; se combina con `cn()` para permitir sobrescritura. */
   className?: string;
   /** `testID` del contenedor. Deriva `-header`, `-index`, `-readout`, `-value` y `-unit`. */
@@ -91,7 +81,7 @@ export type MetricCounterProps = Omit<BoxProps, 'children'> & {
  *
  * ```tsx
  * <MetricCounter label="Peso" value={100} unit="KG" index="SEC.01" />
- * <MetricCounter label="Carga" value={80} unit="%" tone="active" index={2} indexPrefix="SER" />
+ * <MetricCounter label="Carga" value={80} unit="%" role="active" index={2} indexPrefix="SER" />
  * ```
  */
 export function MetricCounter({
@@ -100,7 +90,7 @@ export function MetricCounter({
   unit,
   index,
   indexPrefix,
-  tone = 'neutral',
+  role,
   className,
   testID,
   ...rest
@@ -140,7 +130,7 @@ export function MetricCounter({
       >
         <Text
           variant="headlineMetric"
-          className={TONE_CLASS[tone]}
+          className={role ? ROLE_TEXT_CLASS[role] : NEUTRAL_TEXT_CLASS}
           testID={testID ? `${testID}-value` : undefined}
         >
           {valueText}

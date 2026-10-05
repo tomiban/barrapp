@@ -34,6 +34,11 @@ const REQUIRED_TOKENS = [
   '--spacing-xl',
   '--spacing-gutter',
   '--spacing-margin',
+  // Tamaños físicos (alturas táctiles y lados de controles)
+  '--spacing-control-primary',
+  '--spacing-control-secondary',
+  '--spacing-checkbox',
+  '--spacing-radio-dot',
   // Radios
   '--radius-sm',
   '--radius-base',

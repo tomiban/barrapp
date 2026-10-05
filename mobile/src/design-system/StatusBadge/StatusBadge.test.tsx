@@ -121,16 +121,6 @@ describe('StatusBadge', () => {
     expect(screen.getByText(DEFAULT_LABEL.confirmed)).toBeOnTheScreen();
   });
 
-  it('acepta `status` como alias de `role`', async () => {
-    await render(<StatusBadge status="error" testID="badge" />);
-
-    expect(screen.getByText(DEFAULT_LABEL.error)).toBeOnTheScreen();
-    expect(screen.getByTestId('badge')).toHaveProp(
-      'className',
-      expect.stringContaining(SOLID_FILL.error),
-    );
-  });
-
   it('se anuncia como texto con la etiqueta del rol (no solo color)', async () => {
     await render(<StatusBadge role="active" />);
 

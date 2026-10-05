@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getApiBaseUrl } from '@/api/client';
 import { fetchPing, type PingResponse } from '@/api/ping';
-import { DesignSystemPreview } from '@/components/DesignSystemPreview';
+import { Button } from '@/design-system/Button';
+import { Banner, Loading } from '@/design-system/Feedback';
+import { Box, Stack } from '@/design-system/layout';
+import { Header, Screen } from '@/design-system/Navigation';
+import { StatusBadge } from '@/design-system/StatusBadge';
+import { Text } from '@/design-system/Text';
 
 type PingState =
   | { status: 'loading' }
@@ -15,6 +18,11 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
 }
 
+/**
+ * Pantalla de inicio del esqueleto caminante: comprueba la conexión con el API
+ * (`GET /ping`) usando los componentes del design system (`Screen`/`Header`,
+ * `Loading`, `StatusBadge`, `Banner`, `Button` y `Text`), sin estilos ad hoc.
+ */
 export default function HomeScreen() {
   const [state, setState] = useState<PingState>({ status: 'loading' });
 
@@ -48,50 +56,41 @@ export default function HomeScreen() {
   }, [load]);
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-canvas">
-      <ScrollView contentContainerClassName="grow justify-center gap-md px-lg">
-        <Text className="font-mono-semibold text-label-technical text-text-muted">
+    <Screen header={<Header title="Conexión con el API" />} testID="home-screen">
+      <Stack gap="md">
+        <Text variant="labelTechnical" className="text-text-muted">
           BARRAPP · ESQUELETO CAMINANTE
         </Text>
-        <Text className="mb-sm font-display text-headline-lg text-text">Conexión con el API</Text>
 
-        {state.status === 'loading' && (
-          <View className="flex-row items-center gap-sm">
-            <ActivityIndicator colorClassName="accent-primary" />
-            <Text className="font-body text-body-md text-text">
-              Consultando {getApiBaseUrl()}/ping…
-            </Text>
-          </View>
-        )}
+        {state.status === 'loading' ? (
+          <Loading label={`Consultando ${getApiBaseUrl()}/ping…`} testID="home-loading" />
+        ) : null}
 
-        {state.status === 'success' && (
-          <View className="gap-sm rounded-md border border-border bg-surface p-md">
-            <Text className="font-mono-bold text-headline-md text-text">{state.data.message}</Text>
-            <Text className="font-body text-body-sm text-text-muted">
+        {state.status === 'success' ? (
+          <Box className="gap-sm rounded-md border border-border bg-surface p-md">
+            <StatusBadge role="confirmed" label="Conectado" testID="home-status" />
+            <Text variant="headlineMd">{state.data.message}</Text>
+            <Text variant="bodySm" className="text-text-muted">
               Servidor: {state.data.serverTimeUtc}
             </Text>
-          </View>
-        )}
+          </Box>
+        ) : null}
 
-        {state.status === 'error' && (
-          <View className="gap-sm rounded-md border border-error bg-surface p-md">
-            <Text className="font-mono-bold text-headline-md text-text">Sin conexión</Text>
-            <Text className="font-body text-body-sm text-text-muted">{state.message}</Text>
-          </View>
-        )}
+        {state.status === 'error' ? (
+          <Stack gap="sm">
+            <StatusBadge role="error" label="Sin conexión" testID="home-status" />
+            <Banner role="error" message={state.message} testID="home-error" />
+          </Stack>
+        ) : null}
 
-        <Text className="font-body text-body-sm text-text-muted">API: {getApiBaseUrl()}</Text>
+        <Text variant="bodySm" className="text-text-muted">
+          API: {getApiBaseUrl()}
+        </Text>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={retry}
-          className="mt-md items-center rounded-base bg-primary py-md active:opacity-80"
-        >
-          <Text className="font-display-semibold text-body-md text-on-primary">Reintentar</Text>
-        </Pressable>
-
-        <DesignSystemPreview />
-      </ScrollView>
-    </SafeAreaView>
+        <Button onPress={retry} testID="home-retry">
+          Reintentar
+        </Button>
+      </Stack>
+    </Screen>
   );
 }

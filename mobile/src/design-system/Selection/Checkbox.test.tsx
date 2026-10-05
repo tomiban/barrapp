@@ -81,8 +81,8 @@ describe('Checkbox', () => {
     await render(<Checkbox checked={false} testID="check" />);
 
     const className = getControl().props.className as string;
-    expect(className).toContain('h-[20px]');
-    expect(className).toContain('w-[20px]');
+    expect(className).toContain('h-checkbox');
+    expect(className).toContain('w-checkbox');
     expect(className).toContain('border-active');
     expect(className).toContain('rounded-none');
     for (const radius of [

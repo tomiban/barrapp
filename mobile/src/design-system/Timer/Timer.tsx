@@ -141,7 +141,7 @@ export function Timer({
       label={label ?? DEFAULT_LABEL}
       value={remaining}
       unit={UNIT}
-      tone="active"
+      role="active"
       testID={testID ? `${testID}-metric` : undefined}
     />
   );
