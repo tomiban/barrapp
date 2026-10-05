@@ -28,7 +28,10 @@ builder.Services
 
 var app = builder.Build();
 
-await ApplyMigrationsAsync(app);
+if (Program.ShouldApplyMigrations(builder.Configuration))
+{
+    await Program.ApplyMigrationsAsync(app);
+}
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
@@ -45,17 +48,27 @@ app.MapHealthChecks("/health");
 
 app.Run();
 
-/// <summary>
-/// Aplica las migraciones pendientes al arrancar. En el MVP (SQLite local y un solo contenedor)
-/// es la forma más simple de garantizar el esquema; en despliegues con varias réplicas conviene
-/// separarlo del arranque.
-/// </summary>
-static async Task ApplyMigrationsAsync(WebApplication app)
-{
-    await using var scope = app.Services.CreateAsyncScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-
 /// <summary>Marca la clase de entrada como pública para los tests de integración.</summary>
-public partial class Program;
+public partial class Program
+{
+    /// <summary>
+    /// Indica si se deben aplicar migraciones al arrancar la API. El valor puede configurarse desde
+    /// appsettings.json o por variable de entorno; por defecto se mantiene el comportamiento actual del MVP.
+    /// </summary>
+    public static bool ShouldApplyMigrations(IConfiguration configuration)
+    {
+        return configuration.GetValue<bool?>("Database:ApplyMigrationsOnStartup") ?? true;
+    }
+
+    /// <summary>
+    /// Aplica las migraciones pendientes al arrancar. En el MVP (SQLite local y un solo contenedor)
+    /// es la forma más simple de garantizar el esquema; en despliegues con varias réplicas conviene
+    /// separarlo del arranque.
+    /// </summary>
+    internal static async Task ApplyMigrationsAsync(WebApplication app)
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
+}
