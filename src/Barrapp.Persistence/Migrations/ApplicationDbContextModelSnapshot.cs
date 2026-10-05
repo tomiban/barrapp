@@ -39,6 +39,32 @@ namespace Barrapp.Persistence.Migrations
 
                     b.ToTable("AthleteProfiles", (string)null);
                 });
+
+            modelBuilder.Entity("Barrapp.Domain.Users.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000001")
+                        });
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Athlete.AthleteProfile", b =>
+                {
+                    b.HasOne("Barrapp.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
 #pragma warning restore 612, 618
         }
     }

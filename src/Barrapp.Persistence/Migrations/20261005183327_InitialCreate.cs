@@ -12,6 +12,17 @@ namespace Barrapp.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AthleteProfiles",
                 columns: table => new
                 {
@@ -23,7 +34,18 @@ namespace Barrapp.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AthleteProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AthleteProfiles_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.InsertData(
+                table: "Users",
+                column: "Id",
+                value: new Guid("00000000-0000-0000-0000-000000000001"));
 
             migrationBuilder.CreateIndex(
                 name: "IX_AthleteProfiles_UserId",
@@ -37,6 +59,9 @@ namespace Barrapp.Persistence.Migrations
         {
             migrationBuilder.DropTable(
                 name: "AthleteProfiles");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

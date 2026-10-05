@@ -1,4 +1,5 @@
 using Barrapp.Domain.Athlete;
+using Barrapp.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -21,5 +22,10 @@ internal sealed class AthleteProfileConfiguration : IEntityTypeConfiguration<Ath
         builder.Property(profile => profile.HeightCentimeters).IsRequired();
 
         builder.HasIndex(profile => profile.UserId).IsUnique();
+
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(profile => profile.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -6,6 +6,11 @@ export type AthleteProfile = {
   heightCentimeters: number;
 };
 
+/** Error uniforme cuando el API responde algo distinto de un 2xx. */
+function apiError(response: Response): Error {
+  return new Error(`El API respondió ${response.status} ${response.statusText}`.trim());
+}
+
 /**
  * Lee el perfil guardado (`GET /profile`). Devuelve `null` si todavía no hay perfil
  * (el API responde `404`), que es el estado inicial del onboarding.
@@ -18,7 +23,7 @@ export async function fetchAthleteProfile(signal?: AbortSignal): Promise<Athlete
   }
 
   if (!response.ok) {
-    throw new Error(`El API respondió ${response.status} ${response.statusText}`.trim());
+    throw apiError(response);
   }
 
   return (await response.json()) as AthleteProfile;
@@ -33,7 +38,7 @@ export async function saveAthleteProfile(profile: AthleteProfile): Promise<Athle
   });
 
   if (!response.ok) {
-    throw new Error(`El API respondió ${response.status} ${response.statusText}`.trim());
+    throw apiError(response);
   }
 
   return (await response.json()) as AthleteProfile;

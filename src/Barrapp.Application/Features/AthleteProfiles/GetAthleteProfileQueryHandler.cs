@@ -7,6 +7,11 @@ namespace Barrapp.Application.Features.AthleteProfiles;
 /// <summary>
 /// Lee el perfil por el camino corto: proyecta directo a DTO, sin cargar la entidad.
 /// </summary>
+/// <remarks>
+/// Application no referencia EF Core (lo bloquean los architecture tests), así que la consulta
+/// se materializa con LINQ síncrono sobre <see cref="IApplicationDbContext"/>; sobre SQLite
+/// local es suficiente y evita subir la proyección a Persistence.
+/// </remarks>
 internal sealed class GetAthleteProfileQueryHandler(IApplicationDbContext dbContext)
     : IQueryHandler<GetAthleteProfileQuery, AthleteProfileResponse>
 {

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Barrapp.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261005182715_InitialCreate")]
+    [Migration("20261005183327_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -41,6 +41,32 @@ namespace Barrapp.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("AthleteProfiles", (string)null);
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Users.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000001")
+                        });
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Athlete.AthleteProfile", b =>
+                {
+                    b.HasOne("Barrapp.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

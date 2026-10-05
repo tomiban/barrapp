@@ -46,24 +46,31 @@ export default function ProfileScreen() {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [persisted, setPersisted] = useState<AthleteProfile | null>(null);
 
-  const load = useCallback((signal?: AbortSignal) => {
-    fetchAthleteProfile(signal)
-      .then((profile) => {
-        if (profile) {
-          setWeight(String(profile.weightKilograms));
-          setHeight(String(profile.heightCentimeters));
-        }
-        setPersisted(profile);
-        setLoadState('ready');
-      })
-      .catch((error: unknown) => {
-        if (error instanceof Error && error.name === 'AbortError') {
-          return;
-        }
-        setLoadError(messageOf(error));
-        setLoadState('error');
-      });
+  const applyProfile = useCallback((profile: AthleteProfile | null) => {
+    if (profile) {
+      setWeight(String(profile.weightKilograms));
+      setHeight(String(profile.heightCentimeters));
+    }
+    setPersisted(profile);
   }, []);
+
+  const load = useCallback(
+    (signal?: AbortSignal) => {
+      fetchAthleteProfile(signal)
+        .then((profile) => {
+          applyProfile(profile);
+          setLoadState('ready');
+        })
+        .catch((error: unknown) => {
+          if (error instanceof Error && error.name === 'AbortError') {
+            return;
+          }
+          setLoadError(messageOf(error));
+          setLoadState('error');
+        });
+    },
+    [applyProfile],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -102,18 +109,14 @@ export default function ProfileScreen() {
 
       // Relee del servidor: la app no se fía de su estado local.
       const reloaded = await fetchAthleteProfile();
-      if (reloaded) {
-        setWeight(String(reloaded.weightKilograms));
-        setHeight(String(reloaded.heightCentimeters));
-        setPersisted(reloaded);
-      }
+      applyProfile(reloaded);
       setFeedback({ role: 'confirmed', message: 'Perfil guardado y releído del servidor.' });
     } catch (error) {
       setFeedback({ role: 'error', message: messageOf(error) });
     } finally {
       setSaving(false);
     }
-  }, [height, weight]);
+  }, [applyProfile, height, weight]);
 
   return (
     <Screen testID="profile-screen" header={<Header title="Perfil" />}>
