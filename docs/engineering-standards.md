@@ -12,7 +12,7 @@ Prácticas permanentes de validación, seguridad, datos, rendimiento y resilienc
 - **Matá los N+1.** Usa `Include`/proyecciones; nunca consultes dentro de un bucle por elemento.
 - **Pool de conexiones.** El pool es el de EF Core; no abras una conexión por request a mano.
 - **Migraciones versionadas.** EF Core migrations, siempre versionadas y aplicadas en orden.
-- **Logs con request id.** Cada log lleva el identificador de la petición para poder correlacionar.
+- **Logs con request id.** Cada log lleva el identificador de la petición para correlacionar (ver *Logging*).
 - **Health check que revise la base.** Un endpoint de salud que comprueba también la conexión a la base de datos.
 - **429, no 500.** Al limitar la tasa o saturar, responde `429` (con `Retry-After`); nunca `500` por throttling.
 
@@ -38,6 +38,18 @@ Prácticas permanentes de validación, seguridad, datos, rendimiento y resilienc
 - **OpenAPI nativo** (`AddOpenApi`/`MapOpenApi`), sin Swashbuckle.
 - **Exception handler global** (`IExceptionHandler`) + `AddProblemDetails`; `UseExceptionHandler` arriba del pipeline.
 - Los endpoints inyectan `ISender`.
+
+## Logging (Serilog)
+
+- **Domain no loguea.** No referencia `ILogger`; lanza **domain events** y se loguea en su handler.
+- **Application**: un **`LoggingBehavior`** registra entrada, salida, duración y **resultado fallido** de cada command/query; los handlers no llevan `ILogger`.
+- **Infrastructure**: `ILogger` directo en cada interacción externa (antes, después y el fallo con su excepción).
+- **Presentation**: middleware de request/response (`UseSerilogRequestLogging`) + **exception handler global** que loguea lo no controlado.
+- **Cada fallo se loguea una sola vez**: el `LoggingBehavior` no captura excepciones; suben al handler global.
+- **Structured logging** con Serilog; enriquece con **correlation id** y contexto de usuario.
+- **No loguees el body por defecto**: registra el **nombre** del request y opta explícitamente por propiedades; nunca secretos.
+- **Niveles**: `Warning` para peticiones lentas (>500 ms); `Error` para fallos; `Critical` para arranque/corrupción.
+- El handler global loguea la **excepción completa** (stack trace) y devuelve un mensaje genérico al cliente.
 
 ## Cuando aplique
 

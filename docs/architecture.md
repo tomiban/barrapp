@@ -52,6 +52,7 @@ Api ─▶ Application ─▶ Domain
 - Orden de fuera hacia dentro: **logging → validación → (caché) → (transacción) → handler**. El logging es el más externo; la validación va antes de la caché.
 - Validación con **FluentValidation**: cada command/query tiene su validador a su lado; un `ValidationBehavior` corta el pipeline si falla.
 - Transacción y caché son **opt-in** por marcador (`ITransactional`, `ICacheable`) y usan **puertos de Application** (`IUnitOfWork`, caché), **nunca** `DbContext` directo.
+- **Logging** por capa: Domain no loguea (lanza domain events); Application vía `LoggingBehavior`; Infrastructure directo; Api vía request logging + exception handler global. Ver `docs/engineering-standards.md`.
 
 ## Interfaz de dominio (la costura)
 
