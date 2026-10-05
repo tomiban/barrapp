@@ -72,7 +72,7 @@ Expo / React Native (iOS y Android), TypeScript y Expo Router.
 
 ## Base de conocimiento (datos, no código)
 
-Catálogo de ejercicios, escaleras de progresión y reglas viven como **datos versionados** separados del código: **JSON embebido** cargado a un **catálogo en memoria** y validado al arrancar. Añadir un ejercicio o retocar una escalera no recompila el dominio ni genera una migración. Ver `docs/adr/0009-base-de-conocimiento-json-embebido.md`.
+Catálogo de ejercicios, escaleras de progresión y reglas viven como **datos versionados** separados del código: **JSON embebido** cargado a un **catálogo en memoria** y validado al arrancar. Añadir un ejercicio o retocar una escalera no recompila el dominio ni genera una migración. Ver `docs/adr/0010-base-de-conocimiento-json-embebido.md`.
 
 ## Reglas de dependencia (invariantes)
 
