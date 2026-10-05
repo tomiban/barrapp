@@ -48,7 +48,7 @@ export default function HomeScreen() {
   }, [load]);
 
   return (
-    <SafeAreaView className="flex-1 bg-canvas">
+    <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-canvas">
       <ScrollView contentContainerClassName="grow justify-center gap-md px-lg">
         <Text className="font-mono-semibold text-label-technical text-text-muted">
           BARRAPP · ESQUELETO CAMINANTE
