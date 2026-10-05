@@ -11,8 +11,9 @@ namespace Barrapp.Persistence;
 public static class DependencyInjection
 {
     /// <summary>
-    /// Registra el acceso a datos: EF Core sobre SQLite y los adaptadores de los puertos de
-    /// Application (repositorios, <see cref="IApplicationDbContext"/> y <see cref="IUnitOfWork"/>).
+    /// Registra el acceso a datos: EF Core sobre SQLite, los adaptadores de los puertos de
+    /// Application (repositorios, <see cref="IApplicationDbContext"/> y <see cref="IUnitOfWork"/>)
+    /// y el catálogo de la base de conocimiento como singleton.
     /// La conexión sale de configuración, nunca del código (ver <c>docs/engineering-standards.md</c>).
     /// </summary>
     public static IServiceCollection AddPersistence(
