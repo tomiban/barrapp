@@ -1,8 +1,10 @@
 using Barrapp.Application.Abstractions;
+using Barrapp.Persistence.Knowledge;
 using Barrapp.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Barrapp.Persistence;
 
@@ -27,6 +29,12 @@ public static class DependencyInjection
             provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IUnitOfWork>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
+
+        // Catálogo de conocimiento: se carga y valida una sola vez (fail-fast).
+        services.AddSingleton<IKnowledgeBase>(provider =>
+            new KnowledgeBaseCatalog(
+                new KnowledgeBaseLoader(provider.GetRequiredService<ILogger<KnowledgeBaseLoader>>())
+                    .LoadEmbeddedResources()));
 
         return services;
     }
