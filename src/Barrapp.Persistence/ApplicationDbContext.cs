@@ -1,13 +1,22 @@
+using Barrapp.Application.Abstractions;
+using Barrapp.Domain.Athlete;
 using Microsoft.EntityFrameworkCore;
 
 namespace Barrapp.Persistence;
 
 /// <summary>
-/// Contexto de EF Core sobre SQLite. Las entidades y sus configuraciones llegan con el modelo de datos
-/// (ticket #3 en adelante).
+/// Contexto de EF Core sobre SQLite. Además de exponer las entidades para EF, implementa los
+/// puertos de Application: <see cref="IApplicationDbContext"/> para las queries y
+/// <see cref="IUnitOfWork"/> para confirmar las escrituras.
 /// </summary>
-public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
+public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    : DbContext(options), IApplicationDbContext, IUnitOfWork
 {
+    /// <summary>Perfiles de atleta.</summary>
+    public DbSet<AthleteProfile> AthleteProfiles => Set<AthleteProfile>();
+
+    IQueryable<AthleteProfile> IApplicationDbContext.AthleteProfiles => AthleteProfiles;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

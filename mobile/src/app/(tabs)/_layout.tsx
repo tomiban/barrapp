@@ -9,6 +9,7 @@ import { TabBar, type TabDefinition } from '@/design-system/Navigation';
  */
 const TABS: readonly TabDefinition[] = [
   { name: 'index', href: '/', label: 'Inicio' },
+  { name: 'profile', href: '/profile', label: 'Perfil' },
   { name: 'plan', href: '/plan', label: 'Plan' },
   { name: 'showcase', href: '/showcase', label: 'Catálogo' },
 ];

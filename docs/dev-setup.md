@@ -53,7 +53,14 @@ dotnet restore barrapp.slnx
 dotnet run --project src/Barrapp.Api
 ```
 
-El API escucha en `http://0.0.0.0:5213`.
+El API escucha en `http://0.0.0.0:5213`. Al arrancar aplica las migraciones de EF Core; la base
+SQLite se crea en la carpeta de trabajo (`Data Source=barrapp.db`).
+
+Como alternativa, con Docker (API + SQLite en un volumen):
+
+```sh
+docker compose up --build
+```
 
 ## App móvil
 

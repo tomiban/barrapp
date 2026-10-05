@@ -1,0 +1,21 @@
+# Contexto de build de Docker: se copia solo `src/` y las props de .NET.
+
+**/bin/
+**/obj/
+**/node_modules/
+**/.expo/
+
+.git/
+.github/
+.vs/
+.idea/
+
+# Tests y app móvil no participan en la imagen del API.
+tests/
+mobile/
+docs/
+
+# Bases SQLite locales.
+*.db
+*.db-shm
+*.db-wal
