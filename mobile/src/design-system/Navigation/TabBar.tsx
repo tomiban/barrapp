@@ -78,7 +78,7 @@ export type TabBarProps = {
  * ```tsx
  * <TabBar
  *   tabs={[
- *     { name: 'index', href: '/', label: 'Inicio' },
+ *     { name: 'index', href: '/', label: 'Entrenar' },
  *     { name: 'plan', href: '/plan', label: 'Plan' },
  *   ]}
  * />
