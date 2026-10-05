@@ -132,14 +132,27 @@ public sealed class KnowledgeBaseLoaderTests
     }
 
     [Fact]
-    public void Load_from_embedded_resources_returns_a_catalog()
+    public void Load_from_embedded_resources_returns_the_validated_real_catalog()
     {
         var catalog = CreateLoader().LoadEmbeddedResources();
 
-        Assert.NotNull(catalog);
-        Assert.NotNull(catalog.Exercises);
+        Assert.NotEmpty(catalog.Exercises);
         Assert.NotNull(catalog.Skills);
         Assert.NotNull(catalog.Programs);
+
+        // El catálogo real cubre los cinco patrones y ningún grupo queda vacío.
+        foreach (var group in Enum.GetValues<ExerciseGroup>())
+        {
+            Assert.NotEmpty(catalog.ExercisesByGroup(group));
+        }
+
+        // Cada regresión declarada resuelve dentro del propio catálogo (lo garantiza el cargador).
+        Assert.All(
+            catalog.Exercises.Where(exercise => exercise.RegressionId is not null),
+            exercise => Assert.NotNull(catalog.FindExercise(exercise.RegressionId!)));
+
+        // Los básicos declaran que se registra su máximo.
+        Assert.Contains(catalog.Exercises, exercise => exercise.TracksMaximum);
     }
 
     [Fact]

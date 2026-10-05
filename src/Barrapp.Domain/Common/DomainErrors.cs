@@ -58,6 +58,11 @@ public static class DomainErrors
             "knowledge.missing_data",
             "Los datos de la base de conocimiento son obligatorios.");
 
+        /// <summary>El catálogo no tiene ningún ejercicio que servir.</summary>
+        public static readonly Error EmptyCatalog = Error.NotFound(
+            "knowledge.empty_catalog",
+            "El catálogo de ejercicios está vacío.");
+
         /// <summary>Un ejercicio no tiene id.</summary>
         public static readonly Error EmptyExerciseId = Error.Validation(
             "knowledge.empty_exercise_id",
