@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import {
-  EXERCISE_GROUP_LABELS,
-  fetchExerciseCatalog,
-  type ExerciseCatalog,
-} from '@/api/catalog/exercises';
+import { EXERCISE_GROUP_LABELS, fetchExerciseCatalog } from '@/api/catalog/exercises';
 import {
   fetchSkillCatalog,
   type PatternRoutine,
-  type RoutineItem,
   type Skill,
   type SkillStage,
   type StageCriterion,
@@ -18,6 +13,8 @@ import { Banner, EmptyState, Loading } from '@/design-system/Feedback';
 import { Stack } from '@/design-system/layout';
 import { ListRow, SectionHeader } from '@/design-system/ListRow';
 import { Text } from '@/design-system/Text';
+import { buildExerciseNameIndex } from '@/features/library/exerciseNames';
+import { formatRoutineItem } from '@/features/library/routineItemText';
 
 type LoadState =
   | { status: 'loading' }
@@ -28,40 +25,11 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
 }
 
-/** Índice `exerciseId → nombre` con los ejercicios de acondicionamiento del catálogo. */
-function indexExerciseNames(catalog: ExerciseCatalog): Map<string, string> {
-  const names = new Map<string, string>();
-  for (const group of catalog.groups) {
-    for (const exercise of group.exercises) {
-      names.set(exercise.id, exercise.name);
-    }
-  }
-  return names;
-}
-
 /** Texto del criterio de una etapa, p. ej. `3 × 20 s` o `3 × 5 reps`. */
 function formatCriterion(criterion: StageCriterion): string {
   return criterion.metric === 'seconds'
     ? `${criterion.sets} × ${criterion.target} s`
     : `${criterion.sets} × ${criterion.target} reps`;
-}
-
-/** Texto de series y rango de una fila, p. ej. `4 × 5–15 s` o `3 × 6–8 reps`. */
-function formatItemRange(item: RoutineItem): string {
-  if (typeof item.holdSecondsMin === 'number' && typeof item.holdSecondsMax === 'number') {
-    return `${item.sets} × ${item.holdSecondsMin}–${item.holdSecondsMax} s`;
-  }
-
-  if (typeof item.repsMin === 'number' && typeof item.repsMax === 'number') {
-    return `${item.sets} × ${item.repsMin}–${item.repsMax} reps`;
-  }
-
-  return `${item.sets} series`;
-}
-
-/** Texto completo de una fila: series, rango y descanso. */
-function formatItem(item: RoutineItem): string {
-  return `${formatItemRange(item)} · descanso ${item.restSeconds} s`;
 }
 
 /** Bloques de una rutina de patrón: modelos con sus filas. */
@@ -83,7 +51,7 @@ function PatternRoutineBlock({
         <ListRow
           key={`${routine.id}-${item.exerciseId}-${index}`}
           title={nameOf(item.exerciseId)}
-          subtitle={formatItem(item)}
+          subtitle={formatRoutineItem(item)}
           last={index === routine.items.length - 1}
         />
       ))}
@@ -111,7 +79,7 @@ export function SkillsView() {
         setState({
           status: 'ready',
           skills,
-          exerciseNames: indexExerciseNames(catalog),
+          exerciseNames: buildExerciseNameIndex(catalog, skills),
         }),
       )
       .catch((error: unknown) => {
@@ -161,11 +129,7 @@ export function SkillsView() {
   return (
     <Stack gap="xl">
       {state.skills.map((skill) => {
-        const stageNameByExercise = new Map(
-          skill.stages.map((stage) => [stage.exerciseId, stage.name]),
-        );
-        const nameOf = (exerciseId: string) =>
-          state.exerciseNames.get(exerciseId) ?? stageNameByExercise.get(exerciseId) ?? exerciseId;
+        const nameOf = (exerciseId: string) => state.exerciseNames.get(exerciseId) ?? exerciseId;
 
         return (
           <Stack key={skill.id} gap="md" testID={`library-skill-${skill.id}`}>

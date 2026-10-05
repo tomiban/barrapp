@@ -153,15 +153,97 @@ const SKILLS = [
   },
 ];
 
-/** Mock de `fetch` que reparte por ruta: skills devuelve la escalera; el resto, el catálogo. */
+/** Programas generales mínimos: un circuito por tiempo y una sesión de fuerza. */
+const ROUTINES = [
+  {
+    id: 'ponte-en-forma',
+    name: 'Ponte en forma',
+    type: 'circuit',
+    description: 'Rutinas por tiempo para acondicionamiento general.',
+    routines: [
+      {
+        id: 'ponte-en-forma-r1',
+        name: 'Rutina 1',
+        intensity: 2,
+        durationMinutes: 14,
+        blocks: [
+          {
+            name: 'SET 1',
+            rounds: 3,
+            restSeconds: 0,
+            notes: 'Sin descanso.',
+            items: [
+              {
+                exerciseId: 'push-up',
+                sets: 1,
+                repsMin: null,
+                repsMax: null,
+                holdSecondsMin: 15,
+                holdSecondsMax: 15,
+                restSeconds: 0,
+                tempo: null,
+                supersetGroup: null,
+                notes: null,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'home-workout',
+    name: 'Home Workout Avanzados',
+    type: 'strength',
+    description: null,
+    routines: [
+      {
+        id: 'home-workout-d1',
+        name: 'Día 1 — Empuje',
+        intensity: 3,
+        durationMinutes: null,
+        blocks: [
+          {
+            name: 'Empuje',
+            rounds: 1,
+            restSeconds: 0,
+            notes: null,
+            items: [
+              {
+                exerciseId: 'dip',
+                sets: 4,
+                repsMin: 6,
+                repsMax: 10,
+                holdSecondsMin: null,
+                holdSecondsMax: null,
+                restSeconds: 120,
+                tempo: null,
+                supersetGroup: 1,
+                notes: null,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];
+
+/**
+ * Mock de `fetch` que reparte por ruta: skills devuelve la escalera, routines los programas
+ * generales y el resto, el catálogo de ejercicios.
+ */
 function routeFetch(): jest.Mock {
-  return jest.fn((input: unknown) =>
-    Promise.resolve(
-      String(input).includes('/catalog/skills')
-        ? jsonResponse(200, SKILLS)
-        : jsonResponse(200, CATALOG),
-    ),
-  );
+  return jest.fn((input: unknown) => {
+    const url = String(input);
+    if (url.includes('/catalog/skills')) {
+      return Promise.resolve(jsonResponse(200, SKILLS));
+    }
+    if (url.includes('/catalog/routines')) {
+      return Promise.resolve(jsonResponse(200, ROUTINES));
+    }
+    return Promise.resolve(jsonResponse(200, CATALOG));
+  });
 }
 
 describe('LibraryScreen · Ejercicios', () => {
@@ -190,7 +272,7 @@ describe('LibraryScreen · Ejercicios', () => {
     );
   });
 
-  it('switches to the Skills view and keeps the Rutinas placeholder', async () => {
+  it('switches to the Skills and Rutinas views', async () => {
     global.fetch = routeFetch() as unknown as typeof fetch;
 
     await render(<LibraryScreen />);
@@ -200,7 +282,9 @@ describe('LibraryScreen · Ejercicios', () => {
     await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
 
     await fireEvent.press(screen.getByTestId('library-section-routines'));
-    expect(screen.getByTestId('library-routines-empty')).toBeOnTheScreen();
+    await waitFor(() =>
+      expect(screen.getByTestId('library-program-ponte-en-forma')).toBeOnTheScreen(),
+    );
   });
 
   it('shows the API problem detail and retries on failure', async () => {
@@ -258,6 +342,52 @@ describe('LibraryScreen · Skills', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/catalog/skills'),
+      expect.anything(),
+    );
+  });
+});
+
+describe('LibraryScreen · Rutinas', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    jest.restoreAllMocks();
+  });
+
+  it('renders the programs with their routines, intensity, duration and blocks', async () => {
+    const fetchMock = routeFetch();
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await render(<LibraryScreen />);
+    await waitFor(() => expect(screen.getByText('Flexiones')).toBeOnTheScreen());
+
+    await fireEvent.press(screen.getByTestId('library-section-routines'));
+
+    await waitFor(() => expect(screen.getByText('Ponte en forma')).toBeOnTheScreen());
+
+    // Tipo de programa y descripción.
+    expect(screen.getByText('Circuito por tiempo')).toBeOnTheScreen();
+    expect(
+      screen.getByText('Rutinas por tiempo para acondicionamiento general.'),
+    ).toBeOnTheScreen();
+
+    // Rutina con su intensidad, duración y bloques; las filas resuelven el nombre del catálogo.
+    expect(screen.getByText('Rutina 1')).toBeOnTheScreen();
+    expect(screen.getByText('Intensidad 2 · 14 min')).toBeOnTheScreen();
+    expect(screen.getByText('SET 1 · 3 vueltas')).toBeOnTheScreen();
+    expect(screen.getByText('1 × 15–15 s · descanso 0 s')).toBeOnTheScreen();
+
+    // Un programa de fuerza: reps, sin duración y con el nombre del bloque.
+    expect(screen.getByText('Home Workout Avanzados')).toBeOnTheScreen();
+    expect(screen.getByText('Fuerza por repeticiones')).toBeOnTheScreen();
+    expect(screen.getByText('Día 1 — Empuje')).toBeOnTheScreen();
+    expect(screen.getByText('Intensidad 3')).toBeOnTheScreen();
+    expect(screen.getByText('Empuje')).toBeOnTheScreen();
+    expect(screen.getByText('4 × 6–10 reps · descanso 120 s')).toBeOnTheScreen();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/catalog/routines'),
       expect.anything(),
     );
   });

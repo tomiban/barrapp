@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
 import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
-import { EmptyState } from '@/design-system/Feedback';
 import { Stack } from '@/design-system/layout';
 import { Header, Screen } from '@/design-system/Navigation';
 import { Text } from '@/design-system/Text';
 import { ExercisesView } from '@/features/library/ExercisesView';
+import { RoutinesView } from '@/features/library/RoutinesView';
 import { SkillsView } from '@/features/library/SkillsView';
 
 /** Secciones de la Biblioteca. */
@@ -20,10 +20,9 @@ const SECTION_OPTIONS: readonly SegmentedOption<LibrarySection>[] = [
 /**
  * Pantalla de la Biblioteca: un `SegmentedControl` con tres secciones.
  *
- * `Ejercicios` es esta entrega (#7). `Skills` y `Rutinas` son puntos de extensión:
- * los implementan #8 y #67 como vistas hermanas en `@/features/library/`
- * (`SkillsView.tsx` / `RoutinesView.tsx`), sustituyendo su `EmptyState` sin tocar
- * el resto de la pantalla.
+ * `Ejercicios` (#7), `Skills` (#8) y `Rutinas` (#67) son vistas hermanas en
+ * `@/features/library/`; cada una lee su endpoint del catálogo y sustituye el
+ * `EmptyState` original sin tocar el resto de la pantalla.
  */
 export default function LibraryScreen() {
   const [section, setSection] = useState<LibrarySection>('exercises');
@@ -47,13 +46,7 @@ export default function LibraryScreen() {
 
         {section === 'skills' ? <SkillsView /> : null}
 
-        {section === 'routines' ? (
-          <EmptyState
-            title="Próximamente"
-            description="Las rutinas de patrón llegarán en el próximo módulo."
-            testID="library-routines-empty"
-          />
-        ) : null}
+        {section === 'routines' ? <RoutinesView /> : null}
       </Stack>
     </Screen>
   );
