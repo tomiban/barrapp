@@ -229,6 +229,80 @@ public sealed class KnowledgeBaseLoaderTests
     }
 
     [Fact]
+    public void Load_from_embedded_resources_validates_every_program_routine_and_block()
+    {
+        var catalog = CreateLoader().LoadEmbeddedResources();
+
+        // Los tres programas generales de la M2, con su tipo y su número de rutinas.
+        Assert.Equal(
+            ["ponte-en-forma", "base-perfecta", "home-workout"],
+            catalog.Programs.Select(program => program.Id));
+
+        var ponteEnForma = catalog.Programs.Single(program => program.Id == "ponte-en-forma");
+        Assert.Equal("Ponte en forma", ponteEnForma.Name);
+        Assert.Equal(RoutineProgramType.Circuit, ponteEnForma.Type);
+        Assert.Equal(
+            new int?[] { 14, 8, 10, 15, 15 },
+            ponteEnForma.Routines.Select(routine => routine.DurationMinutes));
+
+        var basePerfecta = catalog.Programs.Single(program => program.Id == "base-perfecta");
+        Assert.Equal(RoutineProgramType.Strength, basePerfecta.Type);
+        Assert.Equal(8, basePerfecta.Routines.Count);
+
+        var homeWorkout = catalog.Programs.Single(program => program.Id == "home-workout");
+        Assert.Equal(RoutineProgramType.Strength, homeWorkout.Type);
+        Assert.Equal(5, homeWorkout.Routines.Count);
+
+        // Cada rutina describe bloques completos cuyas filas resuelven a ejercicios del catálogo.
+        foreach (var program in catalog.Programs)
+        {
+            Assert.NotEmpty(program.Routines);
+            Assert.Equal(
+                program.Routines.Count,
+                program.Routines.Select(routine => routine.Id).Distinct(StringComparer.Ordinal).Count());
+
+            foreach (var routine in program.Routines)
+            {
+                Assert.False(string.IsNullOrWhiteSpace(routine.Name));
+                Assert.InRange(routine.Intensity, 2, 3);
+                Assert.NotEmpty(routine.Blocks);
+
+                foreach (var block in routine.Blocks)
+                {
+                    Assert.False(string.IsNullOrWhiteSpace(block.Name));
+                    Assert.True(block.Rounds >= 1);
+                    Assert.True(block.RestSeconds >= 0);
+                    Assert.NotEmpty(block.Items);
+
+                    foreach (var item in block.Items)
+                    {
+                        Assert.NotNull(catalog.FindExercise(item.ExerciseId));
+                        Assert.True(item.Sets > 0);
+                        Assert.True(item.RestSeconds >= 0);
+
+                        var hasRepsRange = item.RepsMin is not null && item.RepsMax is not null;
+                        var hasHoldRange = item.HoldSecondsMin is not null && item.HoldSecondsMax is not null;
+                        Assert.True(hasRepsRange || hasHoldRange);
+                    }
+                }
+            }
+        }
+
+        // Los programas generales apoyan los skills: referencian movimientos kind: skill.
+        var referencedExerciseIds = catalog.Programs
+            .SelectMany(program => program.Routines)
+            .SelectMany(routine => routine.Blocks)
+            .SelectMany(block => block.Items)
+            .Select(item => item.ExerciseId)
+            .ToHashSet(StringComparer.Ordinal);
+        Assert.Contains("planche-tuck", referencedExerciseIds);
+        Assert.Contains("front-lever-full", referencedExerciseIds);
+        Assert.All(
+            referencedExerciseIds,
+            exerciseId => Assert.NotNull(catalog.FindExercise(exerciseId)));
+    }
+
+    [Fact]
     public void Load_rejects_non_consecutive_superset_groups()
     {
         var exception = Assert.Throws<KnowledgeBaseValidationException>(
