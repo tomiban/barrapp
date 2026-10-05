@@ -14,6 +14,10 @@ Flujo de tickets, ramas, commits, testing y estándares. **Léelo antes de empez
 
 Validación, seguridad, datos, rendimiento, resiliencia y anti-patrones de arquitectura (reglas permanentes y las que se activan por feature). **Léelo antes de escribir código de API o tocar la base de datos.** Ver `docs/engineering-standards.md`.
 
+## Specs
+
+Las especificaciones versionadas viven en `docs/specs/`. La spec vigente es `docs/specs/0001-planificador-calistenia.md`, y de ella salen los tickets del issue tracker. **Léela antes de trabajar un ticket** para conocer el contexto y las decisiones.
+
 ## Dominio
 
 El vocabulario del proyecto (*objetivo*, *skill*, *mesociclo*, *deload*, *registro*…) y los términos a evitar. Ver `GLOSSARY.md`. Las decisiones técnicas duraderas, en `docs/adr/`.
@@ -22,7 +26,7 @@ El vocabulario del proyecto (*objetivo*, *skill*, *mesociclo*, *deload*, *regist
 
 ### Issue tracker
 
-Issues and specs live as GitHub issues; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues (tickets) live as GitHub issues; specs live as versioned files under `docs/specs/`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

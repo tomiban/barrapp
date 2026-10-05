@@ -2,7 +2,7 @@
 
 ## Flujo de ticket
 
-- El trabajo vive en GitHub Issues. La spec es el issue **#1**; los tickets son **#2–#30**, agrupados en milestones (M1–M7).
+- El trabajo (tickets) vive en GitHub Issues. La spec es **`docs/specs/0001-planificador-calistenia.md`** (archivo versionado); los tickets son **#2–#30**, agrupados en milestones (M1–M7).
 - Trabaja la **frontera**: solo tickets sin bloqueadores abiertos (`blocked_by` en GitHub).
 - Un ticket = **una rama corta + un PR**. Arranca con `/implement <n>`.
 - El ticket termina cuando sus **criterios de aceptación** se cumplen y los tests pasan.

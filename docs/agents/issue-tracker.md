@@ -1,6 +1,10 @@
 # Issue tracker: GitHub
 
-Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+Issues (tickets) for this repo live as GitHub issues; use the `gh` CLI for all operations. **Specs live as versioned files under `docs/specs/`** (see below).
+
+## Specs
+
+Specs are versioned Markdown files under `docs/specs/` (e.g. `docs/specs/0001-planificador-calistenia.md`), reviewed via pull request — **not** issues. The issue tracker holds the **tickets** derived from a spec. When a skill says to read the spec, read the file; when it says to fetch a ticket, use `gh issue view`.
 
 ## Conventions
 
@@ -27,7 +31,7 @@ GitHub shares one number space across issues and PRs, so a bare `#42` may be eit
 
 ## When a skill says "publish to the issue tracker"
 
-Create a GitHub issue.
+Create a GitHub issue (for tickets). To publish a **spec**, write a versioned file under `docs/specs/` instead.
 
 ## When a skill says "fetch the relevant ticket"
 
