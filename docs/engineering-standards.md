@@ -65,6 +65,11 @@ Guardrails, en positivo:
 - **Dependencias solo hacia dentro**: Application nunca referencia Infrastructure; los architecture tests lo bloquean en CI.
 - **Pragmatismo**: Clean Architecture es un medio, no un fin; se aplica con criterio y se evita la ceremonia por la ceremonia.
 
+## Front (app nativa)
+
+- Estilos con **Unistyles**; colores, espaciado y tipografía salen de los tokens del design system (`docs/specs/0002-design-system.md`), nunca hardcodeados.
+- Los componentes de UI se toman del design system, no de `View`/`Text` con estilos ad hoc.
+
 ## Cuando aplique
 
 - **Cuando llegue el login (auth):** hashea las contraseñas con un algoritmo lento y sal; pon rate limit en el login; nunca compares en claro.

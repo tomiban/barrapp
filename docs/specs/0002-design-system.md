@@ -126,5 +126,5 @@ Screen/Header · TabBar · BottomSheet/Modal · Toast/Banner · Loading/Skeleton
 
 ## Further Notes
 
-- **Implementación pendiente**: cómo consumen los componentes estos tokens (librería) se decide aparte, con su propio ADR.
+- **Implementación**: **react-native-unistyles** (MIT) —tokens, variantes y temas tipados (ADR-0008). El desarrollo usa *development builds* (no Expo Go).
 - Deriva de la propuesta «Functional Swiss Brutalism», con la paleta fría de su prosa como fuente de verdad.
