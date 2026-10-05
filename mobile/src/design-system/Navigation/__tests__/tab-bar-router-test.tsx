@@ -9,7 +9,7 @@ import { TabBar, type TabDefinition } from '../TabBar';
  * layout para no depender del root layout de fuentes de la app.
  */
 const TABS: readonly TabDefinition[] = [
-  { name: 'index', href: '/', label: 'Inicio' },
+  { name: 'index', href: '/', label: 'Entrenar' },
   { name: 'plan', href: '/plan', label: 'Plan' },
 ];
 
@@ -24,7 +24,7 @@ describe('TabBar (integración con Expo Router)', () => {
   it('muestra las pestañas y marca la ruta activa', async () => {
     await renderRouter({ _layout: TabsLayout, index: Home, plan: Plan }, { initialUrl: '/' });
 
-    expect(screen.getByRole('tab', { name: 'Inicio', selected: true })).toBeOnTheScreen();
+    expect(screen.getByRole('tab', { name: 'Entrenar', selected: true })).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Plan', selected: false })).toBeOnTheScreen();
   });
 
@@ -35,7 +35,7 @@ describe('TabBar (integración con Expo Router)', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('tab', { name: 'Plan', selected: true })).toBeOnTheScreen();
-      expect(screen.getByRole('tab', { name: 'Inicio', selected: false })).toBeOnTheScreen();
+      expect(screen.getByRole('tab', { name: 'Entrenar', selected: false })).toBeOnTheScreen();
     });
   });
 });

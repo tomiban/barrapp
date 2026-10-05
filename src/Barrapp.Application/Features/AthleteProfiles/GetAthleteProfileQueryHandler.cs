@@ -20,7 +20,13 @@ internal sealed class GetAthleteProfileQueryHandler(IApplicationDbContext dbCont
             .Where(profile => profile.UserId == SingleUser.Id)
             .Select(profile => new AthleteProfileResponse(
                 profile.WeightKilograms,
-                profile.HeightCentimeters))
+                profile.HeightCentimeters,
+                profile.TrainingDays,
+                profile.Maximums
+                    .AsQueryable()
+                    .OrderBy(MaximumResponses.OrderByCode)
+                    .Select(MaximumResponses.Selector)
+                    .ToList()))
             .FirstOrDefaultAsync(cancellationToken);
 
         return response is null

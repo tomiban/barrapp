@@ -1,5 +1,6 @@
 import { Pressable, View, type ViewProps } from 'react-native';
 
+import { ROLE_TEXT_CLASS } from '../semantic';
 import { Text } from '../Text';
 import { cn } from '../utils/cn';
 
@@ -24,6 +25,11 @@ export type SegmentedControlProps<T extends string = string> = ViewProps & {
   disabled?: boolean;
   /** Etiqueta accesible del grupo (opcional pero recomendada). */
   label?: string;
+  /**
+   * Mensaje de error. Si viene, se muestra bajo el control como texto
+   * anunciable, con el mismo token (`text-error`) y vocabulario que `TextField`.
+   */
+  error?: string;
   /** Utilities extra del contenedor; se fusionan con `cn()`. */
   className?: string;
 };
@@ -51,6 +57,10 @@ const segmentLabelClass = {
  * `surface-muted`/`text-muted`. Semántica accesible de grupo de radios
  * (`radiogroup` + `radio` con `accessibilityState.selected`), de modo que el
  * estado nunca se comunica solo por color.
+ *
+ * Si llega `error`, se muestra bajo el control con el token `error` del
+ * design system, como texto anunciable (`accessibilityRole="alert"`), igual
+ * que `TextField`.
  */
 export function SegmentedControl<T extends string = string>({
   options,
@@ -58,48 +68,61 @@ export function SegmentedControl<T extends string = string>({
   onChange,
   disabled,
   label,
+  error,
   className,
   testID,
   ...rest
 }: SegmentedControlProps<T>) {
   return (
-    <View
-      accessibilityRole="radiogroup"
-      accessibilityLabel={label}
-      className={cn(
-        'flex-row items-stretch rounded-base border border-border bg-surface-muted p-xs',
-        className,
-      )}
-      testID={testID}
-      {...rest}
-    >
-      {options.map((option) => {
-        const selected = option.value === value;
+    <View className="gap-xs">
+      <View
+        accessibilityRole="radiogroup"
+        accessibilityLabel={label}
+        className={cn(
+          'flex-row items-stretch rounded-base border border-border bg-surface-muted p-xs',
+          className,
+        )}
+        testID={testID}
+        {...rest}
+      >
+        {options.map((option) => {
+          const selected = option.value === value;
 
-        return (
-          <Pressable
-            key={option.value}
-            accessible
-            accessibilityRole="radio"
-            accessibilityLabel={option.label}
-            accessibilityState={{ selected, disabled: Boolean(disabled) }}
-            disabled={disabled}
-            onPress={() => onChange(option.value)}
-            testID={testID ? `${testID}-${option.value}` : undefined}
-            className={cn(
-              'flex-1 flex-row items-center justify-center rounded-sm px-md py-sm',
-              selected ? segmentStateClass.active : segmentStateClass.inactive,
-            )}
-          >
-            <Text
-              variant="labelCode"
-              className={selected ? segmentLabelClass.active : segmentLabelClass.inactive}
+          return (
+            <Pressable
+              key={option.value}
+              accessible
+              accessibilityRole="radio"
+              accessibilityLabel={option.label}
+              accessibilityState={{ selected, disabled: Boolean(disabled) }}
+              disabled={disabled}
+              onPress={() => onChange(option.value)}
+              testID={testID ? `${testID}-${option.value}` : undefined}
+              className={cn(
+                'flex-1 flex-row items-center justify-center rounded-sm px-md py-sm',
+                selected ? segmentStateClass.active : segmentStateClass.inactive,
+              )}
             >
-              {option.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+              <Text
+                variant="labelCode"
+                className={selected ? segmentLabelClass.active : segmentLabelClass.inactive}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {error ? (
+        <Text
+          variant="bodySm"
+          className={ROLE_TEXT_CLASS.error}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
