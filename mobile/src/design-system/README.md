@@ -72,18 +72,54 @@ deja el contenido a 20 dp del borde sin medir píxeles a mano. La caja de la
 retícula se ensancha 8 dp por lado: **no le pongas fondo**; el fondo va en las
 celdas (`GridItem`).
 
-`cn()` registra la escala de espaciado del design system en `tailwind-merge`,
-así que el `className` de un consumidor puede sobrescribir `gap-*`, `p-*`… de
-una primitiva.
+`cn()` registra las escalas del design system (espaciado y tipografía) en
+`tailwind-merge`, así que el `className` de un consumidor puede sobrescribir
+`gap-*`, `p-*`, `text-*`… de una primitiva sin perder el token del componente.
+
+## Componentes
+
+Cada componente vive en su propio directorio `src/design-system/<Nombre>/` con
+un `index.ts` que expone su API pública, sus props y sus tipos.
+
+### ProgressIndicator
+
+Barra o anillo de progreso sobre los tokens de color, para series y para el
+avance del mesociclo. Sin sombras: la pista es una capa tonal (`surface-muted`)
+y la profundidad sale de bordes y radios.
+
+| Prop        | Tipo                 | Default    | Uso                                                             |
+| ----------- | -------------------- | ---------- | --------------------------------------------------------------- |
+| `value`     | `number`             | —          | Progreso actual; se recorta a `[0, max]`.                       |
+| `max`       | `number`             | `1`        | Total de la escala; el ratio es `value / max`.                  |
+| `tone`      | `ProgressTone`       | `'active'` | Rol semántico de estado.                                        |
+| `label`     | `string`             | —          | Etiqueta textual; el estado nunca se comunica solo por color.   |
+| `variant`   | `'bar' \| 'ring'`    | `'bar'`    | Forma del indicador.                                            |
+| `size`      | `number`             | `64`       | Lado del anillo en dp (solo `ring`).                            |
+| `className` | `string`             | —          | Clases del contenedor (se combinan con `cn()`).                 |
+| `testID`    | `string`             | —          | Identificador; barra/anillo derivan `<testID>-fill` / `-ring`.  |
+
+`ProgressTone` mapea los roles semánticos de la spec a tokens:
+
+| Rol                    | `tone`      | Token       |
+| ---------------------- | ----------- | ----------- |
+| Activo / en curso      | `active`    | `primary`   |
+| Calibrado / confirmado | `confirmed` | `secondary` |
+| Sobrecarga / fallo     | `error`     | `error`     |
+| Inactivo               | `inactive`  | `textMuted` |
+
+Accesibilidad: `accessibilityRole="progressbar"` con
+`accessibilityValue={{ min: 0, max, now }}` (con `max` ya saneado). La barra
+colorea el relleno por `className`; el anillo colorea por la prop `stroke` de
+`react-native-svg`, resolviendo el token con `useCSSVariable`.
 
 ## Estructura
 
 - `utils/` — infraestructura compartida (`cn()`).
 - `layout/` — primitivas de layout (`Box`, `Stack`, `Spacer`, `Grid`,
   `GridItem`) con su `index.ts` local.
-- (próximos tickets) componentes base y de entrenamiento, cada uno en su propio
-  archivo/directorio con su barrel local; **sin barrel de `design-system/`**
-  para no colisionar entre tickets.
+- `<Nombre>/` — cada componente con su `index.ts` de API pública. Un barrel por
+  directorio; **sin barrel de `design-system/`** para no colisionar entre
+  tickets.
 
 Reglas: nada de colores, espaciado ni tipografía hardcodeados; todo sale de los
 tokens de `mobile/global.css`.
