@@ -1,13 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
+  BASIC_EXERCISES,
+  EXERCISE_PATTERN_LABELS,
+  EXERCISE_PATTERNS,
   fetchAthleteProfile,
   saveAthleteProfile,
-  validateAthleteProfileMeasurements,
+  validateAthleteProfileDraft,
+  validateMaximumDrafts,
+  TRAINING_DAYS_LIMITS,
   type AthleteProfile,
   type AthleteProfileFieldErrors,
+  type MaximumDraft,
+  type MaximumFieldErrors,
 } from '@/api/athleteProfile';
 import { Button } from '@/design-system/Button';
+import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { Box, Stack } from '@/design-system/layout';
 import { Header, Screen } from '@/design-system/Navigation';
@@ -22,21 +30,40 @@ type Feedback = {
   message: string;
 };
 
+/** Una opción por cada valor del rango de días de entrenamiento (3–5). */
+const TRAINING_DAYS_OPTIONS: readonly SegmentedOption[] = Array.from(
+  { length: TRAINING_DAYS_LIMITS.max - TRAINING_DAYS_LIMITS.min + 1 },
+  (_, index) => {
+    const value = String(TRAINING_DAYS_LIMITS.min + index);
+    return { value, label: value };
+  },
+);
+
+const DEFAULT_TRAINING_DAYS = String(TRAINING_DAYS_LIMITS.min);
+
+/** Un borrador vacío por cada ejercicio básico. */
+function emptyMaximumDrafts(): Record<string, string> {
+  return Object.fromEntries(BASIC_EXERCISES.map((exercise) => [exercise.code, '']));
+}
+
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
 }
 
 /**
- * Pantalla del perfil del atleta: guarda peso y altura en el API y los vuelve a leer
- * para comprobar que la persistencia los conserva. Es la costura de la app con
- * `GET`/`PUT /profile`.
+ * Pantalla del perfil del atleta: guarda peso, altura, días de entrenamiento por semana y
+ * sus máximos por ejercicio básico en el API, y los vuelve a leer para comprobar que la
+ * persistencia los conserva. Es la costura de la app con `GET`/`PUT /profile`.
  */
 export default function ProfileScreen() {
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [loadError, setLoadError] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
+  const [trainingDays, setTrainingDays] = useState(DEFAULT_TRAINING_DAYS);
+  const [maximumDrafts, setMaximumDrafts] = useState<Record<string, string>>(emptyMaximumDrafts);
   const [fieldErrors, setFieldErrors] = useState<AthleteProfileFieldErrors>({});
+  const [maximumErrors, setMaximumErrors] = useState<MaximumFieldErrors>({});
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [persisted, setPersisted] = useState<AthleteProfile | null>(null);
@@ -45,6 +72,18 @@ export default function ProfileScreen() {
     if (profile) {
       setWeight(String(profile.weightKilograms));
       setHeight(String(profile.heightCentimeters));
+      setTrainingDays(String(profile.trainingDays));
+      setMaximumDrafts(
+        Object.fromEntries(
+          BASIC_EXERCISES.map((exercise) => [
+            exercise.code,
+            String(
+              profile.maximums.find((maximum) => maximum.exerciseCode === exercise.code)
+                ?.repetitions ?? '',
+            ),
+          ]),
+        ),
+      );
     }
     setPersisted(profile);
   }, []);
@@ -80,21 +119,40 @@ export default function ProfileScreen() {
   }, [load]);
 
   const handleSave = useCallback(async () => {
-    const { weightKilograms, heightCentimeters, errors } = validateAthleteProfileMeasurements(
-      weight,
-      height,
-    );
+    const {
+      weightKilograms,
+      heightCentimeters,
+      trainingDays: selectedTrainingDays,
+      errors,
+    } = validateAthleteProfileDraft(weight, height, Number(trainingDays));
+
+    const drafts: MaximumDraft[] = BASIC_EXERCISES.map((exercise) => ({
+      exerciseCode: exercise.code,
+      value: maximumDrafts[exercise.code] ?? '',
+    }));
+    const maximumValidation = validateMaximumDrafts(drafts);
 
     setFieldErrors(errors);
+    setMaximumErrors(maximumValidation.errors);
     setFeedback(null);
 
-    if (weightKilograms === null || heightCentimeters === null) {
+    if (
+      weightKilograms === null ||
+      heightCentimeters === null ||
+      selectedTrainingDays === null ||
+      maximumValidation.maximums === null
+    ) {
       return;
     }
 
     setSaving(true);
     try {
-      await saveAthleteProfile({ weightKilograms, heightCentimeters });
+      await saveAthleteProfile({
+        weightKilograms,
+        heightCentimeters,
+        trainingDays: selectedTrainingDays,
+        maximums: maximumValidation.maximums,
+      });
 
       // Relee del servidor: la app no se fía de su estado local.
       const reloaded = await fetchAthleteProfile();
@@ -105,7 +163,7 @@ export default function ProfileScreen() {
     } finally {
       setSaving(false);
     }
-  }, [applyProfile, height, weight]);
+  }, [applyProfile, height, maximumDrafts, trainingDays, weight]);
 
   return (
     <Screen testID="profile-screen" header={<Header title="Perfil" />}>
@@ -149,6 +207,48 @@ export default function ProfileScreen() {
                 error={fieldErrors.height}
                 testID="profile-height"
               />
+              <Stack gap="xs">
+                <Text variant="labelTechnical" className="text-text-muted">
+                  Días de entrenamiento
+                </Text>
+                <SegmentedControl
+                  options={TRAINING_DAYS_OPTIONS}
+                  value={trainingDays}
+                  onChange={setTrainingDays}
+                  label="Días de entrenamiento por semana"
+                  error={fieldErrors.trainingDays}
+                  testID="profile-training-days"
+                />
+              </Stack>
+            </Stack>
+
+            <Stack gap="sm">
+              <Text variant="labelTechnical" className="text-text-muted">
+                Máximos (reps)
+              </Text>
+              {EXERCISE_PATTERNS.map((pattern) => (
+                <Stack key={pattern} gap="sm">
+                  <Text variant="bodySm" className="text-text-muted">
+                    {EXERCISE_PATTERN_LABELS[pattern]}
+                  </Text>
+                  {BASIC_EXERCISES.filter((exercise) => exercise.pattern === pattern).map(
+                    (exercise) => (
+                      <TextField
+                        key={exercise.code}
+                        label={exercise.name}
+                        value={maximumDrafts[exercise.code] ?? ''}
+                        onChangeText={(text) =>
+                          setMaximumDrafts((current) => ({ ...current, [exercise.code]: text }))
+                        }
+                        keyboardType="number-pad"
+                        placeholder="0"
+                        error={maximumErrors[exercise.code]}
+                        testID={`profile-maximum-${exercise.code}`}
+                      />
+                    ),
+                  )}
+                </Stack>
+              ))}
             </Stack>
 
             {feedback ? (
@@ -171,9 +271,20 @@ export default function ProfileScreen() {
                 testID="profile-persisted-status"
               />
               {persisted ? (
-                <Text variant="bodyMd" testID="profile-persisted-values">
-                  {persisted.weightKilograms} kg · {persisted.heightCentimeters} cm
-                </Text>
+                <>
+                  <Text variant="bodyMd" testID="profile-persisted-values">
+                    {persisted.weightKilograms} kg · {persisted.heightCentimeters} cm ·{' '}
+                    {persisted.trainingDays} días/semana
+                  </Text>
+                  <Text variant="bodySm" testID="profile-persisted-maximums">
+                    {BASIC_EXERCISES.map((exercise) => {
+                      const maximum = persisted.maximums.find(
+                        (candidate) => candidate.exerciseCode === exercise.code,
+                      );
+                      return `${exercise.name} ${maximum?.repetitions ?? 0}`;
+                    }).join(' · ')}
+                  </Text>
+                </>
               ) : (
                 <Text variant="bodySm" className="text-text-muted">
                   Todavía no hay ningún perfil guardado. Introduce tus datos y guarda.

@@ -1,0 +1,9 @@
+# Máximos anclados a un ejercicio básico por patrón en M1
+
+En M1 el perfil del atleta guarda su **máximo** (reps estrictas, 0 vale) para exactamente **un ejercicio básico por patrón**: `push_up` (empuje), `pull_up` (tirón) y `squat` (pierna). Ese trío es un conjunto **pequeño, estable y propiedad del dominio** (`Barrapp.Domain.Athlete.BasicExercises`), pensado como **ancla para derivar cargas** en el motor de programación, **no** como el catálogo completo de ejercicios. El catálogo **data-driven** llega en el ticket #7: debe **incluir y reutilizar** esos mismos códigos estables para no romper los máximos ya guardados ni el contrato del API; añadir ejercicios nuevos no recompila el dominio (ver `docs/architecture.md`, *Base de conocimiento*). Entretanto, la app móvil **espeja** estos tres anclas como **puente temporal** (`mobile/src/api/athleteProfile.ts`) hasta que el catálogo se sirva desde el API. Como **no hay datos en producción**, no hace falta migración de *backfill*: la única consideración es que la columna `TrainingDays` arranca con el mínimo del dominio (`AthleteProfile.MinTrainingDays`, 3), no con 0. Complementa a `docs/specs/0001-planificador-calistenia.md`.
+
+## Considered Options
+
+- **Arrancar con el catálogo completo data-driven (#7) en M1**: evita el espejo temporal en la app, pero acopla el perfil a un catálogo que aún no existe y retrasa las fundaciones. Descartado.
+- **Máximos contra un identificador libre de ejercicio (string sin validar)**: más flexible, pero permite máximos huérfanos y duplica la validación en cada capa. Descartado: el dominio es la fuente única de la semántica.
+- **Un value object `TrainingDays` o un tipo que agrupe los parámetros del perfil**: menos constantes sueltas, pero el repo trata peso y altura igual (parámetros simples con invariantes en el agregado); añadir ceremonia no compensa en M1. Descartado.

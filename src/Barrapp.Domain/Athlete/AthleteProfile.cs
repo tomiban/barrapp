@@ -3,13 +3,15 @@ using Barrapp.Domain.Common;
 namespace Barrapp.Domain.Athlete;
 
 /// <summary>
-/// Perfil del atleta: sus datos corporales. Hoy guarda <b>peso</b> (kg) y <b>altura</b> (cm);
-/// los máximos por ejercicio y los días de entrenamiento llegan en tickets posteriores.
+/// Perfil del atleta: sus datos corporales, de entrenamiento y sus máximos por ejercicio
+/// básico. Guarda <b>peso</b> (kg), <b>altura</b> (cm), <b>días de entrenamiento</b> por
+/// semana (3–5) y el <see cref="Maximum"/> de cada ejercicio de <see cref="BasicExercises"/>.
 /// </summary>
 /// <remarks>
 /// El estado solo cambia por sus métodos (<see cref="Create"/>, <see cref="Update"/>), que
-/// validan los invariantes. Pertenece a un usuario (<see cref="UserId"/>); en el MVP
-/// mono-usuario, sin login, todos los perfiles pertenecen al mismo usuario fijo.
+/// validan los invariantes y son atómicos: si algo falla, no se modifica nada. Pertenece a un
+/// usuario (<see cref="UserId"/>); en el MVP mono-usuario, sin login, todos los perfiles
+/// pertenecen al mismo usuario fijo.
 /// </remarks>
 public sealed class AthleteProfile
 {
@@ -25,12 +27,26 @@ public sealed class AthleteProfile
     /// <summary>Altura máxima admitida, en centímetros.</summary>
     public const double MaxHeightCentimeters = 220;
 
-    private AthleteProfile(Guid id, Guid userId, double weightKilograms, double heightCentimeters)
+    /// <summary>Número mínimo de días de entrenamiento por semana.</summary>
+    public const int MinTrainingDays = 3;
+
+    /// <summary>Número máximo de días de entrenamiento por semana.</summary>
+    public const int MaxTrainingDays = 5;
+
+    private readonly List<Maximum> _maximums = [];
+
+    private AthleteProfile(
+        Guid id,
+        Guid userId,
+        double weightKilograms,
+        double heightCentimeters,
+        int trainingDays)
     {
         Id = id;
         UserId = userId;
         WeightKilograms = weightKilograms;
         HeightCentimeters = heightCentimeters;
+        TrainingDays = trainingDays;
     }
 
     // Requerido por EF Core para materializar la entidad; nunca se usa desde el dominio.
@@ -50,51 +66,159 @@ public sealed class AthleteProfile
     /// <summary>Altura del atleta en centímetros.</summary>
     public double HeightCentimeters { get; private set; }
 
+    /// <summary>Días de entrenamiento por semana (3–5).</summary>
+    public int TrainingDays { get; private set; }
+
+    /// <summary>Máximo por cada ejercicio básico; uno por ejercicio, siempre completo.</summary>
+    public IReadOnlyCollection<Maximum> Maximums => _maximums;
+
     /// <summary>
-    /// Crea un perfil para <paramref name="userId"/>. Falla si el peso (30–200 kg) o la
-    /// altura (120–220 cm) están fuera de rango.
+    /// Crea un perfil para <paramref name="userId"/>. Falla si el peso (30–200 kg), la
+    /// altura (120–220 cm) o los días de entrenamiento (3–5) están fuera de rango, o si los
+    /// máximos no cubren exactamente los ejercicios básicos (falta alguno, hay repetidos,
+    /// un código desconocido o una repeticiones negativas).
     /// </summary>
     public static Result<AthleteProfile> Create(
         Guid userId,
         double weightKilograms,
-        double heightCentimeters)
+        double heightCentimeters,
+        int trainingDays,
+        IReadOnlyCollection<MaximumInput> maximums)
     {
-        var validation = ValidateMeasurements(weightKilograms, heightCentimeters);
-        return validation.IsFailure
-            ? Result.Failure<AthleteProfile>(validation.Error)
-            : new AthleteProfile(Guid.NewGuid(), userId, weightKilograms, heightCentimeters);
+        var validation = ValidateProfile(weightKilograms, heightCentimeters, trainingDays);
+        if (validation.IsFailure)
+        {
+            return Result.Failure<AthleteProfile>(validation.Error);
+        }
+
+        var maximumValidation = ValidateMaximums(maximums);
+        if (maximumValidation.IsFailure)
+        {
+            return Result.Failure<AthleteProfile>(maximumValidation.Error);
+        }
+
+        var profile = new AthleteProfile(
+            Guid.NewGuid(),
+            userId,
+            weightKilograms,
+            heightCentimeters,
+            trainingDays);
+        profile._maximums.AddRange(maximumValidation.Value);
+
+        return profile;
     }
 
     /// <summary>
-    /// Actualiza las medidas del perfil. Falla si el peso (30–200 kg) o la altura
-    /// (120–220 cm) están fuera de rango; en ese caso no se modifica nada.
+    /// Actualiza los datos del perfil. Falla si el peso (30–200 kg), la altura (120–220 cm),
+    /// los días de entrenamiento (3–5) o los máximos no son válidos; en ese caso no se modifica
+    /// nada.
     /// </summary>
-    public Result Update(double weightKilograms, double heightCentimeters)
+    public Result Update(
+        double weightKilograms,
+        double heightCentimeters,
+        int trainingDays,
+        IReadOnlyCollection<MaximumInput> maximums)
     {
-        var validation = ValidateMeasurements(weightKilograms, heightCentimeters);
+        var validation = ValidateProfile(weightKilograms, heightCentimeters, trainingDays);
         if (validation.IsFailure)
         {
             return validation;
         }
 
+        var maximumValidation = ValidateMaximums(maximums);
+        if (maximumValidation.IsFailure)
+        {
+            return maximumValidation;
+        }
+
         WeightKilograms = weightKilograms;
         HeightCentimeters = heightCentimeters;
+        TrainingDays = trainingDays;
+        ApplyMaximums(maximumValidation.Value);
 
         return Result.Success();
     }
 
-    private static Result ValidateMeasurements(double weightKilograms, double heightCentimeters)
+    private static Result ValidateProfile(
+        double weightKilograms,
+        double heightCentimeters,
+        int trainingDays)
     {
         if (!IsWithinRange(weightKilograms, MinWeightKilograms, MaxWeightKilograms))
         {
             return Result.Failure(DomainErrors.AthleteProfile.WeightOutOfRange);
         }
 
-        return !IsWithinRange(heightCentimeters, MinHeightCentimeters, MaxHeightCentimeters)
-            ? Result.Failure(DomainErrors.AthleteProfile.HeightOutOfRange)
-            : Result.Success();
+        if (!IsWithinRange(heightCentimeters, MinHeightCentimeters, MaxHeightCentimeters))
+        {
+            return Result.Failure(DomainErrors.AthleteProfile.HeightOutOfRange);
+        }
+
+        return IsWithinRange(trainingDays, MinTrainingDays, MaxTrainingDays)
+            ? Result.Success()
+            : Result.Failure(DomainErrors.AthleteProfile.TrainingDaysOutOfRange);
+    }
+
+    private static Result<List<Maximum>> ValidateMaximums(IReadOnlyCollection<MaximumInput> maximums)
+    {
+        if (maximums is null || maximums.Count == 0)
+        {
+            return Result.Failure<List<Maximum>>(DomainErrors.AthleteProfile.MissingExerciseMaximum);
+        }
+
+        var built = new List<Maximum>(maximums.Count);
+        foreach (var input in maximums)
+        {
+            var creation = Maximum.Create(input.ExerciseCode, input.Repetitions);
+            if (creation.IsFailure)
+            {
+                return Result.Failure<List<Maximum>>(creation.Error);
+            }
+
+            built.Add(creation.Value);
+        }
+
+        var codes = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var maximum in built)
+        {
+            if (!codes.Add(maximum.ExerciseCode))
+            {
+                return Result.Failure<List<Maximum>>(
+                    DomainErrors.AthleteProfile.DuplicateExerciseMaximum);
+            }
+        }
+
+        foreach (var exercise in BasicExercises.All)
+        {
+            if (!codes.Contains(exercise.Code))
+            {
+                return Result.Failure<List<Maximum>>(DomainErrors.AthleteProfile.MissingExerciseMaximum);
+            }
+        }
+
+        return Result.Success(built);
+    }
+
+    private void ApplyMaximums(IReadOnlyCollection<Maximum> maximums)
+    {
+        foreach (var maximum in maximums)
+        {
+            var existing = _maximums.FirstOrDefault(
+                current => string.Equals(current.ExerciseCode, maximum.ExerciseCode, StringComparison.Ordinal));
+
+            if (existing is null)
+            {
+                _maximums.Add(maximum);
+            }
+            else
+            {
+                existing.SetRepetitions(maximum.Repetitions);
+            }
+        }
     }
 
     private static bool IsWithinRange(double value, double min, double max) =>
         double.IsFinite(value) && value >= min && value <= max;
+
+    private static bool IsWithinRange(int value, int min, int max) => value >= min && value <= max;
 }

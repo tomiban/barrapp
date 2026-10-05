@@ -3,6 +3,7 @@ using System;
 using Barrapp.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Barrapp.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261005190411_AddTrainingDaysToAthleteProfile")]
+    partial class AddTrainingDaysToAthleteProfile
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
@@ -67,27 +70,6 @@ namespace Barrapp.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.OwnsMany("Barrapp.Domain.Athlete.Maximum", "Maximums", b1 =>
-                        {
-                            b1.Property<Guid>("AthleteProfileId")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<string>("ExerciseCode")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<int>("Repetitions")
-                                .HasColumnType("INTEGER");
-
-                            b1.HasKey("AthleteProfileId", "ExerciseCode");
-
-                            b1.ToTable("Maximums", (string)null);
-
-                            b1.WithOwner()
-                                .HasForeignKey("AthleteProfileId");
-                        });
-
-                    b.Navigation("Maximums");
                 });
 #pragma warning restore 612, 618
         }
