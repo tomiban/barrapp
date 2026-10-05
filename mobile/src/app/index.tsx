@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getApiBaseUrl } from '@/api/client';
 import { fetchPing, type PingResponse } from '@/api/ping';
+import { DesignSystemPreview } from '@/components/DesignSystemPreview';
 import { borders, colors, radius, spacing, typography } from '@/theme/tokens';
 
 type PingState =
@@ -49,7 +50,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.eyebrow}>Barrapp · esqueleto caminante</Text>
         <Text style={styles.title}>Conexión con el API</Text>
 
@@ -83,7 +84,9 @@ export default function HomeScreen() {
         >
           <Text style={styles.buttonLabel}>Reintentar</Text>
         </Pressable>
-      </View>
+
+        <DesignSystemPreview />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -94,7 +97,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.canvas,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.lg,

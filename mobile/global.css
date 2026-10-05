@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+@import 'uniwind';
+
+/*
+ * Tokens del design system (docs/specs/0002-design-system.md).
+ *
+ * Set mínimo para la muestra del ticket #31 (dark-only, sin fuentes ni escala
+ * tipográfica). El set completo lo define #32; no añadir tokens aquí de más.
+ */
+@theme {
+    /* Color */
+    --color-canvas: #111214;
+    --color-surface: #1e2022;
+    --color-surface-muted: #26292c;
+    --color-border: #33373b;
+    --color-text: #e2e4e9;
+    --color-text-muted: #8a9099;
+    --color-primary: #ffcc00;
+    --color-on-primary: #111214;
+    --color-secondary: #0055ff;
+    --color-on-secondary: #ffffff;
+
+    /* Espaciado (dp) */
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+
+    /* Radios (dp) */
+    --radius-base: 4px;
+    --radius-md: 6px;
+}
