@@ -12,7 +12,7 @@
         { "order": 4, "name": "Pino libre con entrada", "exerciseId": "handstand-kick-up", "criterion": { "metric": "seconds", "target": 5, "sets": 5 }, "notes": "Entrada a pino sin pared; aún con apoyos puntuales." },
         { "order": 5, "name": "Pino libre", "exerciseId": "handstand-freestanding", "criterion": { "metric": "seconds", "target": 10, "sets": 3 }, "notes": "Mantener sin pared, respirando con calma." }
       ],
-      "supportRoutine": [
+      "patternRoutine": [
         { "exerciseId": "elevated-pike-push-up", "sets": 3, "repsMin": 5, "repsMax": 8, "restSeconds": 120 },
         { "exerciseId": "handstand-push-up", "sets": 3, "repsMin": 3, "repsMax": 5, "restSeconds": 150 },
         { "exerciseId": "handstand-shrug", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 },
@@ -30,7 +30,7 @@
         { "order": 4, "name": "Front lever con piernas abiertas", "exerciseId": "front-lever-straddle", "criterion": { "metric": "seconds", "target": 5, "sets": 3 }, "notes": "Piernas extendidas y separadas; cadera a la altura de los hombros." },
         { "order": 5, "name": "Front lever completo", "exerciseId": "front-lever-full", "criterion": { "metric": "seconds", "target": 5, "sets": 3 }, "notes": "Cuerpo horizontal y paralelo al suelo." }
       ],
-      "supportRoutine": [
+      "patternRoutine": [
         { "exerciseId": "front-lever-tuck-pull-up", "sets": 3, "repsMin": 4, "repsMax": 8, "holdSecondsMin": 5, "holdSecondsMax": 10, "restSeconds": 180, "notes": "Dominadas en tuck avanzado + hold al final de cada serie." },
         { "exerciseId": "front-lever-tuck-press", "sets": 3, "repsMin": 2, "repsMax": 5, "restSeconds": 120 },
         { "exerciseId": "front-lever-advanced-tuck", "sets": 3, "holdSecondsMin": 3, "holdSecondsMax": 5, "restSeconds": 150, "notes": "Mantener la posición de tuck avanzado." },
@@ -48,7 +48,7 @@
         { "order": 4, "name": "Planche con piernas abiertas", "exerciseId": "planche-straddle", "criterion": { "metric": "seconds", "target": 5, "sets": 3 }, "notes": "Piernas extendidas y separadas." },
         { "order": 5, "name": "Planche completa", "exerciseId": "planche-full", "criterion": { "metric": "seconds", "target": 3, "sets": 3 }, "notes": "Piernas juntas y paralelas al suelo." }
       ],
-      "supportRoutine": [
+      "patternRoutine": [
         { "exerciseId": "pseudo-planche-push-up", "sets": 3, "repsMin": 5, "repsMax": 8, "restSeconds": 120 },
         { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 15, "holdSecondsMax": 30, "restSeconds": 120 },
         { "exerciseId": "tuck-planche-push-up", "sets": 3, "repsMin": 3, "repsMax": 5, "restSeconds": 150 },
@@ -66,7 +66,7 @@
         { "order": 4, "name": "Pistol completa", "exerciseId": "pistol-full", "criterion": { "metric": "reps", "target": 3, "sets": 3 }, "notes": "Pierna libre extendida y sin apoyo." },
         { "order": 5, "name": "Pistol con pausa", "exerciseId": "pistol-paused", "criterion": { "metric": "reps", "target": 3, "sets": 3 }, "notes": "Pausa de 2 s abajo manteniendo el equilibrio." }
       ],
-      "supportRoutine": [
+      "patternRoutine": [
         { "exerciseId": "cossack-squat", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 },
         { "exerciseId": "shrimp-squat", "sets": 3, "repsMin": 4, "repsMax": 6, "restSeconds": 120 },
         { "exerciseId": "bulgarian-split-squat", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 },
