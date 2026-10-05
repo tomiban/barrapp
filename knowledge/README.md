@@ -49,6 +49,7 @@ Reglas:
       "id": "planche",
       "name": "Planche",
       "group": "push",            // patrón que entrena
+      "lever": true,              // skill apalancado → ajuste por palanca (ADR-0011)
       "stages": [
         {
           "order": 1,             // 4–6, consecutivo desde 1

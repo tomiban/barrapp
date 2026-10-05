@@ -5,6 +5,7 @@
       "id": "handstand",
       "name": "Pino",
       "group": "push",
+      "lever": false,
       "stages": [
         { "order": 1, "name": "Pino en pared", "exerciseId": "handstand-wall-support", "criterion": { "metric": "seconds", "target": 30, "sets": 3 }, "notes": "Pies apoyados en la pared, cuerpo alineado y hombros activos." },
         { "order": 2, "name": "Pino de espaldas a la pared", "exerciseId": "handstand-back-to-wall", "criterion": { "metric": "seconds", "target": 30, "sets": 3 }, "notes": "Sin apoyo de pies; los talones rozan la pared." },
@@ -31,6 +32,7 @@
       "id": "front-lever",
       "name": "Front lever",
       "group": "pull",
+      "lever": true,
       "stages": [
         { "order": 1, "name": "Front lever agrupado", "exerciseId": "front-lever-tuck", "criterion": { "metric": "seconds", "target": 15, "sets": 3 }, "notes": "Rodillas al pecho, espalda recta y escápulas activas." },
         { "order": 2, "name": "Front lever agrupado avanzado", "exerciseId": "front-lever-advanced-tuck", "criterion": { "metric": "seconds", "target": 10, "sets": 3 }, "notes": "Cadera abierta y rodillas fuera de la línea del torso." },
@@ -115,6 +117,7 @@
       "id": "planche",
       "name": "Planche",
       "group": "push",
+      "lever": true,
       "stages": [
         { "order": 1, "name": "Planche inclinada", "exerciseId": "planche-lean", "criterion": { "metric": "seconds", "target": 20, "sets": 3 }, "notes": "Inclinación con los hombros por delante de las manos." },
         { "order": 2, "name": "Planche agrupada", "exerciseId": "planche-tuck", "criterion": { "metric": "seconds", "target": 10, "sets": 3 }, "notes": "Rodillas al pecho y pies despegados." },
@@ -198,6 +201,7 @@
       "id": "pistol-squat",
       "name": "Pistol squat",
       "group": "leg",
+      "lever": false,
       "stages": [
         { "order": 1, "name": "Pistol al cajón", "exerciseId": "pistol-box", "criterion": { "metric": "reps", "target": 5, "sets": 3 }, "notes": "Bajar hasta un cajón alto, talón apoyado." },
         { "order": 2, "name": "Pistol asistida", "exerciseId": "pistol-assisted", "criterion": { "metric": "reps", "target": 5, "sets": 3 }, "notes": "Con apoyo ligero para controlar el descenso." },
