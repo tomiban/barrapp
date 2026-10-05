@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "skills": [
+    {
+      "id": "handstand",
+      "name": "Pino",
+      "group": "push",
+      "stages": [
+        { "order": 1, "name": "Pino en pared", "exerciseId": "handstand-wall-support", "criterion": { "metric": "seconds", "target": 30, "sets": 3 }, "notes": "Pies apoyados en la pared, cuerpo alineado y hombros activos." },
+        { "order": 2, "name": "Pino de espaldas a la pared", "exerciseId": "handstand-back-to-wall", "criterion": { "metric": "seconds", "target": 30, "sets": 3 }, "notes": "Sin apoyo de pies; los talones rozan la pared." },
+        { "order": 3, "name": "Pino de pecho a la pared", "exerciseId": "handstand-chest-to-wall", "criterion": { "metric": "seconds", "target": 45, "sets": 3 }, "notes": "Pecho a la pared, cuerpo en línea y mirada entre las manos." },
+        { "order": 4, "name": "Pino libre con entrada", "exerciseId": "handstand-kick-up", "criterion": { "metric": "seconds", "target": 5, "sets": 5 }, "notes": "Entrada a pino sin pared; aún con apoyos puntuales." },
+        { "order": 5, "name": "Pino libre", "exerciseId": "handstand-freestanding", "criterion": { "metric": "seconds", "target": 10, "sets": 3 }, "notes": "Mantener sin pared, respirando con calma." }
+      ],
+      "supportRoutine": [
+        { "exerciseId": "elevated-pike-push-up", "sets": 3, "repsMin": 5, "repsMax": 8, "restSeconds": 120 },
+        { "exerciseId": "handstand-push-up", "sets": 3, "repsMin": 3, "repsMax": 5, "restSeconds": 150 },
+        { "exerciseId": "handstand-shrug", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 },
+        { "exerciseId": "wall-walk", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 90, "notes": "Pasos." }
+      ]
+    },
+    {
+      "id": "front-lever",
+      "name": "Front lever",
+      "group": "pull",
+      "stages": [
+        { "order": 1, "name": "Front lever agrupado", "exerciseId": "front-lever-tuck", "criterion": { "metric": "seconds", "target": 15, "sets": 3 }, "notes": "Rodillas al pecho, espalda recta y escápulas activas." },
+        { "order": 2, "name": "Front lever agrupado avanzado", "exerciseId": "front-lever-advanced-tuck", "criterion": { "metric": "seconds", "target": 10, "sets": 3 }, "notes": "Cadera abierta y rodillas fuera de la línea del torso." },
+        { "order": 3, "name": "Front lever a una pierna", "exerciseId": "front-lever-one-leg", "criterion": { "metric": "seconds", "target": 8, "sets": 3 }, "notes": "Una pierna extendida y la otra recogida." },
+        { "order": 4, "name": "Front lever con piernas abiertas", "exerciseId": "front-lever-straddle", "criterion": { "metric": "seconds", "target": 5, "sets": 3 }, "notes": "Piernas extendidas y separadas; cadera a la altura de los hombros." },
+        { "order": 5, "name": "Front lever completo", "exerciseId": "front-lever-full", "criterion": { "metric": "seconds", "target": 5, "sets": 3 }, "notes": "Cuerpo horizontal y paralelo al suelo." }
+      ],
+      "supportRoutine": [
+        { "exerciseId": "front-lever-tuck-pull-up", "sets": 3, "repsMin": 4, "repsMax": 8, "holdSecondsMin": 5, "holdSecondsMax": 10, "restSeconds": 180, "notes": "Dominadas en tuck avanzado + hold al final de cada serie." },
+        { "exerciseId": "front-lever-tuck-press", "sets": 3, "repsMin": 2, "repsMax": 5, "restSeconds": 120 },
+        { "exerciseId": "front-lever-advanced-tuck", "sets": 3, "holdSecondsMin": 3, "holdSecondsMax": 5, "restSeconds": 150, "notes": "Mantener la posición de tuck avanzado." },
+        { "exerciseId": "explosive-pull-up", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "notes": "Bajo pecho." }
+      ]
+    },
+    {
+      "id": "planche",
+      "name": "Planche",
+      "group": "push",
+      "stages": [
+        { "order": 1, "name": "Planche inclinada", "exerciseId": "planche-lean", "criterion": { "metric": "seconds", "target": 20, "sets": 3 }, "notes": "Inclinación con los hombros por delante de las manos." },
+        { "order": 2, "name": "Planche agrupada", "exerciseId": "planche-tuck", "criterion": { "metric": "seconds", "target": 10, "sets": 3 }, "notes": "Rodillas al pecho y pies despegados." },
+        { "order": 3, "name": "Planche agrupada avanzada", "exerciseId": "planche-advanced-tuck", "criterion": { "metric": "seconds", "target": 8, "sets": 3 }, "notes": "Cadera abierta y espalda paralela al suelo." },
+        { "order": 4, "name": "Planche con piernas abiertas", "exerciseId": "planche-straddle", "criterion": { "metric": "seconds", "target": 5, "sets": 3 }, "notes": "Piernas extendidas y separadas." },
+        { "order": 5, "name": "Planche completa", "exerciseId": "planche-full", "criterion": { "metric": "seconds", "target": 3, "sets": 3 }, "notes": "Piernas juntas y paralelas al suelo." }
+      ],
+      "supportRoutine": [
+        { "exerciseId": "pseudo-planche-push-up", "sets": 3, "repsMin": 5, "repsMax": 8, "restSeconds": 120 },
+        { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 15, "holdSecondsMax": 30, "restSeconds": 120 },
+        { "exerciseId": "tuck-planche-push-up", "sets": 3, "repsMin": 3, "repsMax": 5, "restSeconds": 150 },
+        { "exerciseId": "planche-scapular", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 }
+      ]
+    },
+    {
+      "id": "pistol-squat",
+      "name": "Pistol squat",
+      "group": "leg",
+      "stages": [
+        { "order": 1, "name": "Pistol al cajón", "exerciseId": "pistol-box", "criterion": { "metric": "reps", "target": 5, "sets": 3 }, "notes": "Bajar hasta un cajón alto, talón apoyado." },
+        { "order": 2, "name": "Pistol asistida", "exerciseId": "pistol-assisted", "criterion": { "metric": "reps", "target": 5, "sets": 3 }, "notes": "Con apoyo ligero para controlar el descenso." },
+        { "order": 3, "name": "Pistol negativa", "exerciseId": "pistol-negative", "criterion": { "metric": "reps", "target": 4, "sets": 3 }, "notes": "Descenso controlado y subida con las dos piernas." },
+        { "order": 4, "name": "Pistol completa", "exerciseId": "pistol-full", "criterion": { "metric": "reps", "target": 3, "sets": 3 }, "notes": "Pierna libre extendida y sin apoyo." },
+        { "order": 5, "name": "Pistol con pausa", "exerciseId": "pistol-paused", "criterion": { "metric": "reps", "target": 3, "sets": 3 }, "notes": "Pausa de 2 s abajo manteniendo el equilibrio." }
+      ],
+      "supportRoutine": [
+        { "exerciseId": "cossack-squat", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 },
+        { "exerciseId": "shrimp-squat", "sets": 3, "repsMin": 4, "repsMax": 6, "restSeconds": 120 },
+        { "exerciseId": "bulgarian-split-squat", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 },
+        { "exerciseId": "calf-raise", "sets": 3, "repsMin": 12, "repsMax": 15, "restSeconds": 60 }
+      ]
+    }
+  ]
+}
