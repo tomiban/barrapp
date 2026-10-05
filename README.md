@@ -46,12 +46,15 @@ dev server de Expo y usa el puerto `5213`.
 
 ## Checks
 
+Lo mismo que corre la CI en cada PR:
+
 ```sh
-dotnet test barrapp.slnx
 dotnet format barrapp.slnx --verify-no-changes
+dotnet test barrapp.slnx
 
 cd mobile
 npm run typecheck
 npm run lint
 npm run format:check
+npm test
 ```
