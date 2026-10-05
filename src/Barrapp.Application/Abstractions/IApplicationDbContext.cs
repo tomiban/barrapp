@@ -1,5 +1,6 @@
 using Barrapp.Domain.Athlete;
 using Barrapp.Domain.Objectives;
+using Barrapp.Domain.SkillProgress;
 using Microsoft.EntityFrameworkCore;
 
 namespace Barrapp.Application.Abstractions;
@@ -17,4 +18,7 @@ public interface IApplicationDbContext
 
     /// <summary>Objetivos del mesociclo.</summary>
     DbSet<Objective> Objectives { get; }
+
+    /// <summary>Etapa actual del atleta por skill.</summary>
+    DbSet<AthleteSkillProgress> AthleteSkillProgresses { get; }
 }

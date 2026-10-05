@@ -50,6 +50,7 @@ app.MapPingEndpoints();
 app.MapAthleteProfileEndpoints();
 app.MapObjectiveEndpoints();
 app.MapCatalogEndpoints();
+app.MapSkillProgressEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();
