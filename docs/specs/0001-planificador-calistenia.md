@@ -52,9 +52,9 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 
 ## Implementation Decisions
 
-- **Front**: **app nativa iOS y Android** con **Expo / React Native + TypeScript y Expo Router**, builds vía EAS. La base de código es React Native puro (no `react-native-web`); la PWA queda fuera del MVP (ADR-0005). En español, unidades kg/cm.
+- **Front**: **app nativa iOS y Android** con **Expo / React Native + TypeScript y Expo Router**, builds vía EAS. La base de código es React Native puro (no `react-native-web`); la PWA queda fuera del MVP (ADR-0004). En español, unidades kg/cm.
 - **Backend**: .NET 10 Minimal API + EF Core + SQLite, dockerizado en local; PostgreSQL como ruta de escalado (ADR-0001).
-- **Capas**: Clean Architecture + CQRS en cinco proyectos —**Domain** (motor puro), **Application** (commands/queries, puertos, validadores, behaviors), **Infrastructure** (servicios externos), **Persistence** (EF/SQLite, repositorios, migraciones), **Api** (Minimal API fina)— (ADR-0006). Reglas permanentes en `docs/engineering-standards.md`.
+- **Capas**: Clean Architecture + CQRS en cinco proyectos —**Domain** (motor puro), **Application** (commands/queries, puertos, validadores, behaviors), **Infrastructure** (servicios externos), **Persistence** (EF/SQLite, repositorios, migraciones), **Api** (Minimal API fina)— (ADR-0005). Reglas permanentes en `docs/engineering-standards.md`.
 - **Patrones de la API**: endpoints finos por feature con extension methods `Map*Endpoints()` que inyectan `ISender`; **CQRS con MediatR** (`ICommand`/`IQuery` + handlers + `IPipelineBehavior`); **validación con FluentValidation** por command/query en Application, ejecutada por un `ValidationBehavior`; un `AddX()` por capa; **OpenAPI nativo**; **exception handler global**; **Result/Error** mapeado a códigos HTTP como Problem Details.
 - **Cross-cutting**: behaviors de MediatR (`AddOpenBehavior`) en orden logging → validación → (caché) → (transacción); transacción y caché son opt-in por marcador y usan puertos de Application (`IUnitOfWork`), nunca `DbContext` directo.
 - **Logging**: Serilog estructurado por capa —Domain no loguea (lanza domain events), Application vía `LoggingBehavior`, Infrastructure directo, Api vía request logging + exception handler global; correlation id; sin cuerpos por defecto.
@@ -64,7 +64,7 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
   - `GenerarSesionSuelta(perfil, objetivo, parámetros) → Sesión`
 - **Base de conocimiento**: datos versionados separados del código (archivos JSON/YAML o tablas sembradas): catálogo de ejercicios por patrón, escaleras de progresión de cada skill (4–6 etapas) con su criterio, plantillas de sesión y reglas de progresión.
 - **LLM**: solo como **capa posterior** que traduce/variar y que el motor valida (ADR-0002). Nada de IA en la v1.
-- **Offline-first**: la app mantiene **almacén local en el dispositivo** (SQLite vía `expo-sqlite`) con el plan cacheado y una **cola de sincronización** (*outbox*); los cambios suben al backend al recuperar la red. Sincronización **last-write-wins**, válida por ser mono-usuario. La **generación** de plan y de sesión suelta **requiere conexión**, porque el motor es server-side (ADR-0002, ADR-0004).
+- **Offline-first**: la app mantiene **almacén local en el dispositivo** (SQLite vía `expo-sqlite`) con el plan cacheado y una **cola de sincronización** (*outbox*); los cambios suben al backend al recuperar la red. Sincronización **last-write-wins**, válida por ser mono-usuario. La **generación** de plan y de sesión suelta **requiere conexión**, porque el motor es server-side (ADR-0002, ADR-0003).
 - **Modelo de registro**: `SessionLog` guarda, **por serie**, el valor real ejecutado —**reps** en fuerza o **segundos** en holds/skill— con la unidad derivada del tipo de ejercicio y **RIR/RPE real opcional**; editable y borrable. Alimenta el avance de etapa del skill y el ajuste de máximos del siguiente mesociclo.
 - **Vocabulario de dominio**: el de `GLOSSARY.md`.
 - **Modelo de datos** (todo con `UserId`; tabla `Users` con una fila única en el MVP, sin login): `User`, `AthleteProfile` (peso, altura), `Exercise`, `Maximum` (por ejercicio), `Skill`, `SkillStage` (escalera), `AthleteSkillProgress`, `Objective`, `Plan`/`Mesocycle`, `Microcycle` (semana), `Session`, `SessionItem` (ejercicio, series, reps, intensidad, patrón), `SessionLog` (por serie: reps o segundos reales, unidad, RIR/RPE real), `SessionSuelta` (parámetros + generada + registrada). El cliente replica en su almacén local el plan y los registros, más una cola de salida pendiente de sincronizar.
@@ -91,13 +91,13 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 ## Out of Scope
 
 - Generación por LLM y prompt en lenguaje natural (post-MVP; ADR-0002).
-- **Generación sin conexión** (motor en el cliente): la generación de plan y sesión suelta requiere red en el MVP (ADR-0004).
+- **Generación sin conexión** (motor en el cliente): la generación de plan y sesión suelta requiere red en el MVP (ADR-0003).
 - Auth/login y multi-usuario real (esquema preparado, funcionalidad pospuesta).
 - Nutrición, IMC y objetivos de pérdida de grasa.
 - Cardio y acondicionamiento metabólico.
 - Skills más allá de los cuatro iniciales y escaleras de más de 4–6 etapas.
 - Adaptación del plan en vivo dentro del mes.
-- PWA / versión web (la v1 es solo nativa; ADR-0005).
+- PWA / versión web (la v1 es solo nativa; ADR-0004).
 - PostgreSQL y despliegue en nube.
 - Material multimedia de ejercicios (vídeos/imágenes).
 
@@ -106,4 +106,4 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 - **Costura de test**: principal, la interfaz pública del motor; secundaria, la outbox del cliente.
 - **Tickets**: viven en el issue tracker (GitHub), issues #2–#30 en los milestones M1–M7.
 - **Repositorio**: https://github.com/tomiban/barrapp (privado).
-- **Decisiones registradas**: `docs/adr/0001-backend-dotnet-sqlite.md`, `docs/adr/0002-motor-determinista-llm-como-capa.md`, `docs/adr/0004-offline-first-sincronizacion.md`, `docs/adr/0005-nativo-ios-android-mvp.md`, `docs/adr/0006-clean-architecture-cqrs.md`.
+- **Decisiones registradas**: `docs/adr/0001-backend-dotnet-sqlite.md`, `docs/adr/0002-motor-determinista-llm-como-capa.md`, `docs/adr/0003-offline-first-sincronizacion.md`, `docs/adr/0004-nativo-ios-android-mvp.md`, `docs/adr/0005-clean-architecture-cqrs.md`.
