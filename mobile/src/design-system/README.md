@@ -38,11 +38,52 @@ Para prohibirla, añadir `--color-*: initial;` al inicio del `@theme`.
 - Profundidad por bordes y capas tonales (`canvas` → `surface` →
   `surface-muted`), **sin sombras**.
 
+### Primitivas
+
+`src/design-system/layout/` expone primitivas finas sobre `View`; el espaciado
+sale siempre de los tokens. Todas aceptan `className` y lo fusionan con `cn()`
+resolviendo conflictos (gana la clase del consumidor).
+
+| Primitiva  | API                                                                        | Clases que emite                                                              |
+| ---------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `Box`      | `ViewProps` + `className`                                                  | sólo fusiona `className`                                                      |
+| `Stack`    | `direction?: 'row' \| 'column'` (def. `column`), `gap?: xs…xl` (def. `md`) | `flex-row`/`flex-col` + `gap-<token>`                                         |
+| `Spacer`   | `size?: xs…xl` (si se omite, ocupa el espacio libre)                       | `flex-1` o `basis-<token> grow-0 shrink-0`                                    |
+| `Grid`     | `margin?: boolean` (def. `true`)                                           | `flex-row flex-wrap -mx-sm` + `px-margin`                                     |
+| `GridItem` | `span?: 1 \| 2 \| 3 \| 4` (def. `1`)                                       | `basis-1/4 \| basis-1/2 \| basis-3/4 \| basis-full` + `px-sm grow-0 shrink-0` |
+
+```tsx
+<Grid>
+  <GridItem span={2}>
+    <MetricCounter />
+  </GridItem>
+  <GridItem>
+    <StatusBadge />
+  </GridItem>
+  <GridItem>
+    <StatusBadge />
+  </GridItem>
+</Grid>
+```
+
+`Grid` reparte el `gutter` (16 dp) como padding de media separación (`sm`) en
+cada celda y se saca 8 dp por lado con `-mx-sm`, de modo que el `px-margin`
+deja el contenido a 20 dp del borde sin medir píxeles a mano. La caja de la
+retícula se ensancha 8 dp por lado: **no le pongas fondo**; el fondo va en las
+celdas (`GridItem`).
+
+`cn()` registra la escala de espaciado del design system en `tailwind-merge`,
+así que el `className` de un consumidor puede sobrescribir `gap-*`, `p-*`… de
+una primitiva.
+
 ## Estructura
 
 - `utils/` — infraestructura compartida (`cn()`).
+- `layout/` — primitivas de layout (`Box`, `Stack`, `Spacer`, `Grid`,
+  `GridItem`) con su `index.ts` local.
 - (próximos tickets) componentes base y de entrenamiento, cada uno en su propio
-  archivo/directorio; **sin barrel `index.ts`** para no colisionar entre tickets.
+  archivo/directorio con su barrel local; **sin barrel de `design-system/`**
+  para no colisionar entre tickets.
 
 Reglas: nada de colores, espaciado ni tipografía hardcodeados; todo sale de los
 tokens de `mobile/global.css`.
