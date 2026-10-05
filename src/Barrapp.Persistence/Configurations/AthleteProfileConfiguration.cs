@@ -24,6 +24,18 @@ internal sealed class AthleteProfileConfiguration : IEntityTypeConfiguration<Ath
 
         builder.HasIndex(profile => profile.UserId).IsUnique();
 
+        // Los máximos son parte del agregado: viven en su propia tabla, con una fila por
+        // ejercicio básico. La clave compuesta (perfil, código) garantiza un máximo por
+        // ejercicio sin repetir.
+        builder.OwnsMany(profile => profile.Maximums, maximums =>
+        {
+            maximums.ToTable("Maximums");
+            maximums.WithOwner().HasForeignKey("AthleteProfileId");
+            maximums.HasKey("AthleteProfileId", nameof(Maximum.ExerciseCode));
+            maximums.Property(maximum => maximum.ExerciseCode).IsRequired();
+            maximums.Property(maximum => maximum.Repetitions).IsRequired();
+        });
+
         builder.HasOne<User>()
             .WithMany()
             .HasForeignKey(profile => profile.UserId)

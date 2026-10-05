@@ -25,6 +25,13 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
         _dbContext.Database.Migrate();
     }
 
+    private static MaximumInput[] Maximums(int pushUp = 10, int pullUp = 0, int squat = 20) =>
+    [
+        new MaximumInput("push_up", pushUp),
+        new MaximumInput("pull_up", pullUp),
+        new MaximumInput("squat", squat),
+    ];
+
     [Fact]
     public async Task There_is_no_profile_before_one_is_saved()
     {
@@ -38,7 +45,7 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
     [Fact]
     public async Task A_new_profile_is_written_and_read_back_with_the_same_measurements()
     {
-        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4).Value;
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4, Maximums()).Value;
         _dbContext.AthleteProfiles.Add(profile);
         await _dbContext.SaveChangesAsync();
 
@@ -52,13 +59,43 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task Updating_a_profile_overwrites_the_stored_measurements()
+    public async Task A_new_profile_is_written_and_read_back_with_the_same_maximums()
     {
-        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4).Value;
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4, Maximums(pushUp: 12, pullUp: 3, squat: 20)).Value;
         _dbContext.AthleteProfiles.Add(profile);
         await _dbContext.SaveChangesAsync();
 
-        profile.Update(82, 181.5, 5);
+        var reloaded = await ReadProfileAsync();
+
+        Assert.NotNull(reloaded);
+        var maximums = reloaded!.Maximums.ToDictionary(maximum => maximum.ExerciseCode);
+        Assert.Equal(3, maximums.Count);
+        Assert.Equal(12, maximums["push_up"].Repetitions);
+        Assert.Equal(3, maximums["pull_up"].Repetitions);
+        Assert.Equal(20, maximums["squat"].Repetitions);
+    }
+
+    [Fact]
+    public async Task A_zero_maximum_round_trips_through_sqlite()
+    {
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4, Maximums(pushUp: 0)).Value;
+        _dbContext.AthleteProfiles.Add(profile);
+        await _dbContext.SaveChangesAsync();
+
+        var reloaded = await ReadProfileAsync();
+
+        Assert.NotNull(reloaded);
+        Assert.Equal(0, reloaded!.Maximums.Single(maximum => maximum.ExerciseCode == "push_up").Repetitions);
+    }
+
+    [Fact]
+    public async Task Updating_a_profile_overwrites_the_stored_measurements_and_maximums()
+    {
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4, Maximums()).Value;
+        _dbContext.AthleteProfiles.Add(profile);
+        await _dbContext.SaveChangesAsync();
+
+        profile.Update(82, 181.5, 5, Maximums(pushUp: 15, pullUp: 1, squat: 0));
         await _dbContext.SaveChangesAsync();
 
         var reloaded = await ReadProfileAsync();
@@ -67,6 +104,10 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
         Assert.Equal(82, reloaded!.WeightKilograms);
         Assert.Equal(181.5, reloaded.HeightCentimeters);
         Assert.Equal(5, reloaded.TrainingDays);
+        var maximums = reloaded.Maximums.ToDictionary(maximum => maximum.ExerciseCode);
+        Assert.Equal(15, maximums["push_up"].Repetitions);
+        Assert.Equal(1, maximums["pull_up"].Repetitions);
+        Assert.Equal(0, maximums["squat"].Repetitions);
     }
 
     private async Task<AthleteProfile?> ReadProfileAsync()

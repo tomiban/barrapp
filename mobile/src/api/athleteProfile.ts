@@ -1,10 +1,47 @@
 import { getApiBaseUrl } from '@/api/client';
 
-/** Perfil del atleta: peso en kg, altura en cm y días de entrenamiento por semana. */
+/** Patrón de movimiento de un ejercicio básico. */
+export type ExercisePattern = 'push' | 'pull' | 'legs';
+
+/** Ejercicio básico del perfil: código estable, nombre para la UI y patrón. */
+export type BasicExercise = {
+  code: string;
+  name: string;
+  pattern: ExercisePattern;
+};
+
+/**
+ * Los tres ejercicios básicos del MVP, espejo del catálogo del dominio (códigos en
+ * inglés, nombres y patrones en español). El catálogo completo llega más adelante.
+ */
+export const BASIC_EXERCISES: readonly BasicExercise[] = [
+  { code: 'push_up', name: 'Flexión', pattern: 'push' },
+  { code: 'pull_up', name: 'Dominada', pattern: 'pull' },
+  { code: 'squat', name: 'Sentadilla', pattern: 'legs' },
+];
+
+/** Patrones en el orden en que se agrupan los máximos en la UI. */
+export const EXERCISE_PATTERNS: readonly ExercisePattern[] = ['push', 'pull', 'legs'];
+
+/** Nombre para la UI de cada patrón. */
+export const EXERCISE_PATTERN_LABELS: Record<ExercisePattern, string> = {
+  push: 'Empuje',
+  pull: 'Tirón',
+  legs: 'Pierna',
+};
+
+/** Máximo del atleta en un ejercicio básico; 0 indica regresión. */
+export type Maximum = {
+  exerciseCode: string;
+  repetitions: number;
+};
+
+/** Perfil del atleta: peso en kg, altura en cm, días de entrenamiento y máximos. */
 export type AthleteProfile = {
   weightKilograms: number;
   heightCentimeters: number;
   trainingDays: number;
+  maximums: Maximum[];
 };
 
 /**
@@ -33,6 +70,21 @@ export type AthleteProfileMeasurements = {
   heightCentimeters: number | null;
   trainingDays: number | null;
   errors: AthleteProfileFieldErrors;
+};
+
+/** Borrador de un máximo: código del ejercicio y texto introducido. */
+export type MaximumDraft = {
+  exerciseCode: string;
+  value: string;
+};
+
+/** Mensajes de error de los máximos, por código de ejercicio. */
+export type MaximumFieldErrors = Record<string, string>;
+
+/** Resultado de validar los borradores de los máximos. */
+export type MaximumsValidation = {
+  maximums: Maximum[] | null;
+  errors: MaximumFieldErrors;
 };
 
 /** Convierte el texto de una medida en número; `null` si no es un número válido. */
@@ -122,6 +174,44 @@ export function validateAthleteProfileMeasurements(
     weightKilograms: weightResult.value,
     heightCentimeters: heightResult.value,
     trainingDays: trainingDaysResult.value,
+    errors,
+  };
+}
+
+/**
+ * Valida los borradores de los máximos. Son repeticiones enteras (nada de decimales ni
+ * comas): 0 es válido e indica regresión. Exige un borrador por cada ejercicio básico y
+ * devuelve los máximos numéricos, o `null` junto con un mensaje claro por ejercicio.
+ */
+export function validateMaximumDrafts(drafts: readonly MaximumDraft[]): MaximumsValidation {
+  const errors: MaximumFieldErrors = {};
+  const maximums: Maximum[] = [];
+
+  for (const exercise of BASIC_EXERCISES) {
+    const draft = drafts.find((candidate) => candidate.exerciseCode === exercise.code);
+    const value = draft?.value.trim() ?? '';
+
+    if (value === '') {
+      errors[exercise.code] = 'Introduce las repeticiones.';
+      continue;
+    }
+
+    if (!/^-?\d+$/.test(value)) {
+      errors[exercise.code] = 'Introduce un número entero de repeticiones.';
+      continue;
+    }
+
+    const repetitions = Number(value);
+    if (repetitions < 0) {
+      errors[exercise.code] = 'El máximo no puede ser negativo.';
+      continue;
+    }
+
+    maximums.push({ exerciseCode: exercise.code, repetitions });
+  }
+
+  return {
+    maximums: Object.keys(errors).length === 0 ? maximums : null,
     errors,
   };
 }

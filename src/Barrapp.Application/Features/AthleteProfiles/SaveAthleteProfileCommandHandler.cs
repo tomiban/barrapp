@@ -26,7 +26,8 @@ internal sealed class SaveAthleteProfileCommandHandler(
                 SingleUser.Id,
                 request.WeightKilograms,
                 request.HeightCentimeters,
-                request.TrainingDays);
+                request.TrainingDays,
+                request.Maximums);
 
             if (creation.IsFailure)
             {
@@ -41,7 +42,8 @@ internal sealed class SaveAthleteProfileCommandHandler(
             var update = profile.Update(
                 request.WeightKilograms,
                 request.HeightCentimeters,
-                request.TrainingDays);
+                request.TrainingDays,
+                request.Maximums);
             if (update.IsFailure)
             {
                 return Result.Failure<AthleteProfileResponse>(update.Error);
@@ -53,6 +55,10 @@ internal sealed class SaveAthleteProfileCommandHandler(
         return new AthleteProfileResponse(
             profile.WeightKilograms,
             profile.HeightCentimeters,
-            profile.TrainingDays);
+            profile.TrainingDays,
+            profile.Maximums
+                .OrderBy(maximum => maximum.ExerciseCode, StringComparer.Ordinal)
+                .Select(maximum => new MaximumResponse(maximum.ExerciseCode, maximum.Repetitions))
+                .ToList());
     }
 }
