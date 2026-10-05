@@ -4,7 +4,7 @@ Prácticas permanentes de validación, seguridad, datos, rendimiento y resilienc
 
 ## Aplican siempre (API .NET)
 
-- **Validá toda entrada.** Cada command/query tiene su **validador de FluentValidation** en Application, que corre en un **decorador** sobre el handler; el API traduce el fallo a Problem Details. Nunca confíes en el cliente.
+- **Validá toda entrada.** Cada command/query tiene su **validador de FluentValidation** en Application; un **`ValidationBehavior`** del pipeline de MediatR lo ejecuta y corta antes del handler. El API traduce el fallo a Problem Details. Nunca confíes en el cliente.
 - **No concatenes SQL.** Cero SQL armado con strings; EF Core parametriza. El SQL crudo solo como consulta parametrizada.
 - **Sacá los secretos del repo.** Claves y cadenas de conexión por variables de entorno o *user-secrets*; `.env` en `.gitignore`; el repo solo lleva `.env.example`.
 - **Transacciones donde haya más de una escritura.** Una operación que escribe en más de un sitio va dentro de una transacción.
@@ -18,7 +18,10 @@ Prácticas permanentes de validación, seguridad, datos, rendimiento y resilienc
 
 ## Límites de capas (Clean Architecture)
 
-- La **validación** y demás cross-cutting van en **decoradores** sobre los handlers, no dentro de ellos.
+- La **validación** y demás cross-cutting van en **behaviors del pipeline de MediatR**, no dentro de los handlers.
+- Orden de behaviors de fuera hacia dentro: **logging → validación → (caché) → (transacción)**; el logging es el más externo y la validación va antes de la caché.
+- La transacción pasa por el puerto **`IUnitOfWork`**, no por `DbContext`.
+- Los handlers son `IRequestHandler` de **MediatR**; los endpoints inyectan `ISender`.
 - **Application** no referencia EF Core ni ASP.NET Core; solo Domain y paquetes de abstracciones.
 - **Commands** pasan por el dominio; **queries** proyectan directo a DTO.
 - Los handlers leen como **tabla de contenidos** (cargar → actuar → guardar); la regla vive en Domain.

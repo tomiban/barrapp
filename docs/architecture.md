@@ -11,9 +11,9 @@ Backend .NET con **Clean Architecture + CQRS**: el dominio (el motor de generaci
 ```
 
 - **Domain** (puro): entidades y las reglas de programación — el **motor de generación**. Sin E/S, sin EF, sin HTTP, sin dependencias externas. Es el único lugar con lógica de programación y la **costura de test principal**.
-- **Application** (casos de uso, **CQRS**): *commands* y *queries* con sus handlers, **DTOs**, **puertos** (interfaces de repositorio/servicios) y **validadores**. Devuelve **Result/Error**, no HTTP. Organizada **por feature** (Screaming Architecture).
+- **Application** (casos de uso, **CQRS con MediatR**): *commands* y *queries* con sus handlers (`IRequestHandler`), **DTOs**, **puertos** (interfaces de repositorio/servicios), **validadores** y **behaviors**. Devuelve **Result/Error**, no HTTP. Organizada **por feature** (Screaming Architecture).
 - **Infrastructure**: EF Core + SQLite, repositorios, migraciones y la **carga de la base de conocimiento** (datos versionados). Implementa los puertos que declara Application.
-- **Api** (adaptador, Minimal API): **endpoints finos** que traducen HTTP → command/query y el resultado → respuesta; errores como **Problem Details** (400/404/409/429…).
+- **Api** (adaptador, Minimal API): **endpoints finos** que inyectan `ISender`, traducen HTTP → command/query y el resultado → respuesta; errores como **Problem Details** (400/404/409/429…).
 
 ## Handlers finos y CQRS
 
@@ -21,10 +21,12 @@ Backend .NET con **Clean Architecture + CQRS**: el dominio (el motor de generaci
 - **Commands** pasan por el modelo de dominio (repositorios + UnitOfWork). **Queries** saltan el dominio y proyectan **directamente a DTO** (vía `IApplicationDbContext`).
 - Los **puertos** (interfaces de repositorio/servicios) se declaran en **Application**.
 
-## Cross-cutting
+## Cross-cutting (pipeline de MediatR)
 
-- Validación, logging y caché van como **decoradores** sobre los handlers (Scrutor `Decorate`), nunca dentro del handler.
-- Validación con **FluentValidation**: cada command/query tiene su validador a su lado.
+- Los cross-cutting van como **`IPipelineBehavior`** de MediatR (`AddOpenBehavior`), nunca dentro del handler.
+- Orden de fuera hacia dentro: **logging → validación → (caché) → (transacción) → handler**. El logging es el más externo; la validación va antes de la caché.
+- Validación con **FluentValidation**: cada command/query tiene su validador a su lado; un `ValidationBehavior` corta el pipeline si falla.
+- Transacción y caché son **opt-in** por marcador (`ITransactional`, `ICacheable`) y usan **puertos de Application** (`IUnitOfWork`, caché), **nunca** `DbContext` directo.
 
 ## Interfaz de dominio (la costura)
 
@@ -48,7 +50,7 @@ Catálogo de ejercicios, escaleras de progresión y reglas viven como **datos ve
 ## Reglas de dependencia (invariantes)
 
 - **Domain no depende de nadie.**
-- **Application** depende de Domain y de paquetes de **abstracciones** (p. ej. contratos de FluentValidation); **nunca** de EF Core ni ASP.NET Core.
+- **Application** depende de Domain y de paquetes de **abstracciones** (contratos de MediatR y FluentValidation); **nunca** de EF Core ni ASP.NET Core.
 - **Infrastructure** implementa los puertos de Application; **Api** es el composition root.
 - **Nada depende de Api.**
 - La **lógica de programación solo vive en Domain.**
