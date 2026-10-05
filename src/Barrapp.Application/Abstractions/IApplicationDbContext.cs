@@ -1,4 +1,5 @@
 using Barrapp.Domain.Athlete;
+using Barrapp.Domain.Objectives;
 using Microsoft.EntityFrameworkCore;
 
 namespace Barrapp.Application.Abstractions;
@@ -13,4 +14,7 @@ public interface IApplicationDbContext
 {
     /// <summary>Perfiles de atleta.</summary>
     DbSet<AthleteProfile> AthleteProfiles { get; }
+
+    /// <summary>Objetivos del mesociclo.</summary>
+    DbSet<Objective> Objectives { get; }
 }

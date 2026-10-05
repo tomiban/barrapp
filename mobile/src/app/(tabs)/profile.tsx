@@ -22,6 +22,7 @@ import { Header, Screen } from '@/design-system/Navigation';
 import { StatusBadge } from '@/design-system/StatusBadge';
 import { Text } from '@/design-system/Text';
 import { TextField } from '@/design-system/TextField';
+import { ObjectiveSection } from '@/features/profile/ObjectiveSection';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
@@ -291,6 +292,8 @@ export default function ProfileScreen() {
                 </Text>
               )}
             </Box>
+
+            {persisted ? <ObjectiveSection /> : null}
           </>
         ) : null}
       </Stack>

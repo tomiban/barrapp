@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connectionString));
 
         services.AddScoped<IAthleteProfileRepository, AthleteProfileRepository>();
+        services.AddScoped<IObjectiveRepository, ObjectiveRepository>();
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IUnitOfWork>(provider =>
