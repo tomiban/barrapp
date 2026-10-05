@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react-native';
 
+import type { SemanticRole } from '../semantic';
 import { MetricCounter } from './MetricCounter';
 
 /*
@@ -8,16 +9,17 @@ import { MetricCounter } from './MetricCounter';
  * tomar el readout y los tokens que les corresponden. No se importa el mapa del
  * componente para no validar el código contra sí mismo.
  *
- * `neutral` es el rol por defecto: el dato principal se pinta con `text` (no es
- * un estado, así que no lleva acento).
+ * Sin rol, el readout usa el token neutro `text` (no es un estado, así que no
+ * lleva acento).
  */
-const TONE_CLASS = {
-  neutral: 'text-text',
+const ROLE_CLASS: Record<SemanticRole, string> = {
   active: 'text-primary',
   confirmed: 'text-secondary',
   error: 'text-error',
   inactive: 'text-text-muted',
-} as const;
+};
+
+const NEUTRAL_CLASS = 'text-text';
 
 /**
  * MetricCounter (ticket #40): celda modular con micro-label, índice, readout
@@ -79,15 +81,15 @@ describe('MetricCounter', () => {
     );
   });
 
-  it.each(Object.entries(TONE_CLASS))(
+  it.each(Object.entries(ROLE_CLASS))(
     'el rol semántico %s pinta el readout con su token',
-    async (tone, expectedClass) => {
+    async (role, expectedClass) => {
       await render(
         <MetricCounter
           label="Carga"
           value={80}
           unit="%"
-          tone={tone as keyof typeof TONE_CLASS}
+          role={role as SemanticRole}
           testID="metric"
         />,
       );
@@ -104,7 +106,7 @@ describe('MetricCounter', () => {
 
     expect(screen.getByTestId('metric-value')).toHaveProp(
       'className',
-      expect.stringContaining(TONE_CLASS.neutral),
+      expect.stringContaining(NEUTRAL_CLASS),
     );
   });
 

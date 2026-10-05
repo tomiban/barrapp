@@ -1,1 +1,1 @@
-export { MetricCounter, type MetricCounterProps, type MetricTone } from './MetricCounter';
+export { MetricCounter, type MetricCounterProps } from './MetricCounter';

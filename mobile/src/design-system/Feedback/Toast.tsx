@@ -1,22 +1,16 @@
 import { Pressable, View } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 
+import { Icon, X } from '@/design-system/Icon';
 import {
-  Activity,
-  CircleAlert,
-  CircleCheck,
-  Icon,
-  Info,
-  X,
-  type LucideIcon,
-} from '@/design-system/Icon';
+  ROLE_BORDER_CLASS,
+  ROLE_COLOR_VARIABLE,
+  type SemanticRole,
+} from '@/design-system/semantic';
 import { Text } from '@/design-system/Text';
 import { cn } from '@/design-system/utils/cn';
 
-import type { BannerTone } from './Banner';
-
-/** Rol semántico de estado del aviso transitorio; mismos roles que `Banner`. */
-export type ToastTone = BannerTone;
+import { ROLE_ICON } from './roleIcon';
 
 /** Props públicas de `Toast`. */
 export type ToastProps = {
@@ -26,41 +20,14 @@ export type ToastProps = {
   visible?: boolean;
   /** Se invoca al pulsar el botón de descarte. */
   onDismiss?: () => void;
-  /** Rol semántico de estado. Default `info`. */
-  tone?: ToastTone;
+  /** Rol semántico de estado. Default `active`. */
+  role?: SemanticRole;
   /** Etiqueta accesible del botón de descarte. Default `Cerrar aviso`. */
   dismissLabel?: string;
   /** Clases del contenedor; se combinan con `cn()` para permitir sobrescritura. */
   className?: string;
   /** `testID` del contenedor; el descarte deriva `<testID>-dismiss`. */
   testID?: string;
-};
-
-/**
- * Clases del borde por rol semántico. El token también aparece aquí para que el
- * build lo incluya: `useCSSVariable` solo resuelve variables usadas en clases.
- */
-const toneBorderClass: Record<ToastTone, string> = {
-  info: 'border-secondary',
-  active: 'border-primary',
-  confirmed: 'border-secondary',
-  error: 'border-error',
-};
-
-/** Variable CSS del color del icono por rol. */
-const toneVariable: Record<ToastTone, string> = {
-  info: '--color-secondary',
-  active: '--color-primary',
-  confirmed: '--color-secondary',
-  error: '--color-error',
-};
-
-/** Icono por defecto de cada rol semántico. */
-const toneIcon: Record<ToastTone, LucideIcon> = {
-  info: Info,
-  active: Activity,
-  confirmed: CircleCheck,
-  error: CircleAlert,
 };
 
 /**
@@ -75,12 +42,12 @@ export function Toast({
   message,
   visible = false,
   onDismiss,
-  tone = 'info',
+  role = 'active',
   dismissLabel = 'Cerrar aviso',
   className,
   testID,
 }: ToastProps) {
-  const tokenColor = useCSSVariable(toneVariable[tone]);
+  const tokenColor = useCSSVariable(ROLE_COLOR_VARIABLE[role]);
   const color = typeof tokenColor === 'string' ? tokenColor : undefined;
   const mutedColor = useCSSVariable('--color-text-muted');
   const dismissColor = typeof mutedColor === 'string' ? mutedColor : undefined;
@@ -89,13 +56,13 @@ export function Toast({
     return null;
   }
 
-  const IconComponent = toneIcon[tone];
+  const IconComponent = ROLE_ICON[role];
 
   return (
     <View
       className={cn(
         'flex-row items-start gap-sm rounded-md border bg-surface p-md',
-        toneBorderClass[tone],
+        ROLE_BORDER_CLASS[role],
         className,
       )}
       testID={testID}

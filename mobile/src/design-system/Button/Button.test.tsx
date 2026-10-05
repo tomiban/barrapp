@@ -25,24 +25,36 @@ describe('Button', () => {
     await render(<Button testID="button">Empezar</Button>);
 
     expect(surface().props.className).toContain('bg-primary');
-    expect(surface().props.className).toContain('h-14');
+    expect(surface().props.className).toContain('h-control-primary');
   });
 
   const contract: { variant: ButtonVariant; present: string[]; absent: string[] }[] = [
     {
       variant: 'primary',
-      present: ['bg-primary', 'h-14', 'rounded-sm', 'border-active', 'border-primary'],
-      absent: ['h-12', 'shadow'],
+      present: ['bg-primary', 'h-control-primary', 'rounded-sm', 'border-active', 'border-primary'],
+      absent: ['h-control-secondary', 'shadow'],
     },
     {
       variant: 'secondary',
-      present: ['bg-secondary', 'h-12', 'rounded-sm'],
-      absent: ['h-14', 'border-active', 'shadow'],
+      present: [
+        'bg-secondary',
+        'h-control-secondary',
+        'rounded-sm',
+        'border-active',
+        'border-secondary',
+      ],
+      absent: ['h-control-primary', 'shadow'],
     },
     {
       variant: 'tertiary',
-      present: ['bg-surface', 'h-12', 'rounded-sm', 'border-active', 'border-border'],
-      absent: ['h-14', 'shadow'],
+      present: [
+        'bg-surface',
+        'h-control-secondary',
+        'rounded-sm',
+        'border-active',
+        'border-border',
+      ],
+      absent: ['h-control-primary', 'shadow'],
     },
   ];
 

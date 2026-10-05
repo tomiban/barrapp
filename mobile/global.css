@@ -43,6 +43,16 @@
     --spacing-gutter: 16px;
     --spacing-margin: 20px;
 
+    /* ---- Tamaños físicos (dp) ----
+     * Los tamaños que no caen en la escala base (alturas táctiles y lados de
+     * controles) también son tokens: `h-control-primary` (56 dp),
+     * `h-control-secondary`/`min-h-control-secondary` (48 dp),
+     * `h-checkbox w-checkbox` (20 dp) y `h-radio-dot w-radio-dot` (10 dp). */
+    --spacing-control-primary: 56px;
+    --spacing-control-secondary: 48px;
+    --spacing-checkbox: 20px;
+    --spacing-radio-dot: 10px;
+
     /* ---- Radios (dp); prohibidas las pills ---- */
     --radius-sm: 2px;
     --radius-base: 4px;

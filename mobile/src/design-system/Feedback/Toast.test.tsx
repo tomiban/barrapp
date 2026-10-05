@@ -38,22 +38,28 @@ describe('Toast', () => {
     expect(getByLabelText('Cerrar aviso')).toBeOnTheScreen();
   });
 
-  it('maps each tone to its border token', async () => {
+  it('maps each role to its border token', async () => {
     const cases = [
-      ['info', 'border-secondary'],
       ['active', 'border-primary'],
       ['confirmed', 'border-secondary'],
       ['error', 'border-error'],
+      ['inactive', 'border-border'],
     ] as const;
 
-    for (const [tone, expectedClass] of cases) {
+    for (const [role, expectedClass] of cases) {
       const { getByTestId, unmount } = await render(
-        <Toast message="aviso" visible tone={tone} testID="toast" />,
+        <Toast message="aviso" visible role={role} testID="toast" />,
       );
 
       expect(getByTestId('toast').props.className).toContain(expectedClass);
 
       await unmount();
     }
+  });
+
+  it('usa el rol active por defecto', async () => {
+    const { getByTestId } = await render(<Toast message="aviso" visible testID="toast" />);
+
+    expect(getByTestId('toast').props.className).toContain('border-primary');
   });
 });

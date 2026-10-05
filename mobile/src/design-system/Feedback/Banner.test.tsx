@@ -17,23 +17,29 @@ describe('Banner', () => {
     expect(banner.props.accessibilityRole).toBe('text');
   });
 
-  it('maps each tone to its border token', async () => {
+  it('maps each role to its border token', async () => {
     const cases = [
-      ['info', 'border-secondary'],
       ['active', 'border-primary'],
       ['confirmed', 'border-secondary'],
       ['error', 'border-error'],
+      ['inactive', 'border-border'],
     ] as const;
 
-    for (const [tone, expectedClass] of cases) {
+    for (const [role, expectedClass] of cases) {
       const { getByTestId, unmount } = await render(
-        <Banner message="aviso" tone={tone} testID="banner" />,
+        <Banner message="aviso" role={role} testID="banner" />,
       );
 
       expect(getByTestId('banner').props.className).toContain(expectedClass);
 
       await unmount();
     }
+  });
+
+  it('usa el rol active por defecto', async () => {
+    const { getByTestId } = await render(<Banner message="aviso" testID="banner" />);
+
+    expect(getByTestId('banner').props.className).toContain('border-primary');
   });
 
   it('renders a tone icon', async () => {

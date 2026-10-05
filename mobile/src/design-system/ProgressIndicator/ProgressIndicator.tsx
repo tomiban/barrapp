@@ -1,17 +1,10 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useCSSVariable } from 'uniwind';
 
+import { ROLE_BG_CLASS, ROLE_COLOR_VARIABLE, type SemanticRole } from '@/design-system/semantic';
+import { Text } from '../Text';
 import { cn } from '../utils/cn';
-
-/**
- * Rol semántico de estado (spec 0002): define el color, nunca al revés.
- *
- * `active` → `primary` (activo/en curso) · `confirmed` → `secondary`
- * (calibrado/confirmado) · `error` → `error` (sobrecarga/fallo) ·
- * `inactive` → `textMuted` (inactivo).
- */
-export type ProgressTone = 'active' | 'confirmed' | 'error' | 'inactive';
 
 /** Forma del indicador: barra (sets, sesiones) o anillo (progreso del mesociclo). */
 export type ProgressVariant = 'bar' | 'ring';
@@ -23,7 +16,7 @@ export type ProgressIndicatorProps = {
   /** Total de la escala. Default 1, de modo que `value` es una fracción `0..1`. */
   max?: number;
   /** Rol semántico de estado. Default `active` (`primary`). */
-  tone?: ProgressTone;
+  role?: SemanticRole;
   /** Etiqueta textual; obligatoria para no comunicar el estado solo por color. */
   label?: string;
   /** Forma del indicador. Default `bar`. */
@@ -36,29 +29,29 @@ export type ProgressIndicatorProps = {
   testID?: string;
 };
 
-/** Clases del relleno de la barra por rol semántico (contrato que consume el build). */
-const toneFillClass: Record<ProgressTone, string> = {
-  active: 'bg-primary',
-  confirmed: 'bg-secondary',
-  error: 'bg-error',
-  inactive: 'bg-text-muted',
-};
-
 /**
- * Variables CSS por rol para la variante anillo. `react-native-svg` colorea por
- * la prop `stroke`, no por `className`, así que el token se resuelve en JS.
- * Cada variable aparece además en `toneFillClass`, de modo que el build la
- * incluye y `useCSSVariable` puede resolverla.
+ * Grosor del anillo en dp cuando el token `--spacing-sm` no se puede resolver
+ * (p. ej. en Jest, sin Metro). En runtime el grosor se lee del token, que es la
+ * misma altura que la barra (`h-sm`); este valor sólo es la red de seguridad.
  */
-const toneVariable: Record<ProgressTone, string> = {
-  active: '--color-primary',
-  confirmed: '--color-secondary',
-  error: '--color-error',
-  inactive: '--color-text-muted',
-};
+const RING_STROKE_FALLBACK = 8;
 
-/** Grosor del anillo en dp; espeja la altura de la barra (`h-sm`, 8 dp). */
-const RING_STROKE_WIDTH = 8;
+/** Lee `--spacing-sm` (dp) para que el anillo comparta el grosor de la barra. */
+function useRingStrokeWidth(): number {
+  const token = useCSSVariable('--spacing-sm');
+
+  if (typeof token === 'number' && Number.isFinite(token)) {
+    return token;
+  }
+  if (typeof token === 'string') {
+    const parsed = Number.parseFloat(token);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return RING_STROKE_FALLBACK;
+}
 
 type NormalizedProgress = {
   ratio: number;
@@ -77,7 +70,7 @@ function normalize(value: number, max: number): NormalizedProgress {
 
 type RingProps = {
   ratio: number;
-  tone: ProgressTone;
+  role: SemanticRole;
   size: number;
   accessibilityValue: { min: number; max: number; now: number };
   accessibilityLabel?: string;
@@ -85,13 +78,13 @@ type RingProps = {
 };
 
 /** Anillo de progreso con `react-native-svg`; color resuelto desde tokens. */
-function Ring({ ratio, tone, size, accessibilityValue, accessibilityLabel, testID }: RingProps) {
-  const strokeWidth = RING_STROKE_WIDTH;
+function Ring({ ratio, role, size, accessibilityValue, accessibilityLabel, testID }: RingProps) {
+  const strokeWidth = useRingStrokeWidth();
   const radius = Math.max((size - strokeWidth) / 2, 0);
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - ratio);
-  const colors = useCSSVariable([toneVariable[tone], '--color-surface-muted']);
-  const toneColor = typeof colors[0] === 'string' ? colors[0] : undefined;
+  const colors = useCSSVariable([ROLE_COLOR_VARIABLE[role], '--color-surface-muted']);
+  const roleColor = typeof colors[0] === 'string' ? colors[0] : undefined;
   const trackColor = typeof colors[1] === 'string' ? colors[1] : undefined;
 
   return (
@@ -116,7 +109,7 @@ function Ring({ ratio, tone, size, accessibilityValue, accessibilityLabel, testI
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={toneColor}
+          stroke={roleColor}
           strokeWidth={strokeWidth}
           strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={dashOffset}
@@ -132,12 +125,13 @@ function Ring({ ratio, tone, size, accessibilityValue, accessibilityLabel, testI
  *
  * Barra o anillo que muestra `value`/`max` con los tokens de color del DS.
  * Profundidad por capas tonales y bordes, **sin sombras**. El estado se
- * comunica con color **y** etiqueta textual cuando se provee.
+ * comunica con uno de los cuatro roles semánticos de `semantic.ts` y **etiqueta
+ * textual** cuando se provee; nunca solo por color.
  */
 export function ProgressIndicator({
   value,
   max = 1,
-  tone = 'active',
+  role = 'active',
   label,
   variant = 'bar',
   size = 64,
@@ -155,7 +149,7 @@ export function ProgressIndicator({
       {variant === 'ring' ? (
         <Ring
           ratio={ratio}
-          tone={tone}
+          role={role}
           size={size}
           accessibilityValue={accessibilityValue}
           accessibilityLabel={label}
@@ -171,7 +165,7 @@ export function ProgressIndicator({
         >
           <View
             testID={testID ? `${testID}-fill` : undefined}
-            className={cn('h-full rounded-sm', toneFillClass[tone])}
+            className={cn('h-full rounded-sm', ROLE_BG_CLASS[role])}
             style={{ width: `${ratio * 100}%` }}
           />
         </View>

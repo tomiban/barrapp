@@ -82,9 +82,9 @@ describe('BiomechanicalCard', () => {
     ['confirmed', 'bg-secondary'],
     ['error', 'bg-error'],
     ['inactive', 'bg-text-muted'],
-  ] as const)('colorea el status notch con el rol %s', async (status, expectedClass) => {
+  ] as const)('colorea el status notch con el rol %s', async (role, expectedClass) => {
     await render(
-      <BiomechanicalCard title="Bloque" status={status} testID="card">
+      <BiomechanicalCard title="Bloque" role={role} testID="card">
         <Text>contenido</Text>
       </BiomechanicalCard>,
     );
@@ -95,7 +95,7 @@ describe('BiomechanicalCard', () => {
     );
   });
 
-  it('no añade el notch cuando no hay status', async () => {
+  it('no añade el notch cuando no hay rol', async () => {
     await render(
       <BiomechanicalCard title="Bloque" testID="card">
         <Text>contenido</Text>
@@ -107,7 +107,7 @@ describe('BiomechanicalCard', () => {
 
   it('muestra la etiqueta textual del estado, no solo el color', async () => {
     await render(
-      <BiomechanicalCard title="Bloque" status="error" statusLabel="FALLO" testID="card">
+      <BiomechanicalCard title="Bloque" role="error" statusLabel="FALLO" testID="card">
         <Text>contenido</Text>
       </BiomechanicalCard>,
     );
@@ -115,9 +115,29 @@ describe('BiomechanicalCard', () => {
     expect(screen.getByText('FALLO')).toBeOnTheScreen();
   });
 
+  it('sin statusLabel cae a la etiqueta por defecto del rol', async () => {
+    await render(
+      <BiomechanicalCard title="Bloque" role="confirmed" testID="card">
+        <Text>contenido</Text>
+      </BiomechanicalCard>,
+    );
+
+    expect(screen.getByText('Confirmado')).toBeOnTheScreen();
+  });
+
+  it('ignora una statusLabel en blanco y usa la del rol', async () => {
+    await render(
+      <BiomechanicalCard title="Bloque" role="inactive" statusLabel="   " testID="card">
+        <Text>contenido</Text>
+      </BiomechanicalCard>,
+    );
+
+    expect(screen.getByText('Inactivo')).toBeOnTheScreen();
+  });
+
   it('no usa sombras: la profundidad sale de bordes y capas tonales', async () => {
     await render(
-      <BiomechanicalCard title="Bloque" status="active" testID="card">
+      <BiomechanicalCard title="Bloque" role="active" testID="card">
         <Text>contenido</Text>
       </BiomechanicalCard>,
     );

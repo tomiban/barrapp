@@ -32,11 +32,11 @@ export type ButtonProps = PressableProps & {
  */
 const BASE = 'flex-row items-center justify-center gap-sm rounded-sm px-lg';
 
-/** Tamaños táctiles de la spec (dp): primary 14 × 4 = 56, secondary/tertiary 12 × 4 = 48. */
+/** Tamaños táctiles de la spec (dp): primary 56, secondary/tertiary 48. */
 const HEIGHT: Record<ButtonVariant, string> = {
-  primary: 'h-14',
-  secondary: 'h-12',
-  tertiary: 'h-12',
+  primary: 'h-control-primary',
+  secondary: 'h-control-secondary',
+  tertiary: 'h-control-secondary',
 };
 
 /** Relleno en reposo. */
@@ -68,7 +68,9 @@ const PRESSED_LABEL: Record<ButtonVariant, string> = {
 };
 
 /**
- * Borde de 1.5 dp (`border-active`) donde aplica, con el color de la variante.
+ * Borde de 1.5 dp (`border-active`) en las tres variantes (spec #35), con el
+ * color de cada una: `primary` en primario, `secondary` en secundario y
+ * `border` en terciario.
  *
  * Se concatena **fuera** de `cn()`: `tailwind-merge` clasifica el utility propio
  * `border-active` como color de borde y lo descartaría al fusionarlo con un
@@ -76,7 +78,7 @@ const PRESSED_LABEL: Record<ButtonVariant, string> = {
  */
 const BORDER: Record<ButtonVariant, string> = {
   primary: 'border-active border-primary',
-  secondary: '',
+  secondary: 'border-active border-secondary',
   tertiary: 'border-active border-border',
 };
 

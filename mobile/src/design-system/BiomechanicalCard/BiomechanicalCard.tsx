@@ -1,26 +1,9 @@
 import { Children, type ReactNode } from 'react';
 import { View } from 'react-native';
 
+import { DEFAULT_ROLE_LABEL, ROLE_BG_CLASS, type SemanticRole } from '@/design-system/semantic';
 import { Text } from '../Text';
 import { cn } from '../utils/cn';
-
-/**
- * Rol semántico de estado (spec 0002): define el color del notch, nunca al
- * revés.
- *
- * `active` → `primary` (activo/en curso) · `confirmed` → `secondary`
- * (calibrado/confirmado) · `error` → `error` (sobrecarga/fallo) ·
- * `inactive` → `textMuted` (inactivo).
- */
-export type BiomechanicalCardStatus = 'active' | 'confirmed' | 'error' | 'inactive';
-
-/** Clases del notch por rol; contrato que consume el build. */
-const STATUS_NOTCH_CLASS: Record<BiomechanicalCardStatus, string> = {
-  active: 'bg-primary',
-  confirmed: 'bg-secondary',
-  error: 'bg-error',
-  inactive: 'bg-text-muted',
-};
 
 /** Props del encabezado modular de la tarjeta. */
 export type CardHeaderProps = {
@@ -90,8 +73,8 @@ export type BiomechanicalCardProps = {
   /** Encabezado a medida; sustituye al encabezado por defecto. */
   header?: ReactNode;
   /** Rol semántico de estado; dibuja el notch de color en la esquina. */
-  status?: BiomechanicalCardStatus;
-  /** Etiqueta textual del estado; se renderiza en el encabezado por defecto. */
+  role?: SemanticRole;
+  /** Etiqueta textual del estado; si se omite, se usa la del rol. */
   statusLabel?: string;
   /** Compartimentos; cada hijo directo queda separado por una hairline. */
   children?: ReactNode;
@@ -109,17 +92,25 @@ export type BiomechanicalCardProps = {
  * modular y cada compartimento hijo queda separado por una hairline de 1 px.
  * El **status notch** es un bloque de color en la esquina superior derecha,
  * definido por un rol semántico explícito; el estado se acompaña siempre de una
- * etiqueta textual (`statusLabel`), nunca se comunica solo por color.
+ * etiqueta textual (la de `statusLabel` o, si se omite, la del rol), nunca se
+ * comunica solo por color.
  */
 export function BiomechanicalCard({
   title,
   header,
-  status,
+  role,
   statusLabel,
   children,
   className,
   testID,
 }: BiomechanicalCardProps) {
+  const resolvedStatusLabel =
+    statusLabel && statusLabel.trim().length > 0
+      ? statusLabel
+      : role
+        ? DEFAULT_ROLE_LABEL[role]
+        : undefined;
+
   return (
     <View
       className={cn('overflow-hidden rounded-base border border-border bg-surface', className)}
@@ -128,7 +119,7 @@ export function BiomechanicalCard({
       {header ?? (
         <CardHeader
           title={title}
-          statusLabel={statusLabel}
+          statusLabel={resolvedStatusLabel}
           testID={testID ? `${testID}-header` : undefined}
         />
       )}
@@ -141,13 +132,13 @@ export function BiomechanicalCard({
           {child}
         </View>
       ))}
-      {status ? (
+      {role ? (
         <View
           testID={testID ? `${testID}-status` : undefined}
           accessible={false}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
-          className={cn('absolute top-0 right-0 h-sm w-sm', STATUS_NOTCH_CLASS[status])}
+          className={cn('absolute top-0 right-0 h-sm w-sm', ROLE_BG_CLASS[role])}
         />
       ) : null}
     </View>

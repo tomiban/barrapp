@@ -156,17 +156,17 @@ function TextFieldDemo() {
 
 /** `Checkbox` y `Radio` controlados, con un ejemplo deshabilitado. */
 function SelectionDemo() {
-  const [acondicionamiento, setAcondicionamiento] = useState(true);
+  const [conditioning, setConditioning] = useState(true);
   const [skill, setSkill] = useState(false);
-  const [patron, setPatron] = useState<'empuje' | 'tiron'>('empuje');
+  const [pattern, setPattern] = useState<'push' | 'pull'>('push');
 
   return (
     <Stack gap="md">
       <Stack gap="sm">
         <Checkbox
           label="Acondicionamiento"
-          checked={acondicionamiento}
-          onChange={setAcondicionamiento}
+          checked={conditioning}
+          onChange={setConditioning}
           testID="showcase-checkbox"
         />
         <Checkbox
@@ -185,14 +185,14 @@ function SelectionDemo() {
       <Stack gap="sm">
         <Radio
           label="Empuje"
-          checked={patron === 'empuje'}
-          onChange={() => setPatron('empuje')}
+          checked={pattern === 'push'}
+          onChange={() => setPattern('push')}
           testID="showcase-radio-empuje"
         />
         <Radio
           label="Tirón"
-          checked={patron === 'tiron'}
-          onChange={() => setPatron('tiron')}
+          checked={pattern === 'pull'}
+          onChange={() => setPattern('pull')}
           testID="showcase-radio-tiron"
         />
       </Stack>
@@ -340,19 +340,19 @@ export function ShowcaseScreen() {
                 <MetricCounter label="Peso" value={100} unit="KG" index="SEC.01" />
               </GridItem>
               <GridItem span={2} className="pb-md">
-                <MetricCounter label="RIR" value={2} index={2} indexPrefix="SER" tone="active" />
+                <MetricCounter label="RIR" value={2} index={2} indexPrefix="SER" role="active" />
               </GridItem>
               <GridItem span={2} className="pb-md">
-                <MetricCounter label="Máximo" value={12} unit="REPS" tone="confirmed" />
+                <MetricCounter label="Máximo" value={12} unit="REPS" role="confirmed" />
               </GridItem>
               <GridItem span={2} className="pb-md">
-                <MetricCounter label="Sobrecarga" value={120} unit="%" tone="error" />
+                <MetricCounter label="Sobrecarga" value={120} unit="%" role="error" />
               </GridItem>
               <GridItem span={2} className="pb-md">
-                <MetricCounter label="Pausa" value={0} unit="SEC" tone="inactive" />
+                <MetricCounter label="Pausa" value={0} unit="SEC" role="inactive" />
               </GridItem>
               <GridItem span={2} className="pb-md">
-                <MetricCounter label="Volumen" value={3200} unit="KG" tone="neutral" />
+                <MetricCounter label="Volumen" value={3200} unit="KG" />
               </GridItem>
             </Grid>
           </Demo>
@@ -361,7 +361,7 @@ export function ShowcaseScreen() {
             <Stack gap="md">
               <BiomechanicalCard
                 title="Sentadilla búlgara"
-                status="active"
+                role="active"
                 statusLabel="En curso"
                 testID="showcase-card-active"
               >
@@ -381,7 +381,7 @@ export function ShowcaseScreen() {
               </BiomechanicalCard>
               <BiomechanicalCard
                 title="Fondos en anillas"
-                status="error"
+                role="error"
                 statusLabel="Sobrecarga"
                 testID="showcase-card-error"
               >
@@ -400,46 +400,46 @@ export function ShowcaseScreen() {
             <TimerDemo />
           </Demo>
 
-          <Demo caption="ProgressIndicator · bar + tones">
+          <Demo caption="ProgressIndicator · bar + roles">
             <Stack gap="md">
               <ProgressIndicator
                 value={3}
                 max={4}
-                tone="active"
+                role="active"
                 label="Sets · 3/4"
                 testID="showcase-progress-active"
               />
               <ProgressIndicator
                 value={2}
                 max={4}
-                tone="confirmed"
+                role="confirmed"
                 label="Calibrado · 2/4"
                 testID="showcase-progress-confirmed"
               />
               <ProgressIndicator
                 value={4}
                 max={4}
-                tone="error"
+                role="error"
                 label="Sobrecarga · 4/4"
                 testID="showcase-progress-error"
               />
               <ProgressIndicator
                 value={1}
                 max={4}
-                tone="inactive"
+                role="inactive"
                 label="Inactivo · 1/4"
                 testID="showcase-progress-inactive"
               />
             </Stack>
           </Demo>
 
-          <Demo caption="ProgressIndicator · ring + tones">
+          <Demo caption="ProgressIndicator · ring + roles">
             <Stack direction="row" gap="lg" className="items-center">
               <ProgressIndicator
                 variant="ring"
                 value={3}
                 max={4}
-                tone="active"
+                role="active"
                 size={72}
                 label="Activo"
                 testID="showcase-ring-active"
@@ -448,7 +448,7 @@ export function ShowcaseScreen() {
                 variant="ring"
                 value={2}
                 max={4}
-                tone="confirmed"
+                role="confirmed"
                 size={72}
                 label="Confirmado"
                 testID="showcase-ring-confirmed"
@@ -457,7 +457,7 @@ export function ShowcaseScreen() {
                 variant="ring"
                 value={4}
                 max={4}
-                tone="error"
+                role="error"
                 size={72}
                 label="Fallo"
                 testID="showcase-ring-error"
@@ -490,20 +490,20 @@ export function ShowcaseScreen() {
                 subtitle="Skill + fuerza"
                 leading={<Icon icon={Dumbbell} size={20} />}
                 trailing={<Icon icon={ChevronRight} size={20} />}
-                state="confirmed"
+                role="confirmed"
                 onPress={() => {}}
                 testID="showcase-row-confirmed"
               />
               <ListRow
                 title="Sesión B · Tirón"
-                state="active"
+                role="active"
                 onPress={() => {}}
                 testID="showcase-row-active"
               />
               <ListRow
                 title="Deload"
                 leading={<Icon icon={Calendar} size={20} />}
-                state="inactive"
+                role="inactive"
                 stateLabel="Descarga"
                 last
                 testID="showcase-row-inactive"
@@ -524,23 +524,46 @@ export function ShowcaseScreen() {
             <ModalDemo />
           </Demo>
 
-          <Demo caption="Banner · info / active / confirmed / error">
+          <Demo caption="Banner · active / confirmed / error / inactive">
             <Stack gap="sm">
-              <Banner tone="info" message="Referencia biomecánica actualizada." />
-              <Banner tone="active" message="Sesión en curso: 2 de 4 bloques." />
-              <Banner tone="confirmed" message="Máximo calibrado a 12 repeticiones." />
-              <Banner tone="error" message="No se pudo guardar el registro." />
+              <Banner role="active" message="Sesión en curso: 2 de 4 bloques." />
+              <Banner role="confirmed" message="Máximo calibrado a 12 repeticiones." />
+              <Banner role="error" message="No se pudo guardar el registro." />
+              <Banner role="inactive" message="Registro pausado hasta la próxima sesión." />
             </Stack>
           </Demo>
 
-          <Demo caption="Toast · transitorio">
-            <Toast
-              visible
-              tone="confirmed"
-              message="Sesión guardada en el historial."
-              onDismiss={() => {}}
-              testID="showcase-toast"
-            />
+          <Demo caption="Toast · transitorio (los cuatro roles)">
+            <Stack gap="sm">
+              <Toast
+                visible
+                role="active"
+                message="Sesión en curso."
+                onDismiss={() => {}}
+                testID="showcase-toast-active"
+              />
+              <Toast
+                visible
+                role="confirmed"
+                message="Sesión guardada en el historial."
+                onDismiss={() => {}}
+                testID="showcase-toast-confirmed"
+              />
+              <Toast
+                visible
+                role="error"
+                message="No se pudo guardar el registro."
+                onDismiss={() => {}}
+                testID="showcase-toast-error"
+              />
+              <Toast
+                visible
+                role="inactive"
+                message="Sin cambios que guardar."
+                onDismiss={() => {}}
+                testID="showcase-toast-inactive"
+              />
+            </Stack>
           </Demo>
 
           <Demo caption="Loading · estado de carga">

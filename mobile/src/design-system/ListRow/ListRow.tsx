@@ -1,42 +1,14 @@
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
+import {
+  DEFAULT_ROLE_LABEL,
+  ROLE_BG_CLASS,
+  ROLE_TEXT_CLASS,
+  type SemanticRole,
+} from '@/design-system/semantic';
 import { Text } from '../Text';
 import { cn } from '../utils/cn';
-
-/**
- * Rol semántico de estado (spec 0002): define el color del acento, nunca al
- * revés.
- *
- * `active` → `primary` (activo/en curso) · `confirmed` → `secondary`
- * (calibrado/confirmado) · `error` → `error` (sobrecarga/fallo) ·
- * `inactive` → `textMuted` (inactivo).
- */
-export type ListRowState = 'active' | 'confirmed' | 'error' | 'inactive';
-
-/** Clases del marcador de estado por rol; contrato que consume el build. */
-const STATE_MARK_CLASS: Record<ListRowState, string> = {
-  active: 'bg-primary',
-  confirmed: 'bg-secondary',
-  error: 'bg-error',
-  inactive: 'bg-text-muted',
-};
-
-/** Color textual del estado; también comunica por token, no solo el marcador. */
-const STATE_TEXT_CLASS: Record<ListRowState, string> = {
-  active: 'text-primary',
-  confirmed: 'text-secondary',
-  error: 'text-error',
-  inactive: 'text-text-muted',
-};
-
-/** Etiqueta por defecto de cada rol, en español. El estado nunca es solo color. */
-const DEFAULT_STATE_LABEL: Record<ListRowState, string> = {
-  active: 'En curso',
-  confirmed: 'Confirmado',
-  error: 'Fallo',
-  inactive: 'Inactivo',
-};
 
 /** Props públicas de `ListRow`. */
 export type ListRowProps = {
@@ -51,7 +23,7 @@ export type ListRowProps = {
   /** Si se provee, la fila se vuelve pulsable y se anuncia como botón. */
   onPress?: () => void;
   /** Rol semántico de estado; dibuja el marcador y la etiqueta textual. */
-  state?: ListRowState;
+  role?: SemanticRole;
   /** Etiqueta textual del estado; si se omite, se usa la del rol. */
   stateLabel?: string;
   /**
@@ -74,8 +46,9 @@ export type ListRowProps = {
  * lector de pantalla; el slot `trailing` queda libre para métricas, badges o
  * chevrons.
  *
- * Alcanza el **tamaño táctil secundario** de la spec (48 dp, `min-h-12`) para
- * que pulsar una fila sin subtítulo siga siendo cómodo.
+ * Alcanza el **tamaño táctil secundario** de la spec (48 dp,
+ * `min-h-control-secondary`) para que pulsar una fila sin subtítulo siga siendo
+ * cómodo.
  */
 export function ListRow({
   title,
@@ -83,16 +56,16 @@ export function ListRow({
   leading,
   trailing,
   onPress,
-  state,
+  role,
   stateLabel,
   last = false,
   className,
   testID,
 }: ListRowProps) {
-  const resolvedStateLabel = state
+  const resolvedStateLabel = role
     ? stateLabel && stateLabel.trim().length > 0
       ? stateLabel
-      : DEFAULT_STATE_LABEL[state]
+      : DEFAULT_ROLE_LABEL[role]
     : undefined;
 
   /*
@@ -100,25 +73,25 @@ export function ListRow({
    * accesible de la fila con título, subtítulo y la etiqueta del estado para que
    * el lector de pantalla lo lea entero al agrupar la fila.
    */
-  const accessibilityLabel = state
+  const accessibilityLabel = role
     ? [title, subtitle, resolvedStateLabel].filter(Boolean).join(', ')
     : undefined;
 
   const rowClassName = cn(
-    'min-h-12 flex-row items-center gap-md px-md py-sm',
+    'min-h-control-secondary flex-row items-center gap-md px-md py-sm',
     last ? undefined : 'border-b border-border',
     className,
   );
 
   const content = (
     <>
-      {state ? (
+      {role ? (
         <View
           testID={testID ? `${testID}-state` : undefined}
           accessible={false}
           importantForAccessibility="no"
           accessibilityElementsHidden
-          className={cn('w-xs self-stretch rounded-sm', STATE_MARK_CLASS[state])}
+          className={cn('w-xs self-stretch rounded-sm', ROLE_BG_CLASS[role])}
         />
       ) : null}
       {leading}
@@ -130,8 +103,8 @@ export function ListRow({
           </Text>
         ) : null}
       </View>
-      {state ? (
-        <Text variant="labelTechnical" className={STATE_TEXT_CLASS[state]}>
+      {role ? (
+        <Text variant="labelTechnical" className={ROLE_TEXT_CLASS[role]}>
           {resolvedStateLabel}
         </Text>
       ) : null}
