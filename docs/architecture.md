@@ -77,7 +77,7 @@ Catálogo de ejercicios, escaleras de progresión y reglas viven como **datos ve
 ## Reglas de dependencia (invariantes)
 
 - **Domain no depende de nadie** (ni de paquetes externos).
-- **Application** → Domain + paquetes de abstracciones (contratos de MediatR y FluentValidation) y EF Core **solo** para `IApplicationDbContext` (lado de lectura); **nunca** ASP.NET Core.
+- **Application** → Domain + paquetes de abstracciones (contratos de MediatR y FluentValidation) y EF Core **solo** para `IApplicationDbContext` (lado de lectura); **nunca** ASP.NET Core. Ver `docs/adr/0008-efcore-en-application.md`.
 - **Infrastructure** y **Persistence** → Application. **Api** compone.
 - **Nada depende de Api.**
 - La **lógica de programación solo vive en Domain.**
