@@ -79,38 +79,170 @@ celdas (`GridItem`).
 ## Componentes
 
 Cada componente vive en su propio directorio `src/design-system/<Nombre>/` con
-un `index.ts` que expone su API pública, sus props y sus tipos.
+un `index.ts` que expone su API pública, sus props y sus tipos. El catálogo
+`Showcase` (pantalla «Catálogo», ruta `/showcase`) los muestra todos con sus
+variantes y estados; este README es su índice escrito.
+
+### Text
+
+Escala tipográfica de la spec. El consumidor elige la variante; nunca fuente ni
+tamaño sueltos. Reenvía todas las props de RN `Text`.
+
+- `variant`: `displayHero` · `headlineMetric` · `headlineLg` · `headlineMd` ·
+  `headlineSm` · `bodyLg` · `bodyMd` (default) · `bodySm` · `labelTechnical` ·
+  `labelCode`.
+- `headlineMetric` fija `tabular-nums` para que los contadores no bailen.
+
+### Layout · `Box`, `Stack`, `Spacer`, `Grid`, `GridItem`
+
+Primitivas finas sobre `View`; el espaciado sale de los tokens. Todas aceptan
+`className` fusionado con `cn()` (ver la tabla de _Primitivas_).
+
+### Icon
+
+Envuelve un icono de Lucide con los defaults del DS.
+
+- `icon`: componente de `lucide-react-native` (o `baseIcons.<nombre>`).
+- `size` (24), `strokeWidth` (2), `color` (por defecto token `text`).
+- `baseIcons` reúne el set base con nombres semánticos (`timer`, `dumbbell`,
+  `play`, `cloudOff`…).
+
+### Button
+
+- `variant`: `primary` (56 dp, `primary`/`on-primary`) · `secondary` (48 dp,
+  `secondary`/`on-secondary`) · `tertiary` (48 dp, `surface`/`text`).
+- `disabled`: fondo `surface`, borde y texto `text-muted`, sin inversión.
+- Estado pulsado: inversión de fondo y texto.
+
+### TextField
+
+- `label`, `value`, `onChangeText`, `error?` + props de `TextInput`.
+- Estados: reposo (borde hairline) · foco (borde `primary` de 1.5 px) · error
+  (borde `error` + mensaje `alert`).
+
+### Chip
+
+Toggle controlado de etiqueta visible. `selected` (default `false`) +
+`onChange(selected)`; `disabled`. Inactivo `surface-muted`/`text-muted`, activo
+`primary`/`on-primary`.
+
+### SegmentedControl
+
+Selección única controlada. `options: { value, label }[]`, `value`, `onChange`,
+`disabled`, `label` accesible. Segmento activo invertido a `primary`.
+
+### Checkbox / Radio
+
+Controles controlados (`checked`, `onChange`, `label?`, `disabled`). Caja de
+20×20 dp, radios 0; el `Checkbox` marca con un check y el `Radio` pinta un bloque
+interior. El estado se anuncia por accesibilidad, no solo por color.
+
+### BiomechanicalCard
+
+Superficie nivel 1 con notch de estado y compartimentos separados por hairline.
+
+- `title`, `header?` (encabezado a medida), `status?` (`active` · `confirmed` ·
+  `error` · `inactive`), `statusLabel?`.
+- `CardHeader` / `CardSection` para composición modular.
+
+### MetricCounter
+
+Readout monolítico tabular con micro-label, índice y unidad.
+
+- `label`, `value`, `unit?`, `index?`/`indexPrefix?`.
+- `tone`: `neutral` · `active` · `confirmed` · `error` · `inactive`.
+
+### Timer / Countdown
+
+Cuenta atrás reutilizando `MetricCounter` (rol `active`).
+
+- `durationSeconds`, `running?`, `onComplete?`, `label?`, `onPress?`.
+- Se reinicia al cambiar la duración y dispara `onComplete` una sola vez.
 
 ### ProgressIndicator
 
-Barra o anillo de progreso sobre los tokens de color, para series y para el
-avance del mesociclo. Sin sombras: la pista es una capa tonal (`surface-muted`)
-y la profundidad sale de bordes y radios.
+Barra o anillo de progreso sobre los tokens, para series y para el avance del
+mesociclo. Sin sombras: la pista es `surface-muted`.
 
-| Prop        | Tipo              | Default    | Uso                                                            |
-| ----------- | ----------------- | ---------- | -------------------------------------------------------------- |
-| `value`     | `number`          | —          | Progreso actual; se recorta a `[0, max]`.                      |
-| `max`       | `number`          | `1`        | Total de la escala; el ratio es `value / max`.                 |
-| `tone`      | `ProgressTone`    | `'active'` | Rol semántico de estado.                                       |
-| `label`     | `string`          | —          | Etiqueta textual; el estado nunca se comunica solo por color.  |
-| `variant`   | `'bar' \| 'ring'` | `'bar'`    | Forma del indicador.                                           |
-| `size`      | `number`          | `64`       | Lado del anillo en dp (solo `ring`).                           |
-| `className` | `string`          | —          | Clases del contenedor (se combinan con `cn()`).                |
-| `testID`    | `string`          | —          | Identificador; barra/anillo derivan `<testID>-fill` / `-ring`. |
+| Prop        | Tipo              | Default    | Uso                                                           |
+| ----------- | ----------------- | ---------- | ------------------------------------------------------------- |
+| `value`     | `number`          | —          | Progreso actual; se recorta a `[0, max]`.                     |
+| `max`       | `number`          | `1`        | Total de la escala; el ratio es `value / max`.                |
+| `tone`      | `ProgressTone`    | `'active'` | Rol semántico de estado.                                      |
+| `label`     | `string`          | —          | Etiqueta textual; el estado nunca se comunica solo por color. |
+| `variant`   | `'bar' \| 'ring'` | `'bar'`    | Forma del indicador.                                          |
+| `size`      | `number`          | `64`       | Lado del anillo en dp (solo `ring`).                          |
+| `className` | `string`          | —          | Clases del contenedor (se combinan con `cn()`).               |
+| `testID`    | `string`          | —          | Identificador; barra/anillo derivan `<testID>-fill`/`-ring`.  |
 
-`ProgressTone` mapea los roles semánticos de la spec a tokens:
-
-| Rol                    | `tone`      | Token       |
-| ---------------------- | ----------- | ----------- |
-| Activo / en curso      | `active`    | `primary`   |
-| Calibrado / confirmado | `confirmed` | `secondary` |
-| Sobrecarga / fallo     | `error`     | `error`     |
-| Inactivo               | `inactive`  | `textMuted` |
-
+`ProgressTone` mapea los roles semánticos: `active`→`primary`,
+`confirmed`→`secondary`, `error`→`error`, `inactive`→`textMuted`.
 Accesibilidad: `accessibilityRole="progressbar"` con
-`accessibilityValue={{ min: 0, max, now }}` (con `max` ya saneado). La barra
-colorea el relleno por `className`; el anillo colorea por la prop `stroke` de
-`react-native-svg`, resolviendo el token con `useCSSVariable`.
+`accessibilityValue={{ min: 0, max, now }}`.
+
+### StatusBadge
+
+Comunica estado con rol semántico explícito **y** etiqueta textual.
+
+- `role` (o `status`): `active` · `confirmed` · `error` · `inactive`.
+- `label?` (por defecto la del rol), `variant`: `solid` (default) · `outline`,
+  `showDot?`.
+- Etiquetas por defecto: En curso · Confirmado · Fallo · Inactivo.
+
+### ListRow
+
+Fila de semanas, sesiones y ejercicios, con separador hairline.
+
+- `title`, `subtitle?`, `leading?`, `trailing?`, `onPress?`, `last?`.
+- `state?`: `active` · `confirmed` · `error` · `inactive`; `stateLabel?`.
+- Tamaño táctil secundario (48 dp).
+
+### SectionHeader
+
+Encabezado de sección con hairline y contador/slot opcionales. `label`, `count?`,
+`trailing?`.
+
+### Screen / Header
+
+Chasis de pantalla: `Screen` envuelve `SafeAreaView` (`canvas`, márgenes de
+página) y un `header` opcional; `Header` es título `headlineSm` + slots
+`leading`/`trailing` y hairline inferior.
+
+### TabBar
+
+Navegador inferior custom sobre `expo-router/ui`. `tabs: { name, href, label }[]`;
+`TabBarItem` es el botón (`isFocused` → `primary`/`on-primary`).
+
+### BottomSheet
+
+Modal nivel 3 sobre el `Modal` nativo: `visible`, `onClose`, `title?`,
+`children?`, `closeLabel?`. Superficie `surface` con marco de 2 px en `text` y
+scrim negro 80 %, sin blur.
+
+### Banner / Toast
+
+Aviso inline persistente (`Banner`) y transitorio (`Toast`).
+
+- `message`, `tone`: `info` · `active` · `confirmed` · `error`; `icon?`.
+- `Toast` añade `visible?` y `onDismiss?`.
+
+### Loading / Skeleton
+
+- `Loading`: `label?`, `size?` (`small`/`large`); anuncia «Cargando» por defecto.
+- `Skeleton`: `animated?` (default estático), `className?`; decorativo (oculto a
+  lectores de pantalla).
+
+### EmptyState
+
+`title`, `description?`, `icon?`, `action?`. Bloque centrado; comunica con texto,
+nunca solo con el icono.
+
+### Showcase
+
+`ShowcaseScreen` (directorio `Showcase/`, ruta `/showcase`) es el catálogo: monta
+todas las variantes y estados agrupados en Base, Entrenamiento, Navegación y
+feedback e Iconos, cada demo rotulada. Es la referencia viva y el test de humo de
+la librería.
 
 ## Estructura
 
@@ -120,6 +252,7 @@ colorea el relleno por `className`; el anillo colorea por la prop `stroke` de
 - `<Nombre>/` — cada componente con su `index.ts` de API pública. Un barrel por
   directorio; **sin barrel de `design-system/`** para no colisionar entre
   tickets.
+- `Showcase/` — catálogo del design system (no es un componente de producto).
 
 Reglas: nada de colores, espaciado ni tipografía hardcodeados; todo sale de los
 tokens de `mobile/global.css`.
