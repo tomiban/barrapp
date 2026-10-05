@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Barrapp.Domain\Barrapp.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Barrapp.Application\Barrapp.Application.csproj" />
+    <ProjectReference Include="..\..\src\Barrapp.Infrastructure\Barrapp.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Barrapp.Persistence\Barrapp.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\Barrapp.Api\Barrapp.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

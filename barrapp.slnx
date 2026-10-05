@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Barrapp.Api/Barrapp.Api.csproj" />
+    <Project Path="src/Barrapp.Application/Barrapp.Application.csproj" />
+    <Project Path="src/Barrapp.Domain/Barrapp.Domain.csproj" />
+    <Project Path="src/Barrapp.Infrastructure/Barrapp.Infrastructure.csproj" />
+    <Project Path="src/Barrapp.Persistence/Barrapp.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Barrapp.Api.FunctionalTests/Barrapp.Api.FunctionalTests.csproj" />
+    <Project Path="tests/Barrapp.ArchitectureTests/Barrapp.ArchitectureTests.csproj" />
+    <Project Path="tests/Barrapp.Domain.UnitTests/Barrapp.Domain.UnitTests.csproj" />
+  </Folder>
+</Solution>
