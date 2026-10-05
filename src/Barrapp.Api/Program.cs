@@ -5,6 +5,7 @@ using Barrapp.Api.Http;
 using Barrapp.Application;
 using Barrapp.Infrastructure;
 using Barrapp.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,8 @@ builder.Services
 
 var app = builder.Build();
 
+await ApplyMigrationsAsync(app);
+
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
@@ -37,9 +40,22 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapPingEndpoints();
+app.MapAthleteProfileEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();
+
+/// <summary>
+/// Aplica las migraciones pendientes al arrancar. En el MVP (SQLite local y un solo contenedor)
+/// es la forma más simple de garantizar el esquema; en despliegues con varias réplicas conviene
+/// separarlo del arranque.
+/// </summary>
+static async Task ApplyMigrationsAsync(WebApplication app)
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 /// <summary>Marca la clase de entrada como pública para los tests de integración.</summary>
 public partial class Program;
