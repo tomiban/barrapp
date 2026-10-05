@@ -19,6 +19,16 @@ public static class DomainErrors
             "athlete_profile.height_out_of_range",
             "La altura debe estar entre 120 y 220 cm.");
 
+        /// <summary>La envergadura está fuera del rango admitido (100–250 cm).</summary>
+        public static readonly Error ArmSpanOutOfRange = Error.Validation(
+            "athlete_profile.arm_span_out_of_range",
+            "La envergadura debe estar entre 100 y 250 cm.");
+
+        /// <summary>La entrepierna está fuera del rango admitido (50–130 cm).</summary>
+        public static readonly Error InseamOutOfRange = Error.Validation(
+            "athlete_profile.inseam_out_of_range",
+            "La entrepierna debe estar entre 50 y 130 cm.");
+
         /// <summary>Los días de entrenamiento están fuera del rango admitido (3–5).</summary>
         public static readonly Error TrainingDaysOutOfRange = Error.Validation(
             "athlete_profile.training_days_out_of_range",

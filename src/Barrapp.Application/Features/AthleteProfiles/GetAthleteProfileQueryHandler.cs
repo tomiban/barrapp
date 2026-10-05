@@ -21,6 +21,8 @@ internal sealed class GetAthleteProfileQueryHandler(IApplicationDbContext dbCont
             .Select(profile => new AthleteProfileResponse(
                 profile.WeightKilograms,
                 profile.HeightCentimeters,
+                profile.ArmSpanCentimeters,
+                profile.InseamCentimeters,
                 profile.TrainingDays,
                 profile.Maximums
                     .AsQueryable()

@@ -4,8 +4,9 @@ namespace Barrapp.Domain.Athlete;
 
 /// <summary>
 /// Perfil del atleta: sus datos corporales, de entrenamiento y sus máximos por ejercicio
-/// básico. Guarda <b>peso</b> (kg), <b>altura</b> (cm), <b>días de entrenamiento</b> por
-/// semana (3–5) y el <see cref="Maximum"/> de cada ejercicio de <see cref="BasicExercises"/>.
+/// básico. Guarda <b>peso</b> (kg), <b>altura</b> (cm), <b>envergadura</b> (cm),
+/// <b>entrepierna</b> (cm), <b>días de entrenamiento</b> por semana (3–5) y el
+/// <see cref="Maximum"/> de cada ejercicio de <see cref="BasicExercises"/>.
 /// </summary>
 /// <remarks>
 /// El estado solo cambia por sus métodos (<see cref="Create"/>, <see cref="Update"/>), que
@@ -27,6 +28,18 @@ public sealed class AthleteProfile
     /// <summary>Altura máxima admitida, en centímetros.</summary>
     public const double MaxHeightCentimeters = 220;
 
+    /// <summary>Envergadura mínima admitida, en centímetros.</summary>
+    public const double MinArmSpanCentimeters = 100;
+
+    /// <summary>Envergadura máxima admitida, en centímetros.</summary>
+    public const double MaxArmSpanCentimeters = 250;
+
+    /// <summary>Entrepierna mínima admitida, en centímetros.</summary>
+    public const double MinInseamCentimeters = 50;
+
+    /// <summary>Entrepierna máxima admitida, en centímetros.</summary>
+    public const double MaxInseamCentimeters = 130;
+
     /// <summary>Número mínimo de días de entrenamiento por semana.</summary>
     public const int MinTrainingDays = 3;
 
@@ -40,12 +53,16 @@ public sealed class AthleteProfile
         Guid userId,
         double weightKilograms,
         double heightCentimeters,
+        double armSpanCentimeters,
+        double inseamCentimeters,
         int trainingDays)
     {
         Id = id;
         UserId = userId;
         WeightKilograms = weightKilograms;
         HeightCentimeters = heightCentimeters;
+        ArmSpanCentimeters = armSpanCentimeters;
+        InseamCentimeters = inseamCentimeters;
         TrainingDays = trainingDays;
     }
 
@@ -66,6 +83,12 @@ public sealed class AthleteProfile
     /// <summary>Altura del atleta en centímetros.</summary>
     public double HeightCentimeters { get; private set; }
 
+    /// <summary>Envergadura (arm span) del atleta en centímetros.</summary>
+    public double ArmSpanCentimeters { get; private set; }
+
+    /// <summary>Entrepierna (inseam) del atleta en centímetros.</summary>
+    public double InseamCentimeters { get; private set; }
+
     /// <summary>Días de entrenamiento por semana (3–5).</summary>
     public int TrainingDays { get; private set; }
 
@@ -74,18 +97,26 @@ public sealed class AthleteProfile
 
     /// <summary>
     /// Crea un perfil para <paramref name="userId"/>. Falla si el peso (30–200 kg), la
-    /// altura (120–220 cm) o los días de entrenamiento (3–5) están fuera de rango, o si los
-    /// máximos no cubren exactamente los ejercicios básicos (falta alguno, hay repetidos,
-    /// un código desconocido o una repeticiones negativas).
+    /// altura (120–220 cm), la envergadura (100–250 cm), la entrepierna (50–130 cm) o los
+    /// días de entrenamiento (3–5) están fuera de rango, o si los máximos no cubren
+    /// exactamente los ejercicios básicos (falta alguno, hay repetidos, un código
+    /// desconocido o unas repeticiones negativas).
     /// </summary>
     public static Result<AthleteProfile> Create(
         Guid userId,
         double weightKilograms,
         double heightCentimeters,
+        double armSpanCentimeters,
+        double inseamCentimeters,
         int trainingDays,
         IReadOnlyCollection<MaximumInput> maximums)
     {
-        var validation = ValidateProfile(weightKilograms, heightCentimeters, trainingDays);
+        var validation = ValidateProfile(
+            weightKilograms,
+            heightCentimeters,
+            armSpanCentimeters,
+            inseamCentimeters,
+            trainingDays);
         if (validation.IsFailure)
         {
             return Result.Failure<AthleteProfile>(validation.Error);
@@ -102,6 +133,8 @@ public sealed class AthleteProfile
             userId,
             weightKilograms,
             heightCentimeters,
+            armSpanCentimeters,
+            inseamCentimeters,
             trainingDays);
         profile._maximums.AddRange(maximumValidation.Value);
 
@@ -110,16 +143,23 @@ public sealed class AthleteProfile
 
     /// <summary>
     /// Actualiza los datos del perfil. Falla si el peso (30–200 kg), la altura (120–220 cm),
-    /// los días de entrenamiento (3–5) o los máximos no son válidos; en ese caso no se modifica
-    /// nada.
+    /// la envergadura (100–250 cm), la entrepierna (50–130 cm), los días de entrenamiento
+    /// (3–5) o los máximos no son válidos; en ese caso no se modifica nada.
     /// </summary>
     public Result Update(
         double weightKilograms,
         double heightCentimeters,
+        double armSpanCentimeters,
+        double inseamCentimeters,
         int trainingDays,
         IReadOnlyCollection<MaximumInput> maximums)
     {
-        var validation = ValidateProfile(weightKilograms, heightCentimeters, trainingDays);
+        var validation = ValidateProfile(
+            weightKilograms,
+            heightCentimeters,
+            armSpanCentimeters,
+            inseamCentimeters,
+            trainingDays);
         if (validation.IsFailure)
         {
             return validation;
@@ -133,6 +173,8 @@ public sealed class AthleteProfile
 
         WeightKilograms = weightKilograms;
         HeightCentimeters = heightCentimeters;
+        ArmSpanCentimeters = armSpanCentimeters;
+        InseamCentimeters = inseamCentimeters;
         TrainingDays = trainingDays;
         ApplyMaximums(maximumValidation.Value);
 
@@ -142,6 +184,8 @@ public sealed class AthleteProfile
     private static Result ValidateProfile(
         double weightKilograms,
         double heightCentimeters,
+        double armSpanCentimeters,
+        double inseamCentimeters,
         int trainingDays)
     {
         if (!IsWithinRange(weightKilograms, MinWeightKilograms, MaxWeightKilograms))
@@ -152,6 +196,16 @@ public sealed class AthleteProfile
         if (!IsWithinRange(heightCentimeters, MinHeightCentimeters, MaxHeightCentimeters))
         {
             return Result.Failure(DomainErrors.AthleteProfile.HeightOutOfRange);
+        }
+
+        if (!IsWithinRange(armSpanCentimeters, MinArmSpanCentimeters, MaxArmSpanCentimeters))
+        {
+            return Result.Failure(DomainErrors.AthleteProfile.ArmSpanOutOfRange);
+        }
+
+        if (!IsWithinRange(inseamCentimeters, MinInseamCentimeters, MaxInseamCentimeters))
+        {
+            return Result.Failure(DomainErrors.AthleteProfile.InseamOutOfRange);
         }
 
         return IsWithinRange(trainingDays, MinTrainingDays, MaxTrainingDays)

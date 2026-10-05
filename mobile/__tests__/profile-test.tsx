@@ -19,6 +19,14 @@ async function fillMaximums(pushUp = '10', pullUp = '0', squat = '20') {
   await fireEvent.changeText(screen.getByTestId('profile-maximum-squat'), squat);
 }
 
+/** Rellena las cuatro medidas corporales dentro del rango admitido. */
+async function fillMeasurements(weight = '30', height = '120', armSpan = '180', inseam = '85') {
+  await fireEvent.changeText(screen.getByTestId('profile-weight'), weight);
+  await fireEvent.changeText(screen.getByTestId('profile-height'), height);
+  await fireEvent.changeText(screen.getByTestId('profile-arm-span'), armSpan);
+  await fireEvent.changeText(screen.getByTestId('profile-inseam'), inseam);
+}
+
 describe('ProfileScreen', () => {
   const originalFetch = global.fetch;
 
@@ -34,14 +42,15 @@ describe('ProfileScreen', () => {
     await render(<ProfileScreen />);
     await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
 
-    await fireEvent.changeText(screen.getByTestId('profile-weight'), '10');
-    await fireEvent.changeText(screen.getByTestId('profile-height'), '100');
+    await fillMeasurements('10', '100', '90', '40');
     await fireEvent.press(screen.getByTestId('profile-save'));
 
     await waitFor(() =>
       expect(screen.getByText('El peso debe estar entre 30 y 200 kg.')).toBeOnTheScreen(),
     );
     expect(screen.getByText('La altura debe estar entre 120 y 220 cm.')).toBeOnTheScreen();
+    expect(screen.getByText('La envergadura debe estar entre 100 y 250 cm.')).toBeOnTheScreen();
+    expect(screen.getByText('La entrepierna debe estar entre 50 y 130 cm.')).toBeOnTheScreen();
     // Solo se llamó al GET inicial: la validación cortó antes del PUT.
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -52,6 +61,10 @@ describe('ProfileScreen', () => {
     await render(<ProfileScreen />);
     await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
 
+    expect(screen.getByText('Envergadura (cm)')).toBeOnTheScreen();
+    expect(screen.getByText('Entrepierna (cm)')).toBeOnTheScreen();
+    expect(screen.getByTestId('profile-arm-span')).toBeOnTheScreen();
+    expect(screen.getByTestId('profile-inseam')).toBeOnTheScreen();
     expect(screen.getByText('Máximos (reps)')).toBeOnTheScreen();
     expect(screen.getByText('Empuje')).toBeOnTheScreen();
     expect(screen.getByText('Tirón')).toBeOnTheScreen();
@@ -68,8 +81,7 @@ describe('ProfileScreen', () => {
     await render(<ProfileScreen />);
     await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
 
-    await fireEvent.changeText(screen.getByTestId('profile-weight'), '30');
-    await fireEvent.changeText(screen.getByTestId('profile-height'), '120');
+    await fillMeasurements();
     await fillMaximums('', 'abc', '-1');
     await fireEvent.press(screen.getByTestId('profile-save'));
 
@@ -93,13 +105,14 @@ describe('ProfileScreen', () => {
     await render(<ProfileScreen />);
     await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
 
-    await fireEvent.changeText(screen.getByTestId('profile-weight'), '30');
-    await fireEvent.changeText(screen.getByTestId('profile-height'), '120');
+    await fillMeasurements('30', '120', '100', '50');
     await fillMaximums();
     await fireEvent.press(screen.getByTestId('profile-save'));
 
     await waitFor(() =>
-      expect(screen.getByText('30 kg · 120 cm · 3 días/semana')).toBeOnTheScreen(),
+      expect(
+        screen.getByText('30 kg · 120 cm · Envergadura 100 cm · Entrepierna 50 cm · 3 días/semana'),
+      ).toBeOnTheScreen(),
     );
     expect(screen.getByText('Flexión 10 · Dominada 0 · Sentadilla 20')).toBeOnTheScreen();
   });
@@ -118,19 +131,22 @@ describe('ProfileScreen', () => {
     await render(<ProfileScreen />);
     await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
 
-    await fireEvent.changeText(screen.getByTestId('profile-weight'), '30');
-    await fireEvent.changeText(screen.getByTestId('profile-height'), '120');
+    await fillMeasurements('30', '120', '180', '85');
     await fillMaximums('12', '3', '0');
     await fireEvent.press(screen.getByTestId('profile-training-days-5'));
     await fireEvent.press(screen.getByTestId('profile-save'));
 
     await waitFor(() =>
-      expect(screen.getByText('30 kg · 120 cm · 5 días/semana')).toBeOnTheScreen(),
+      expect(
+        screen.getByText('30 kg · 120 cm · Envergadura 180 cm · Entrepierna 85 cm · 5 días/semana'),
+      ).toBeOnTheScreen(),
     );
     expect(screen.getByText('Flexión 12 · Dominada 3 · Sentadilla 0')).toBeOnTheScreen();
     expect(saved).toEqual({
       weightKilograms: 30,
       heightCentimeters: 120,
+      armSpanCentimeters: 180,
+      inseamCentimeters: 85,
       trainingDays: 5,
       maximums: [
         { exerciseCode: 'push_up', repetitions: 12 },
@@ -153,8 +169,7 @@ describe('ProfileScreen', () => {
     await render(<ProfileScreen />);
     await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
 
-    await fireEvent.changeText(screen.getByTestId('profile-weight'), '30');
-    await fireEvent.changeText(screen.getByTestId('profile-height'), '120');
+    await fillMeasurements();
     await fillMaximums();
     await fireEvent.press(screen.getByTestId('profile-save'));
 
