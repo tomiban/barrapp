@@ -34,6 +34,14 @@ const CATALOG = {
           regressionId: 'bench-dip',
           skillId: null,
         },
+        {
+          id: 'pike-push-up',
+          name: 'Flexiones en pica',
+          metric: 'reps',
+          tracksMaximum: false,
+          regressionId: null,
+          skillId: 'handstand',
+        },
       ],
     },
     {
@@ -51,6 +59,110 @@ const CATALOG = {
     },
   ],
 };
+
+/** Skills mínimos con su escalera y una rutina de patrón de apoyo. */
+const SKILLS = [
+  {
+    id: 'planche',
+    name: 'Planche',
+    group: 'push',
+    lever: true,
+    stages: [
+      {
+        order: 1,
+        name: 'Planche inclinada',
+        exerciseId: 'planche-lean',
+        criterion: { metric: 'seconds', target: 20, sets: 3 },
+        notes: 'Hombros por delante de las manos.',
+      },
+      {
+        order: 2,
+        name: 'Planche agrupada',
+        exerciseId: 'planche-tuck',
+        criterion: { metric: 'seconds', target: 10, sets: 3 },
+        notes: 'Rodillas al pecho.',
+      },
+    ],
+    patternRoutines: [
+      {
+        id: 'r1',
+        name: 'Modelo R1',
+        intensity: 2,
+        equipment: 'Sin equipamiento',
+        items: [
+          {
+            exerciseId: 'planche-tuck',
+            sets: 4,
+            repsMin: null,
+            repsMax: null,
+            holdSecondsMin: 5,
+            holdSecondsMax: 15,
+            restSeconds: 180,
+            tempo: null,
+            supersetGroup: null,
+            notes: null,
+          },
+          {
+            exerciseId: 'pike-push-up',
+            sets: 3,
+            repsMin: 5,
+            repsMax: 8,
+            restSeconds: 120,
+            tempo: null,
+            supersetGroup: null,
+            notes: null,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'pistol-squat',
+    name: 'Pistol squat',
+    group: 'leg',
+    lever: false,
+    stages: [
+      {
+        order: 1,
+        name: 'Pistol al cajón',
+        exerciseId: 'pistol-box',
+        criterion: { metric: 'reps', target: 5, sets: 3 },
+        notes: 'Bajar hasta un cajón alto.',
+      },
+    ],
+    patternRoutines: [
+      {
+        id: 'r1',
+        name: 'Modelo R1',
+        intensity: 2,
+        equipment: null,
+        items: [
+          {
+            exerciseId: 'cossack-squat',
+            sets: 3,
+            repsMin: 6,
+            repsMax: 8,
+            restSeconds: 90,
+            tempo: null,
+            supersetGroup: null,
+            notes: null,
+          },
+        ],
+      },
+    ],
+  },
+];
+
+/** Mock de `fetch` que reparte por ruta: skills devuelve la escalera; el resto, el catálogo. */
+function routeFetch(): jest.Mock {
+  return jest.fn((input: unknown) =>
+    Promise.resolve(
+      String(input).includes('/catalog/skills')
+        ? jsonResponse(200, SKILLS)
+        : jsonResponse(200, CATALOG),
+    ),
+  );
+}
 
 describe('LibraryScreen · Ejercicios', () => {
   const originalFetch = global.fetch;
@@ -78,17 +190,14 @@ describe('LibraryScreen · Ejercicios', () => {
     );
   });
 
-  it('switches to the Skills and Rutinas placeholders', async () => {
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue(jsonResponse(200, CATALOG)) as unknown as typeof fetch;
+  it('switches to the Skills view and keeps the Rutinas placeholder', async () => {
+    global.fetch = routeFetch() as unknown as typeof fetch;
 
     await render(<LibraryScreen />);
     await waitFor(() => expect(screen.getByText('Flexiones')).toBeOnTheScreen());
 
     await fireEvent.press(screen.getByTestId('library-section-skills'));
-    expect(screen.getByTestId('library-skills-empty')).toBeOnTheScreen();
-    expect(screen.getByText('Próximamente')).toBeOnTheScreen();
+    await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
 
     await fireEvent.press(screen.getByTestId('library-section-routines'));
     expect(screen.getByTestId('library-routines-empty')).toBeOnTheScreen();
@@ -107,5 +216,49 @@ describe('LibraryScreen · Ejercicios', () => {
 
     await fireEvent.press(screen.getByTestId('library-exercises-retry'));
     await waitFor(() => expect(screen.getByText('Flexiones')).toBeOnTheScreen());
+  });
+});
+
+describe('LibraryScreen · Skills', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    jest.restoreAllMocks();
+  });
+
+  it('renders a ladder with its criterion and a supporting pattern routine', async () => {
+    const fetchMock = routeFetch();
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await render(<LibraryScreen />);
+    await waitFor(() => expect(screen.getByText('Flexiones')).toBeOnTheScreen());
+
+    await fireEvent.press(screen.getByTestId('library-section-skills'));
+
+    await waitFor(() => expect(screen.getByText('Planche')).toBeOnTheScreen());
+
+    // Escalera: movimiento y criterio por etapa.
+    expect(screen.getByText('Empuje · Apalancado')).toBeOnTheScreen();
+    expect(screen.getByText('Planche inclinada')).toBeOnTheScreen();
+    expect(screen.getByText('Etapa 1 · 3 × 20 s')).toBeOnTheScreen();
+    // El movimiento agrupado aparece como etapa y, resuelto, como ejercicio de la rutina.
+    expect(screen.getAllByText('Planche agrupada').length).toBeGreaterThan(0);
+
+    // Rutina de patrón: ejercicio, series, segundos y descanso. El movimiento de skill
+    // se nombra por la etapa; el acondicionamiento, por el catálogo de ejercicios.
+    expect(screen.getAllByText('Modelo R1').length).toBeGreaterThan(0);
+    expect(screen.getByText('4 × 5–15 s · descanso 180 s')).toBeOnTheScreen();
+    expect(screen.getByText('3 × 5–8 reps · descanso 120 s')).toBeOnTheScreen();
+    expect(screen.getByText('Flexiones en pica')).toBeOnTheScreen();
+
+    // El pistol squat se sirve con su criterio en repeticiones.
+    expect(screen.getByText('Pistol squat')).toBeOnTheScreen();
+    expect(screen.getByText('Etapa 1 · 3 × 5 reps')).toBeOnTheScreen();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/catalog/skills'),
+      expect.anything(),
+    );
   });
 });

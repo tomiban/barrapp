@@ -6,6 +6,7 @@ import { Stack } from '@/design-system/layout';
 import { Header, Screen } from '@/design-system/Navigation';
 import { Text } from '@/design-system/Text';
 import { ExercisesView } from '@/features/library/ExercisesView';
+import { SkillsView } from '@/features/library/SkillsView';
 
 /** Secciones de la Biblioteca. */
 type LibrarySection = 'exercises' | 'skills' | 'routines';
@@ -44,13 +45,7 @@ export default function LibraryScreen() {
 
         {section === 'exercises' ? <ExercisesView /> : null}
 
-        {section === 'skills' ? (
-          <EmptyState
-            title="Próximamente"
-            description="La escalera de skills llegará en el próximo módulo."
-            testID="library-skills-empty"
-          />
-        ) : null}
+        {section === 'skills' ? <SkillsView /> : null}
 
         {section === 'routines' ? (
           <EmptyState
