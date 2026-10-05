@@ -6,7 +6,7 @@ Expo ships breaking changes every SDK release. APIs you remember are likely rena
 
 1. Read the major version of the `expo` package in `package.json`.
 2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+3. For anything else, use https://docs.expo.dev/llms.txt as an **index**, then fetch the **specific `.md` page** you need (e.g. `https://docs.expo.dev/versions/v<major>.0.0/sdk/camera.md`). Never pull the whole CLI reference or all of `llms.txt`, and never answer from memory.
 
 ## Commands
 

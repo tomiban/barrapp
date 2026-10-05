@@ -16,8 +16,9 @@
 
 ## Idiomas
 
-- Código e identificadores en **inglés**.
-- Documentación, comentarios y UI en **español**.
+- Código, **nombres de tests**, variables, funciones y tipos en **inglés**.
+- Documentación, comentarios, UI y descripciones de PR en **español**.
+- Ejemplo: `Get_ping_returns_200_with_pong`, no `Get_ping_devuelve_200_con_pong`.
 - Usa el vocabulario de `GLOSSARY.md` y evita sus términos `_Avoid_`.
 
 ## Testing
