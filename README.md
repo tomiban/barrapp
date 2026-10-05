@@ -17,6 +17,9 @@ y las reglas de trabajo están en `docs/working-rules.md`.
 - .NET SDK 10.
 - Node.js 20+ y la app **Expo Go** en el móvil.
 
+La guía completa de entorno (variables, emulador, puertos y checks) está en
+[`docs/dev-setup.md`](docs/dev-setup.md).
+
 ## Arrancar el API
 
 ```sh
