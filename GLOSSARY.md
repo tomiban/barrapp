@@ -14,6 +14,10 @@ _Avoid_: meta, propósito, target
 Destreza de calistenia con una escalera de progresiones propia (p. ej. pino, front lever, planche, pistol squat).
 _Avoid_: movimiento, ejercicio especial, truco
 
+**Palanca**:
+Dificultad mecánica añadida en los skills apalancados (planche, front lever) por la masa y la longitud de los segmentos corporales; se aproxima con peso, altura, envergadura y entrepierna y se clasifica en tres cubos (favorable, neutra, desfavorable).
+_Avoid_: leverage, morfología, biotipo
+
 **Escalera de progresión**:
 Secuencia ordenada de variantes de un skill, desde la regresión más fácil hasta la versión completa; el atleta avanza al cumplir el criterio de su etapa actual.
 _Avoid_: niveles, pasos, roadmap

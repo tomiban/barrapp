@@ -12,7 +12,7 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 
 ## User Stories
 
-1. Como atleta, quiero crear mi perfil con peso y altura, para que el plan use mis datos corporales reales.
+1. Como atleta, quiero crear mi perfil con peso, altura, envergadura y entrepierna, para que el plan ajuste la palanca de los skills de tensión.
 2. Como atleta, quiero introducir mi **máximo** (reps estrictas) en cada ejercicio básico, para que las cargas se ajusten a mi nivel.
 3. Como atleta, quiero poder introducir `0` cuando no puedo hacer ni una repetición, para que el plan me dé una **regresión** en lugar de un ejercicio imposible.
 4. Como atleta, quiero elegir un **skill** objetivo del catálogo (pino, front lever, planche, pistol squat), para que el plan apunte a él.
@@ -67,14 +67,15 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 - **Offline-first**: la app mantiene **almacén local en el dispositivo** (SQLite vía `expo-sqlite`) con el plan cacheado y una **cola de sincronización** (*outbox*); los cambios suben al backend al recuperar la red. Sincronización **last-write-wins**, válida por ser mono-usuario. La **generación** de plan y de sesión suelta **requiere conexión**, porque el motor es server-side (ADR-0002, ADR-0003).
 - **Modelo de registro**: `SessionLog` guarda, **por serie**, el valor real ejecutado —**reps** en fuerza o **segundos** en holds/skill— con la unidad derivada del tipo de ejercicio y **RIR/RPE real opcional**; editable y borrable. Alimenta el avance de etapa del skill y el ajuste de máximos del siguiente mesociclo.
 - **Vocabulario de dominio**: el de `GLOSSARY.md`.
-- **Modelo de datos** (todo con `UserId`; tabla `Users` con una fila única en el MVP, sin login): `User`, `AthleteProfile` (peso, altura), `Exercise`, `Maximum` (por ejercicio), `Skill`, `SkillStage` (escalera), `AthleteSkillProgress`, `Objective`, `Plan`/`Mesocycle`, `Microcycle` (semana), `Session`, `SessionItem` (ejercicio, series, reps, intensidad, patrón), `SessionLog` (por serie: reps o segundos reales, unidad, RIR/RPE real), `SessionSuelta` (parámetros + generada + registrada). El cliente replica en su almacén local el plan y los registros, más una cola de salida pendiente de sincronizar.
+- **Modelo de datos** (todo con `UserId`; tabla `Users` con una fila única en el MVP, sin login): `User`, `AthleteProfile` (peso, altura, envergadura, entrepierna), `Exercise`, `Maximum` (por ejercicio), `Skill`, `SkillStage` (escalera), `AthleteSkillProgress`, `Objective`, `Plan`/`Mesocycle`, `Microcycle` (semana), `Session`, `SessionItem` (ejercicio, series, reps, intensidad, patrón), `SessionLog` (por serie: reps o segundos reales, unidad, RIR/RPE real), `SessionSuelta` (parámetros + generada + registrada). El cliente replica en su almacén local el plan y los registros, más una cola de salida pendiente de sincronizar.
 - **Auth**: sin login en el MVP; esquema preparado para multi-usuario desde el inicio.
-- **Validación de entradas**: peso 30–200 kg; altura 120–220 cm; máximos enteros ≥ 0 y obligatorios (0 permitido → regresión).
+- **Validación de entradas**: peso 30–200 kg; altura 120–220 cm; envergadura 100–250 cm; entrepierna 50–130 cm; máximos enteros ≥ 0 y obligatorios (0 permitido → regresión).
 - **Reparto por frecuencia**: 3 días → full-body; 4 → tren superior/inferior alterno (skill en días de tren superior); 5 → por patrón. En todos, cada patrón recibe trabajo ≈2×/semana.
 - **Anatomía de sesión**: calentamiento → bloque de *skill* (fresco) → fuerza por patrón (1–2 ejercicios) → core.
 - **Progresión**: S1 RIR 3 (base) → S2 RIR 2 (+volumen) → S3 RIR 1 (+volumen) → S4 deload RIR 4 (~50 % del volumen). Cargas como % del máximo, nunca al fallo.
 - **Criterio de etapa de skill**: cada etapa mide una marca en **segundos mantenidos** (holds: pino, front lever, planche) o en **repeticiones** (pistol squat), con sus series. Es dato de la escalera, no regla.
 - **Avance de skill**: se sube de etapa al cumplir el criterio de la etapa actual en dos sesiones consecutivas.
+- **Ajuste por palanca**: para los skills apalancados (planche, front lever; flag `lever` en `skills.json`), el motor clasifica la palanca del atleta —derivada de peso × altura × proporción (envergadura/entrepierna)— en tres cubos (favorable, neutra, desfavorable) y ajusta ±1 serie el bloque de skill, con una nota de ritmo esperado; el criterio de etapa no cambia (ADR-0010).
 - **Sesión suelta**: parámetros tiempo (15/30/45/60 min), energía (baja/media/alta), foco (patrón o skill) y «sorpréndeme». El motor mapea tiempo+energía a ejercicios/series/RIR, filtra el catálogo por el foco y respeta la escalera del skill si aparece. Se guarda en historial y **no** altera el mesociclo ni los máximos.
 - **API** (contractos): perfil (crear/leer) y **objetivo** (skill objetivo: leer/fijar), catálogo (ejercicios, skills, **progreso** por skill y **rutinas generales**), generar plan, leer plan e historial, registrar sesión, generar sesión suelta. El prompt en lenguaje natural queda para después.
 - **Pantallas**: onboarding (perfil y objetivo), sesión del día, vista del plan (semana/sesión), biblioteca (catálogo de ejercicios, escaleras de skill y rutinas generales), registro de sesión, generador de sesión suelta, historial.
