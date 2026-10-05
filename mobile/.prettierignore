@@ -3,3 +3,4 @@ dist
 .expo
 android
 ios
+src/uniwind-types.d.ts
