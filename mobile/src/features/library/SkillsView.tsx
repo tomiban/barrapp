@@ -8,6 +8,7 @@ import {
   type SkillStage,
   type StageCriterion,
 } from '@/api/catalog/skills';
+import { fetchSkillProgress } from '@/api/catalog/progress';
 import { Button } from '@/design-system/Button';
 import { Banner, EmptyState, Loading } from '@/design-system/Feedback';
 import { Stack } from '@/design-system/layout';
@@ -18,7 +19,12 @@ import { formatRoutineItem } from '@/features/library/routineItemText';
 
 type LoadState =
   | { status: 'loading' }
-  | { status: 'ready'; skills: Skill[]; exerciseNames: Map<string, string> }
+  | {
+      status: 'ready';
+      skills: Skill[];
+      exerciseNames: Map<string, string>;
+      currentStageBySkill: Map<string, number>;
+    }
   | { status: 'error'; message: string };
 
 function messageOf(error: unknown): string {
@@ -66,20 +72,25 @@ function PatternRoutineBlock({
  *
  * El endpoint de skills referencia los ejercicios por id; para mostrar el nombre en español se
  * combinan el catálogo de ejercicios (acondicionamiento) con los nombres de etapa del propio
- * skill (movimientos de la escalera). Es hermana de `ExercisesView` (#7) y `RoutinesView` (#67).
- *
- * Deja la estructura por etapa para que #9 resalte la etapa actual sin reorganizarla.
+ * skill (movimientos de la escalera). Además lee `GET /catalog/progress` y **resalta la etapa
+ * actual** de cada skill (un skill sin progreso parte de la etapa 1). Es hermana de
+ * `ExercisesView` (#7) y `RoutinesView` (#67).
  */
 export function SkillsView() {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
 
   const load = useCallback((signal?: AbortSignal) => {
-    Promise.all([fetchSkillCatalog(signal), fetchExerciseCatalog(signal)])
-      .then(([skills, catalog]) =>
+    Promise.all([
+      fetchSkillCatalog(signal),
+      fetchExerciseCatalog(signal),
+      fetchSkillProgress(signal),
+    ])
+      .then(([skills, catalog, progress]) =>
         setState({
           status: 'ready',
           skills,
           exerciseNames: buildExerciseNameIndex(catalog, skills),
+          currentStageBySkill: new Map(progress.map((entry) => [entry.skillId, entry.stageOrder])),
         }),
       )
       .catch((error: unknown) => {
@@ -130,6 +141,7 @@ export function SkillsView() {
     <Stack gap="xl">
       {state.skills.map((skill) => {
         const nameOf = (exerciseId: string) => state.exerciseNames.get(exerciseId) ?? exerciseId;
+        const currentStage = state.currentStageBySkill.get(skill.id) ?? 1;
 
         return (
           <Stack key={skill.id} gap="md" testID={`library-skill-${skill.id}`}>
@@ -144,15 +156,21 @@ export function SkillsView() {
                 count={skill.stages.length}
                 testID={`library-skill-${skill.id}-ladder`}
               />
-              {skill.stages.map((stage: SkillStage, index: number) => (
-                <ListRow
-                  key={stage.order}
-                  title={stage.name}
-                  subtitle={`Etapa ${stage.order} · ${formatCriterion(stage.criterion)}`}
-                  last={index === skill.stages.length - 1}
-                  testID={`library-skill-${skill.id}-stage-${stage.order}`}
-                />
-              ))}
+              {skill.stages.map((stage: SkillStage, index: number) => {
+                const isCurrent = stage.order === currentStage;
+
+                return (
+                  <ListRow
+                    key={stage.order}
+                    title={stage.name}
+                    subtitle={`Etapa ${stage.order} · ${formatCriterion(stage.criterion)}`}
+                    role={isCurrent ? 'active' : undefined}
+                    stateLabel={isCurrent ? 'Etapa actual' : undefined}
+                    last={index === skill.stages.length - 1}
+                    testID={`library-skill-${skill.id}-stage-${stage.order}`}
+                  />
+                );
+              })}
             </Stack>
 
             <Stack gap="sm">

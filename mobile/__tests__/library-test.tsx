@@ -231,11 +231,14 @@ const ROUTINES = [
 
 /**
  * Mock de `fetch` que reparte por ruta: skills devuelve la escalera, routines los programas
- * generales y el resto, el catálogo de ejercicios.
+ * generales, progress la etapa actual por skill y el resto, el catálogo de ejercicios.
  */
 function routeFetch(): jest.Mock {
   return jest.fn((input: unknown) => {
     const url = String(input);
+    if (url.includes('/catalog/progress')) {
+      return Promise.resolve(jsonResponse(200, [{ skillId: 'planche', stageOrder: 2 }]));
+    }
     if (url.includes('/catalog/skills')) {
       return Promise.resolve(jsonResponse(200, SKILLS));
     }
@@ -342,6 +345,52 @@ describe('LibraryScreen · Skills', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/catalog/skills'),
+      expect.anything(),
+    );
+  });
+});
+
+describe('LibraryScreen · Progreso de skill', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    jest.restoreAllMocks();
+  });
+
+  it('highlights the current stage with its criterion and defaults the rest to stage one', async () => {
+    const fetchMock = routeFetch();
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await render(<LibraryScreen />);
+    await waitFor(() => expect(screen.getByText('Flexiones')).toBeOnTheScreen());
+
+    await fireEvent.press(screen.getByTestId('library-section-skills'));
+    await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
+
+    // La etapa actual (planche → 2) queda resaltada con su criterio.
+    expect(
+      screen.getByTestId('library-skill-planche-stage-2-state', { includeHiddenElements: true }),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId('library-skill-planche-stage-2').props.accessibilityLabel).toContain(
+      'Etapa actual',
+    );
+    expect(screen.getByText('Etapa 2 · 3 × 10 s')).toBeOnTheScreen();
+
+    // La etapa no actual no se resalta.
+    expect(
+      screen.queryByTestId('library-skill-planche-stage-1-state', { includeHiddenElements: true }),
+    ).not.toBeOnTheScreen();
+
+    // Un skill sin fila de progreso parte de la etapa 1 y también se resalta.
+    expect(
+      screen.getByTestId('library-skill-pistol-squat-stage-1-state', {
+        includeHiddenElements: true,
+      }),
+    ).toBeOnTheScreen();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/catalog/progress'),
       expect.anything(),
     );
   });
