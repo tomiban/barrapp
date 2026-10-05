@@ -2,18 +2,39 @@ import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
 /*
- * `tailwind-merge` no conoce los nombres de la escala de espaciado del design
- * system (`xs`…`margin`), así que sin registrarlos no resolvería conflictos
- * como `gap-md` vs `gap-lg` y el `className` de un consumidor no podría
- * sobrescribir el espaciado de un componente. Los radios y el color sí los
- * conoce por defecto.
+ * `tailwind-merge` no conoce las escalas del design system, así que sin
+ * registrarlas no resolvería los conflictos entre utilities del mismo grupo y
+ * el `className` de un consumidor no podría sobrescribir el estilo de un
+ * componente:
+ *
+ * - Espaciado (`xs`…`margin`): `gap-md` vs `gap-lg`, `p-md` vs `px-lg`…
+ * - Tipografía (`text-*`): sin registrar la escala, `tailwind-merge` clasifica
+ *   `text-body-md` como color y lo descarta al fusionarlo con `text-primary`.
+ *
+ * Los radios, colores y bordes sí los conoce por defecto.
  */
 const SPACING_SCALE = ['xs', 'sm', 'md', 'lg', 'xl', 'gutter', 'margin'];
+
+const TYPE_SCALE = [
+  'display-hero',
+  'headline-metric',
+  'headline-lg',
+  'headline-md',
+  'headline-sm',
+  'body-lg',
+  'body-md',
+  'body-sm',
+  'label-technical',
+  'label-code',
+];
 
 const twMerge = extendTailwindMerge({
   extend: {
     theme: {
       spacing: SPACING_SCALE,
+    },
+    classGroups: {
+      'font-size': [{ text: TYPE_SCALE }],
     },
   },
 });
