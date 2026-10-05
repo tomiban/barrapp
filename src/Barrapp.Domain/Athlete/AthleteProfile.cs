@@ -13,6 +13,18 @@ namespace Barrapp.Domain.Athlete;
 /// </remarks>
 public sealed class AthleteProfile
 {
+    /// <summary>Peso mínimo admitido, en kilogramos.</summary>
+    public const double MinWeightKilograms = 30;
+
+    /// <summary>Peso máximo admitido, en kilogramos.</summary>
+    public const double MaxWeightKilograms = 200;
+
+    /// <summary>Altura mínima admitida, en centímetros.</summary>
+    public const double MinHeightCentimeters = 120;
+
+    /// <summary>Altura máxima admitida, en centímetros.</summary>
+    public const double MaxHeightCentimeters = 220;
+
     private AthleteProfile(Guid id, Guid userId, double weightKilograms, double heightCentimeters)
     {
         Id = id;
@@ -39,8 +51,8 @@ public sealed class AthleteProfile
     public double HeightCentimeters { get; private set; }
 
     /// <summary>
-    /// Crea un perfil para <paramref name="userId"/>. Falla si el peso o la altura no son
-    /// números positivos.
+    /// Crea un perfil para <paramref name="userId"/>. Falla si el peso (30–200 kg) o la
+    /// altura (120–220 cm) están fuera de rango.
     /// </summary>
     public static Result<AthleteProfile> Create(
         Guid userId,
@@ -54,8 +66,8 @@ public sealed class AthleteProfile
     }
 
     /// <summary>
-    /// Actualiza las medidas del perfil. Falla si el peso o la altura no son números
-    /// positivos; en ese caso no se modifica nada.
+    /// Actualiza las medidas del perfil. Falla si el peso (30–200 kg) o la altura
+    /// (120–220 cm) están fuera de rango; en ese caso no se modifica nada.
     /// </summary>
     public Result Update(double weightKilograms, double heightCentimeters)
     {
@@ -73,16 +85,16 @@ public sealed class AthleteProfile
 
     private static Result ValidateMeasurements(double weightKilograms, double heightCentimeters)
     {
-        if (!IsPositive(weightKilograms))
+        if (!IsWithinRange(weightKilograms, MinWeightKilograms, MaxWeightKilograms))
         {
-            return Result.Failure(DomainErrors.AthleteProfile.WeightMustBePositive);
+            return Result.Failure(DomainErrors.AthleteProfile.WeightOutOfRange);
         }
 
-        return !IsPositive(heightCentimeters)
-            ? Result.Failure(DomainErrors.AthleteProfile.HeightMustBePositive)
+        return !IsWithinRange(heightCentimeters, MinHeightCentimeters, MaxHeightCentimeters)
+            ? Result.Failure(DomainErrors.AthleteProfile.HeightOutOfRange)
             : Result.Success();
     }
 
-    private static bool IsPositive(double value) =>
-        !double.IsNaN(value) && !double.IsInfinity(value) && value > 0;
+    private static bool IsWithinRange(double value, double min, double max) =>
+        double.IsFinite(value) && value >= min && value <= max;
 }
