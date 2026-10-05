@@ -4,9 +4,11 @@ using FluentValidation;
 namespace Barrapp.Application.Features.AthleteProfiles;
 
 /// <summary>
-/// Valida la entrada del comando en el pipeline, antes de que llegue al handler. Comprueba que
-/// el peso (30–200 kg) y la altura (120–220 cm) están dentro de rango; los límites salen de
-/// <see cref="AthleteProfile"/> para no duplicarlos.
+/// Valida la forma de la entrada en el pipeline, antes de que llegue al handler: que el peso
+/// (30–200 kg), la altura (120–220 cm) y los días de entrenamiento (3–5) estén dentro de rango.
+/// Los límites salen del dominio para no duplicarlos. La semántica de los máximos (código
+/// conocido, sin repetidos, cobertura de todos los ejercicios básicos y repeticiones ≥ 0) vive
+/// solo en <see cref="AthleteProfile"/>: el validador no la reimplementa.
 /// </summary>
 internal sealed class SaveAthleteProfileCommandValidator : AbstractValidator<SaveAthleteProfileCommand>
 {
@@ -19,5 +21,9 @@ internal sealed class SaveAthleteProfileCommandValidator : AbstractValidator<Sav
         RuleFor(command => command.HeightCentimeters)
             .InclusiveBetween(AthleteProfile.MinHeightCentimeters, AthleteProfile.MaxHeightCentimeters)
             .WithMessage("La altura debe estar entre {From} y {To} cm.");
+
+        RuleFor(command => command.TrainingDays)
+            .InclusiveBetween(AthleteProfile.MinTrainingDays, AthleteProfile.MaxTrainingDays)
+            .WithMessage("Los días de entrenamiento deben estar entre {From} y {To}.");
     }
 }

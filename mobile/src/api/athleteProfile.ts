@@ -1,32 +1,90 @@
 import { getApiBaseUrl } from '@/api/client';
 
-/** Perfil del atleta: peso en kg y altura en cm. */
-export type AthleteProfile = {
-  weightKilograms: number;
-  heightCentimeters: number;
+/** Patrón de movimiento de un ejercicio básico. */
+export type ExercisePattern = 'push' | 'pull' | 'legs';
+
+/** Ejercicio básico del perfil: código estable, nombre para la UI y patrón. */
+export type BasicExercise = {
+  code: string;
+  name: string;
+  pattern: ExercisePattern;
 };
 
 /**
- * Límites que valida el API (spec 0001): peso 30–200 kg y altura 120–220 cm.
- * El cliente los replica para avisar antes de enviar; el API sigue siendo la
- * fuente de verdad.
+ * Los tres ejercicios básicos del MVP, espejo del catálogo del dominio (códigos en
+ * inglés, nombres y patrones en español). El catálogo completo llega más adelante.
  */
-export const ATHLETE_PROFILE_LIMITS = {
+export const BASIC_EXERCISES: readonly BasicExercise[] = [
+  { code: 'push_up', name: 'Flexión', pattern: 'push' },
+  { code: 'pull_up', name: 'Dominada', pattern: 'pull' },
+  { code: 'squat', name: 'Sentadilla', pattern: 'legs' },
+];
+
+/** Patrones en el orden en que se agrupan los máximos en la UI. */
+export const EXERCISE_PATTERNS: readonly ExercisePattern[] = ['push', 'pull', 'legs'];
+
+/** Nombre para la UI de cada patrón. */
+export const EXERCISE_PATTERN_LABELS: Record<ExercisePattern, string> = {
+  push: 'Empuje',
+  pull: 'Tirón',
+  legs: 'Pierna',
+};
+
+/** Máximo del atleta en un ejercicio básico; 0 indica regresión. */
+export type Maximum = {
+  exerciseCode: string;
+  repetitions: number;
+};
+
+/** Perfil del atleta: peso en kg, altura en cm, días de entrenamiento y máximos. */
+export type AthleteProfile = {
+  weightKilograms: number;
+  heightCentimeters: number;
+  trainingDays: number;
+  maximums: Maximum[];
+};
+
+/**
+ * Límites de peso y altura que valida el API (spec 0001): 30–200 kg y 120–220 cm. Los
+ * días de entrenamiento viven aparte, en `TRAINING_DAYS_LIMITS`. El cliente los replica
+ * para avisar antes de enviar; el API sigue siendo la fuente de verdad.
+ */
+export const BODY_MEASUREMENT_LIMITS = {
   weightKilograms: { min: 30, max: 200 },
   heightCentimeters: { min: 120, max: 220 },
 } as const;
+
+/** Días de entrenamiento admitidos por semana (3–5). */
+export const TRAINING_DAYS_LIMITS = { min: 3, max: 5 } as const;
 
 /** Mensajes de error por campo del formulario de perfil. */
 export type AthleteProfileFieldErrors = {
   weight?: string;
   height?: string;
+  trainingDays?: string;
 };
 
-/** Resultado de validar el borrador del formulario de perfil. */
-export type AthleteProfileMeasurements = {
+/** Borrador del formulario de perfil: medidas, días de entrenamiento y errores por campo. */
+export type AthleteProfileDraft = {
   weightKilograms: number | null;
   heightCentimeters: number | null;
+  trainingDays: number | null;
   errors: AthleteProfileFieldErrors;
+};
+
+/** Borrador de un máximo: código del ejercicio y texto introducido. */
+export type MaximumDraft = {
+  exerciseCode: string;
+  value: string;
+};
+
+/** Mensajes de error de los máximos, por código de ejercicio. */
+export type MaximumFieldErrors = Record<string, string>;
+
+/** Resultado de validar los borradores de los máximos. */
+export type MaximumsValidation = {
+  maximums: Maximum[] | null;
+  errors: MaximumFieldErrors;
 };
 
 /** Convierte el texto de una medida en número; `null` si no es un número válido. */
@@ -58,17 +116,35 @@ function validateMeasurement(
   return { value: parsed };
 }
 
+/** Valida los días de entrenamiento: devuelve el número o el mensaje que le corresponde. */
+function validateTrainingDays(trainingDays: number): { value: number | null; error?: string } {
+  if (
+    !Number.isInteger(trainingDays) ||
+    trainingDays < TRAINING_DAYS_LIMITS.min ||
+    trainingDays > TRAINING_DAYS_LIMITS.max
+  ) {
+    return {
+      value: null,
+      error: `Los días de entrenamiento deben estar entre ${TRAINING_DAYS_LIMITS.min} y ${TRAINING_DAYS_LIMITS.max}.`,
+    };
+  }
+
+  return { value: trainingDays };
+}
+
 /**
  * Valida el borrador del formulario contra los límites del perfil. Devuelve las
  * medidas numéricas cuando son válidas (admite coma decimal) y un mensaje claro
  * por campo cuando no: distingue un valor ausente o no numérico de uno fuera de
- * rango.
+ * rango. Los días de entrenamiento se validan contra 3–5.
  */
-export function validateAthleteProfileMeasurements(
+export function validateAthleteProfileDraft(
   weight: string,
   height: string,
-): AthleteProfileMeasurements {
-  const { weightKilograms: weightLimits, heightCentimeters: heightLimits } = ATHLETE_PROFILE_LIMITS;
+  trainingDays: number,
+): AthleteProfileDraft {
+  const { weightKilograms: weightLimits, heightCentimeters: heightLimits } =
+    BODY_MEASUREMENT_LIMITS;
 
   const weightResult = validateMeasurement(
     weight,
@@ -82,6 +158,7 @@ export function validateAthleteProfileMeasurements(
     'Introduce la altura en cm.',
     `La altura debe estar entre ${heightLimits.min} y ${heightLimits.max} cm.`,
   );
+  const trainingDaysResult = validateTrainingDays(trainingDays);
 
   const errors: AthleteProfileFieldErrors = {};
   if (weightResult.error) {
@@ -90,10 +167,52 @@ export function validateAthleteProfileMeasurements(
   if (heightResult.error) {
     errors.height = heightResult.error;
   }
+  if (trainingDaysResult.error) {
+    errors.trainingDays = trainingDaysResult.error;
+  }
 
   return {
     weightKilograms: weightResult.value,
     heightCentimeters: heightResult.value,
+    trainingDays: trainingDaysResult.value,
+    errors,
+  };
+}
+
+/**
+ * Valida los borradores de los máximos. Son repeticiones enteras (nada de decimales ni
+ * comas): 0 es válido e indica regresión. Exige un borrador por cada ejercicio básico y
+ * devuelve los máximos numéricos, o `null` junto con un mensaje claro por ejercicio.
+ */
+export function validateMaximumDrafts(drafts: readonly MaximumDraft[]): MaximumsValidation {
+  const errors: MaximumFieldErrors = {};
+  const maximums: Maximum[] = [];
+
+  for (const exercise of BASIC_EXERCISES) {
+    const draft = drafts.find((candidate) => candidate.exerciseCode === exercise.code);
+    const value = draft?.value.trim() ?? '';
+
+    if (value === '') {
+      errors[exercise.code] = 'Introduce las repeticiones.';
+      continue;
+    }
+
+    if (!/^-?\d+$/.test(value)) {
+      errors[exercise.code] = 'Introduce un número entero de repeticiones.';
+      continue;
+    }
+
+    const repetitions = Number(value);
+    if (repetitions < 0) {
+      errors[exercise.code] = 'El máximo no puede ser negativo.';
+      continue;
+    }
+
+    maximums.push({ exerciseCode: exercise.code, repetitions });
+  }
+
+  return {
+    maximums: Object.keys(errors).length === 0 ? maximums : null,
     errors,
   };
 }

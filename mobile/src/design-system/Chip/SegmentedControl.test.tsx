@@ -107,4 +107,27 @@ describe('SegmentedControl', () => {
 
     expect(screen.getByTestId('segment')).toHaveProp('className', expect.stringContaining('mt-lg'));
   });
+
+  it('renders the error as an announced message with the error token', async () => {
+    await render(
+      <SegmentedControl
+        options={options}
+        value="fuerza"
+        onChange={() => {}}
+        error="Los días de entrenamiento deben estar entre 3 y 5."
+      />,
+    );
+
+    const message = screen.getByText('Los días de entrenamiento deben estar entre 3 y 5.');
+    expect(message).toBeOnTheScreen();
+    expect(message).toHaveProp('accessibilityRole', 'alert');
+    expect(message).toHaveProp('accessibilityLiveRegion', 'polite');
+    expect(message).toHaveProp('className', expect.stringContaining('text-error'));
+  });
+
+  it('renders no error message when none is given', async () => {
+    await render(<SegmentedControl options={options} value="fuerza" onChange={() => {}} />);
+
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });
