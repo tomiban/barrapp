@@ -38,11 +38,47 @@ Para prohibirla, añadir `--color-*: initial;` al inicio del `@theme`.
 - Profundidad por bordes y capas tonales (`canvas` → `surface` →
   `surface-muted`), **sin sombras**.
 
+## Componentes
+
+Cada componente vive en su propio directorio `src/design-system/<Nombre>/` con
+un `index.ts` que expone su API pública, sus props y sus tipos.
+
+### ProgressIndicator
+
+Barra o anillo de progreso sobre los tokens de color, para series y para el
+avance del mesociclo. Sin sombras: la pista es una capa tonal (`surface-muted`)
+y la profundidad sale de bordes y radios.
+
+| Prop        | Tipo                 | Default    | Uso                                                             |
+| ----------- | -------------------- | ---------- | --------------------------------------------------------------- |
+| `value`     | `number`             | —          | Progreso actual; se recorta a `[0, max]`.                       |
+| `max`       | `number`             | `1`        | Total de la escala; el ratio es `value / max`.                  |
+| `tone`      | `ProgressTone`       | `'active'` | Rol semántico de estado.                                        |
+| `label`     | `string`             | —          | Etiqueta textual; el estado nunca se comunica solo por color.   |
+| `variant`   | `'bar' \| 'ring'`    | `'bar'`    | Forma del indicador.                                            |
+| `size`      | `number`             | `64`       | Lado del anillo en dp (solo `ring`).                            |
+| `className` | `string`             | —          | Clases del contenedor (se combinan con `cn()`).                 |
+| `testID`    | `string`             | —          | Identificador; barra/anillo derivan `<testID>-fill` / `-ring`.  |
+
+`ProgressTone` mapea los roles semánticos de la spec a tokens:
+
+| Rol                   | `tone`      | Token       |
+| --------------------- | ----------- | ----------- |
+| Activo / en curso     | `active`    | `primary`   |
+| Calibrado / confirmado | `confirmed` | `secondary` |
+| Sobrecarga / fallo    | `error`     | `error`     |
+| Inactivo              | `inactive`  | `textMuted` |
+
+Accesibilidad: `accessibilityRole="progressbar"` con
+`accessibilityValue={{ min: 0, max, now }}` (con `max` ya saneado). La barra
+colorea el relleno por `className`; el anillo colorea por la prop `stroke` de
+`react-native-svg`, resolviendo el token con `useCSSVariable`.
+
 ## Estructura
 
 - `utils/` — infraestructura compartida (`cn()`).
-- (próximos tickets) componentes base y de entrenamiento, cada uno en su propio
-  archivo/directorio; **sin barrel `index.ts`** para no colisionar entre tickets.
+- `<Nombre>/` — cada componente con su `index.ts` de API pública. Un barrel por
+  directorio evita colisiones entre tickets.
 
 Reglas: nada de colores, espaciado ni tipografía hardcodeados; todo sale de los
 tokens de `mobile/global.css`.
