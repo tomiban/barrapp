@@ -64,6 +64,20 @@ public static class DomainErrors
             "No hay ningún objetivo guardado para este atleta.");
     }
 
+    /// <summary>Errores de la etapa actual del atleta por skill.</summary>
+    public static class SkillProgress
+    {
+        /// <summary>El skill indicado no existe en el catálogo.</summary>
+        public static readonly Error UnknownSkill = Error.Validation(
+            "skill_progress.unknown_skill",
+            "El skill indicado no existe en el catálogo.");
+
+        /// <summary>La etapa indicada no existe en la escalera del skill.</summary>
+        public static readonly Error UnknownStage = Error.Validation(
+            "skill_progress.unknown_stage",
+            "La etapa indicada no existe en la escalera del skill.");
+    }
+
     /// <summary>Errores de la base de conocimiento (catálogo, escaleras y rutinas).</summary>
     public static class Knowledge
     {
