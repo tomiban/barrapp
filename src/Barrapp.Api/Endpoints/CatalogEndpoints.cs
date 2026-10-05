@@ -25,6 +25,20 @@ internal static class CatalogEndpoints
             .Produces<ExerciseCatalogResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapGet(
+                "/skills",
+                async (ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(new GetSkillsQuery(), cancellationToken);
+
+                    return result.IsSuccess
+                        ? Results.Ok(result.Value)
+                        : result.Error.ToProblemDetails();
+                })
+            .WithName("GetSkills")
+            .WithSummary("Devuelve los skills con su escalera de progresión y sus rutinas de patrón.")
+            .Produces<IReadOnlyList<SkillResponse>>();
+
         return app;
     }
 }
