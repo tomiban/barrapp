@@ -1,0 +1,31 @@
+# .NET
+bin/
+obj/
+*.user
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+
+# Rider / VS
+.idea/
+.vs/
+
+# Node / PWA front
+node_modules/
+dist/
+.vite/
+
+# Env / secrets
+.env
+.env.*
+appsettings.Development.json
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# OS
+.DS_Store
