@@ -126,5 +126,5 @@ Screen/Header · TabBar · BottomSheet/Modal · Toast/Banner · Loading/Skeleton
 
 ## Further Notes
 
-- **Implementación**: **Uniwind** (MIT, free) —Tailwind CSS v4 sobre React Native (ADR-0009). Los tokens se definen en `@theme`; corre en Expo Go.
+- **Implementación**: **Uniwind** (MIT, free) —Tailwind CSS v4 sobre React Native (ADR-0008). Los tokens se definen en `@theme`; corre en Expo Go.
 - Deriva de la propuesta «Functional Swiss Brutalism», con la paleta fría de su prosa como fuente de verdad.

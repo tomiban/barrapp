@@ -106,4 +106,4 @@ Una **app nativa en español (kg/cm)** (iOS y Android, con Expo) donde introduzc
 - **Costura de test**: principal, la interfaz pública del motor; secundaria, la outbox del cliente.
 - **Tickets**: viven en el issue tracker (GitHub), issues #2–#30 en los milestones M1–M7.
 - **Repositorio**: https://github.com/tomiban/barrapp (privado).
-- **Decisiones registradas**: `docs/adr/0001-backend-dotnet-sqlite.md`, `docs/adr/0002-motor-determinista-llm-como-capa.md`, `docs/adr/0003-front-expo-react-native-web.md`, `docs/adr/0004-offline-first-sincronizacion.md`, `docs/adr/0005-nativo-ios-android-mvp.md`, `docs/adr/0006-clean-architecture-cqrs.md`.
+- **Decisiones registradas**: `docs/adr/0001-backend-dotnet-sqlite.md`, `docs/adr/0002-motor-determinista-llm-como-capa.md`, `docs/adr/0004-offline-first-sincronizacion.md`, `docs/adr/0005-nativo-ios-android-mvp.md`, `docs/adr/0006-clean-architecture-cqrs.md`.
