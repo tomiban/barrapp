@@ -156,6 +156,79 @@ public sealed class KnowledgeBaseLoaderTests
     }
 
     [Fact]
+    public void Load_from_embedded_resources_validates_every_skill_ladder_and_pattern_routine()
+    {
+        var catalog = CreateLoader().LoadEmbeddedResources();
+
+        // Los cuatro skills de la M2, cada uno con su patrón y su flag de palanca.
+        Assert.Equal(
+            ["handstand", "front-lever", "planche", "pistol-squat"],
+            catalog.Skills.Select(skill => skill.Id));
+
+        foreach (var skill in catalog.Skills)
+        {
+            Assert.NotEqual(ExerciseGroup.Cardio, skill.Group);
+            Assert.Equal(5, skill.Stages.Count);
+            Assert.Equal(
+                Enumerable.Range(1, skill.Stages.Count),
+                skill.Stages.Select(stage => stage.Order));
+            Assert.All(skill.Stages, stage =>
+            {
+                Assert.True(stage.Criterion.Target > 0);
+                Assert.True(stage.Criterion.Sets > 0);
+                Assert.False(string.IsNullOrWhiteSpace(stage.Name));
+                Assert.NotNull(catalog.FindExercise(stage.ExerciseId));
+            });
+
+            Assert.NotEmpty(skill.PatternRoutines);
+            Assert.All(skill.PatternRoutines, routine =>
+            {
+                Assert.False(string.IsNullOrWhiteSpace(routine.Id));
+                Assert.False(string.IsNullOrWhiteSpace(routine.Name));
+                Assert.NotEmpty(routine.Items);
+                Assert.All(
+                    routine.Items,
+                    item => Assert.NotNull(catalog.FindExercise(item.ExerciseId)));
+            });
+        }
+
+        // Planche y front lever traen varios modelos (R1–R5); pino y pistol, uno.
+        Assert.Equal(5, catalog.FindSkill("planche")!.PatternRoutines.Count);
+        Assert.Equal(5, catalog.FindSkill("front-lever")!.PatternRoutines.Count);
+        Assert.Single(catalog.FindSkill("handstand")!.PatternRoutines);
+        Assert.Single(catalog.FindSkill("pistol-squat")!.PatternRoutines);
+
+        // Los apalancados lo declaran; pino (equilibrio) y pistol (pierna) no.
+        Assert.True(catalog.FindSkill("planche")!.Lever);
+        Assert.True(catalog.FindSkill("front-lever")!.Lever);
+        Assert.False(catalog.FindSkill("handstand")!.Lever);
+        Assert.False(catalog.FindSkill("pistol-squat")!.Lever);
+
+        // Los holds se miden en segundos y el pistol squat en repeticiones.
+        foreach (var skillId in new[] { "handstand", "front-lever", "planche" })
+        {
+            Assert.All(
+                catalog.FindSkill(skillId)!.Stages,
+                stage => Assert.Equal(Metric.Seconds, stage.Criterion.Metric));
+        }
+
+        Assert.All(
+            catalog.FindSkill("pistol-squat")!.Stages,
+            stage => Assert.Equal(Metric.Reps, stage.Criterion.Metric));
+
+        // Los 20 movimientos de skill resuelven a su skill y no declaran patrón propio.
+        var skillMovements = catalog.Exercises
+            .Where(exercise => exercise.Kind == ExerciseKind.Skill)
+            .ToList();
+        Assert.Equal(20, skillMovements.Count);
+        Assert.All(skillMovements, movement =>
+        {
+            Assert.Null(movement.Group);
+            Assert.NotNull(catalog.FindSkill(movement.SkillId!));
+        });
+    }
+
+    [Fact]
     public void Load_rejects_non_consecutive_superset_groups()
     {
         var exception = Assert.Throws<KnowledgeBaseValidationException>(
