@@ -18,9 +18,17 @@ _Avoid_: movimiento, ejercicio especial, truco
 Secuencia ordenada de variantes de un skill, desde la regresión más fácil hasta la versión completa; el atleta avanza al cumplir el criterio de su etapa actual.
 _Avoid_: niveles, pasos, roadmap
 
+**Criterio de etapa**:
+Marca que el atleta debe alcanzar para avanzar de la etapa actual a la siguiente de una escalera: una marca en segundos mantenidos o en repeticiones, con sus series.
+_Avoid_: requisito, meta, test
+
 **Regresión**:
 Variante más fácil de un ejercicio o skill, que permite entrenarlo cuando su versión estándar aún no es alcanzable.
 _Avoid_: variante fácil, adaptación
+
+**Ejercicio**:
+Movimiento del catálogo, de acondicionamiento o variante de un skill, con su unidad de medida (repeticiones o segundos).
+_Avoid_: movimiento, drill
 
 **Acondicionamiento general**:
 Trabajo de fuerza general repartido en los tres patrones básicos: empuje, tirón y pierna.
@@ -67,7 +75,7 @@ Número máximo de repeticiones estrictas sin lastre que el atleta logra en un e
 _Avoid_: 1RM, récord, PR
 
 **Progresión de skill**:
-Etapa actual del atleta dentro de la escalera de progresión de un skill; se mide en segundos mantenidos.
+Etapa actual del atleta dentro de la escalera de progresión de un skill; cada etapa se mide en segundos mantenidos o en repeticiones, según el skill.
 _Avoid_: nivel, avance
 
 **Registro**:
