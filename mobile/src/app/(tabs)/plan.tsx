@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { messageOf } from '@/api/messageOf';
+import { advanceSkillStage } from '@/api/catalog/progress';
 import { fetchPlan, type Plan } from '@/api/plan';
 import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { CloudOff } from '@/design-system/Icon';
 import { Stack } from '@/design-system/layout';
 import { Header, Screen } from '@/design-system/Navigation';
+import { StageAdvanceAction, type StageAdvanceState } from '@/features/plan/StageAdvanceAction';
 import { PlanView } from '@/features/plan/PlanView';
 import { openPlanStore } from '@/offline/planStore';
 import { readPlan, type PlanReadResult } from '@/offline/readPlan';
@@ -31,6 +33,7 @@ function toLoadState(result: PlanReadResult): LoadState {
  */
 export default function PlanScreen() {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const [advanceState, setAdvanceState] = useState<StageAdvanceState>({ status: 'idle' });
 
   const load = useCallback((signal?: AbortSignal) => {
     void (async () => {
@@ -58,6 +61,30 @@ export default function PlanScreen() {
     load();
   }, [load]);
 
+  const advance = useCallback(async () => {
+    if (state.status !== 'ready' || state.offline) {
+      return;
+    }
+
+    setAdvanceState({ status: 'running' });
+    try {
+      const result = await advanceSkillStage(state.plan.skillId);
+      setAdvanceState(
+        result.advanced ? { status: 'success', stageOrder: result.stageOrder } : { status: 'kept' },
+      );
+
+      // Si subió de etapa, el plan deja de reflejar la etapa actual: se recarga.
+      if (result.advanced) {
+        load();
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      setAdvanceState({ status: 'error', message: messageOf(error) });
+    }
+  }, [state, load]);
+
   return (
     <Screen testID="plan-screen" header={<Header title="Plan" />}>
       {state.status === 'loading' ? (
@@ -83,7 +110,12 @@ export default function PlanScreen() {
               testID="plan-offline-banner"
             />
           ) : null}
+
           <PlanView plan={state.plan} />
+
+          {!state.offline ? (
+            <StageAdvanceAction state={advanceState} onAdvance={advance} testID="plan-advance" />
+          ) : null}
         </Stack>
       ) : null}
     </Screen>

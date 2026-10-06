@@ -45,6 +45,23 @@ internal static class SkillProgressEndpoints
             .Produces<SkillProgressResponse>()
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
+        group.MapPost(
+                "/{skillId}/advance",
+                async (string skillId, ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(
+                        new AdvanceSkillStageCommand(skillId),
+                        cancellationToken);
+
+                    return result.IsSuccess
+                        ? Results.Ok(result.Value)
+                        : result.Error.ToProblemDetails();
+                })
+            .WithName("AdvanceSkillStage")
+            .WithSummary("Evalúa el criterio con los registros y avanza de etapa si se cumple en dos sesiones consecutivas.")
+            .Produces<SkillStageAdvanceResponse>()
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
         return app;
     }
 }
