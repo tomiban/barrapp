@@ -82,7 +82,10 @@ public sealed class AthleteSkillProgressPersistenceTests : IDisposable
             .Send(new SetSkillProgressCommand("planche", 99));
 
         Assert.True(result.IsFailure);
-        Assert.Equal("skill_progress.unknown_stage", result.Error.Code);
+        Assert.Equal("validation.failed", result.Error.Code);
+        Assert.Contains(
+            "La etapa indicada no existe en la escalera del skill.",
+            result.Error.Description);
     }
 
     private static ServiceProvider CreateServices(ApplicationDbContext dbContext)

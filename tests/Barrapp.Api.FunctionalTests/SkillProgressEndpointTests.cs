@@ -67,6 +67,22 @@ public sealed class SkillProgressEndpointTests(BarrappApiFactory factory)
     }
 
     [Fact]
+    public async Task Put_progress_with_an_unknown_skill_returns_400()
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            "/catalog/progress/ghost",
+            new { stageOrder = 1 });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains("El skill indicado no existe en el catálogo.", problem!.Detail);
+    }
+
+    [Fact]
     public async Task Put_progress_with_a_stage_below_one_returns_400()
     {
         using var client = factory.CreateClient();
