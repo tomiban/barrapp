@@ -6,10 +6,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Barrapp.Application.Features.SessionLogs;
 
 /// <summary>
-/// Lista los registros de sesión del atleta proyectando directo a DTO (lado de lectura) y
-/// resolviendo el nombre y la unidad del ejercicio contra el catálogo, igual que el plan
-/// (ADR-0012). Las series viajan con el agregado, así que no hace falta un include.
+/// Lista los registros de sesión del atleta y resuelve el nombre y la unidad del ejercicio contra
+/// el catálogo, igual que el plan (ADR-0012).
 /// </summary>
+/// <remarks>
+/// Excepción pragmática documentada a «las queries proyectan directo a DTO»: las series son una
+/// colección owned del agregado y SQLite no permite proyectarlas a un DTO plano sin partir la
+/// consulta, así que se lee el árbol entero (registro + series) y se mapea en memoria con
+/// <see cref="SessionLogResponses"/>, el mismo patrón que ya usan el plan y el historial
+/// (ADR-0012 y ADR-0013).
+/// </remarks>
 internal sealed class GetSessionLogsQueryHandler(IApplicationDbContext dbContext, IKnowledgeBase knowledgeBase)
     : IQueryHandler<GetSessionLogsQuery, IReadOnlyList<SessionLogResponse>>
 {

@@ -7,10 +7,15 @@ using Microsoft.EntityFrameworkCore;
 namespace Barrapp.Application.Features.Plans;
 
 /// <summary>
-/// Proyecta el historial de mesociclos cerrados (los pasados) directo a DTO (lado de lectura),
-/// más reciente primero, resolviendo el nombre del skill contra el catálogo para la fila de
-/// resumen de la app.
+/// Proyecta el historial de mesociclos cerrados (los pasados), más reciente primero, resolviendo el
+/// nombre del skill contra el catálogo para la fila de resumen de la app.
 /// </summary>
+/// <remarks>
+/// Excepción pragmática documentada a «las queries proyectan directo a DTO»: el plan del mesociclo
+/// vive como snapshot JSON en una única columna y el nombre del skill se resuelve contra el
+/// catálogo en memoria, así que se leen los mesociclos enteros y se proyecta con el mismo patrón
+/// que el historial de sueltas y el plan (ADR-0012 y ADR-0013).
+/// </remarks>
 internal sealed class GetMesocycleHistoryQueryHandler(
     IApplicationDbContext dbContext,
     IKnowledgeBase catalog)
