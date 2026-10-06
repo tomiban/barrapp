@@ -11,7 +11,7 @@ namespace Barrapp.Domain.Knowledge;
 /// error de dominio correspondiente. El cargador de <c>Barrapp.Persistence</c> deserializa los
 /// JSON y usa esta puerta como única validación.
 /// </remarks>
-public sealed class KnowledgeBase : ISkillCatalog
+public sealed class KnowledgeBase : IGenerationCatalog
 {
     private KnowledgeBase(
         IReadOnlyList<Exercise> exercises,

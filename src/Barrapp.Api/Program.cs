@@ -49,6 +49,7 @@ if (app.Environment.IsDevelopment())
 app.MapPingEndpoints();
 app.MapAthleteProfileEndpoints();
 app.MapObjectiveEndpoints();
+app.MapPlanEndpoints();
 app.MapCatalogEndpoints();
 app.MapSkillProgressEndpoints();
 app.MapHealthChecks("/health");

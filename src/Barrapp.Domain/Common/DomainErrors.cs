@@ -88,6 +88,25 @@ public static class DomainErrors
             "La etapa indicada no existe en la escalera del skill.");
     }
 
+    /// <summary>Errores del motor de generación del plan.</summary>
+    public static class Plan
+    {
+        /// <summary>La frecuencia pedida todavía no tiene reparto implementado (solo 3 días).</summary>
+        public static readonly Error UnsupportedFrequency = Error.Validation(
+            "plan.unsupported_frequency",
+            "Por ahora solo se puede generar un plan de 3 días.");
+
+        /// <summary>El skill objetivo no tiene una etapa inicial resoluble en su escalera.</summary>
+        public static readonly Error MissingSkillStage = Error.Validation(
+            "plan.missing_skill_stage",
+            "El skill objetivo no tiene una etapa inicial en su escalera.");
+
+        /// <summary>Falta un ejercicio obligatorio en el catálogo.</summary>
+        public static Error UnknownExercise(string exerciseId) => Error.Validation(
+            "plan.unknown_exercise",
+            $"El ejercicio obligatorio '{exerciseId}' no existe en el catálogo.");
+    }
+
     /// <summary>Errores de la base de conocimiento (catálogo, escaleras y rutinas).</summary>
     public static class Knowledge
     {

@@ -7,16 +7,13 @@ namespace Barrapp.Application.Abstractions;
 /// y programas generales, ya validado y en memoria. Lo consumen el motor de generación, la sesión
 /// suelta y las queries de catálogo.
 /// </summary>
-public interface IKnowledgeBase : ISkillCatalog
+public interface IKnowledgeBase : IGenerationCatalog
 {
     /// <summary>Todos los ejercicios del catálogo.</summary>
     IReadOnlyList<Exercise> Exercises { get; }
 
     /// <summary>Ejercicios del grupo indicado.</summary>
     IReadOnlyList<Exercise> ExercisesByGroup(ExerciseGroup group);
-
-    /// <summary>Busca un ejercicio por su id; <c>null</c> si no existe.</summary>
-    Exercise? FindExercise(string exerciseId);
 
     /// <summary>Todos los skills.</summary>
     IReadOnlyList<Skill> Skills { get; }
