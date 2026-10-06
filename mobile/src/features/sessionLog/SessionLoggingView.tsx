@@ -11,8 +11,8 @@ import { StatusBadge } from '@/design-system/StatusBadge';
 import { Text } from '@/design-system/Text';
 import { TextField } from '@/design-system/TextField';
 
-/** Papeles de la sesión que se registran serie a serie (hoy solo fuerza). */
-const LOGGED_ROLES: readonly PlanItemRole[] = ['strength'];
+/** Papeles de la sesión que se registran serie a serie: skill, fuerza y core (anatomía de sesión). */
+const LOGGED_ROLES: readonly PlanItemRole[] = ['skill', 'strength', 'core'];
 
 /** Una respuesta de guardado (confirmación del servidor o error). */
 export type SaveFeedback = { role: 'confirmed' | 'error'; message: string };
@@ -51,8 +51,10 @@ function valuesOf(log: SessionLog): string {
 
 /**
  * Registro de la sesión del día, serie a serie (spec 0001, US-34): elige microciclo y día,
- * introduce las reps reales de cada serie de fuerza y guarda. Los ejercicios ya registrados se
- * muestran como confirmados y quedan fuera del siguiente guardado (editarlos es el ticket #22).
+ * introduce el valor real de cada serie —reps en fuerza, segundos en holds/skill— y guarda. La
+ * unidad sale de la prescripción del plan, que el motor deriva del tipo de ejercicio (D5/D6);
+ * el cliente solo introduce el número. Los ejercicios ya registrados se muestran como confirmados
+ * y quedan fuera del siguiente guardado (editarlos es el ticket #22).
  */
 export function SessionLoggingView({
   plan,
@@ -77,7 +79,7 @@ export function SessionLoggingView({
     microcycle?.sessions.find((candidate) => String(candidate.day) === day) ??
     microcycle?.sessions[0];
 
-  const strengthItems = useMemo(
+  const loggableItems = useMemo(
     () => session?.items.filter((item) => LOGGED_ROLES.includes(item.role)) ?? [],
     [session],
   );
@@ -132,7 +134,7 @@ export function SessionLoggingView({
   };
 
   const handleSave = () => {
-    const unchecked = strengthItems.filter((item) => logFor(item.exerciseId) === undefined);
+    const unchecked = loggableItems.filter((item) => logFor(item.exerciseId) === undefined);
 
     const exercises: ExerciseSetsPayload[] = [];
     for (const item of unchecked) {
@@ -141,7 +143,7 @@ export function SessionLoggingView({
         const raw = draftFor(item, setNumber).trim();
         const value = Number(raw);
         if (raw === '' || !Number.isInteger(value) || value < 0) {
-          setValidationError('Completa las reps de todas las series antes de guardar.');
+          setValidationError('Completa los valores de todas las series antes de guardar.');
           return;
         }
         sets.push({ setNumber, value });
@@ -181,15 +183,15 @@ export function SessionLoggingView({
         />
       </Stack>
 
-      {strengthItems.length === 0 ? (
+      {loggableItems.length === 0 ? (
         <EmptyState
-          title="Sin fuerza"
-          description="Esta sesión no tiene ejercicios de fuerza que registrar."
-          testID="session-log-no-strength"
+          title="Sin ejercicios"
+          description="Esta sesión no tiene ejercicios que registrar."
+          testID="session-log-no-items"
         />
       ) : (
         <Stack gap="lg">
-          {strengthItems.map((item) => {
+          {loggableItems.map((item) => {
             const logged = logFor(item.exerciseId);
 
             return (
