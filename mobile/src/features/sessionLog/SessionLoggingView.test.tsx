@@ -167,7 +167,9 @@ describe('SessionLoggingView', () => {
 
     // El skill en segundos y el core (hold) prescriben segundos; la unidad sale del ejercicio.
     expect(
-      within(screen.getByTestId('session-log-item-handstand-wall-support')).getByText('3 × 20–30 s'),
+      within(screen.getByTestId('session-log-item-handstand-wall-support')).getByText(
+        '3 × 20–30 s',
+      ),
     ).toBeOnTheScreen();
     expect(screen.getByText('2 × 5–8 reps')).toBeOnTheScreen();
 
@@ -473,8 +475,6 @@ describe('SessionLoggingView', () => {
     );
 
     expect(screen.getByTestId('session-log-no-items')).toBeOnTheScreen();
-    expect(
-      screen.getByText('Esta sesión no tiene ejercicios que registrar.'),
-    ).toBeOnTheScreen();
+    expect(screen.getByText('Esta sesión no tiene ejercicios que registrar.')).toBeOnTheScreen();
   });
 });
