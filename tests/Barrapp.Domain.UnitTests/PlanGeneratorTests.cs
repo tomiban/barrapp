@@ -8,12 +8,13 @@ namespace Barrapp.Domain.UnitTests;
 
 /// <summary>
 /// Reglas del motor de generación (#10): da un mesociclo de cuatro semanas con reparto full-body
-/// de 3 días, cada patrón recibe trabajo al menos dos veces por semana, cada sesión empieza por el
-/// bloque de skill en la etapa actual del atleta (#14) y el resultado es determinista. La carga de
-/// fuerza se deriva del máximo del atleta y nunca llega al fallo (#11); el bloque de skill se
-/// ajusta por la palanca del atleta en los skills apalancados (#68). El RIR baja de 3 a 1 en las
-/// tres primeras semanas, lo que sube las reps y el volumen (#12); la semana 4 es un deload con
-/// RIR 4 y ~50 % del volumen de la semana 3 (#13). Solo se prueba por su interfaz pública.
+/// de 3 días o alterno tren superior / tren inferior de 4 días (#15), cada patrón recibe trabajo
+/// al menos dos veces por semana, cada sesión empieza por el bloque de skill en la etapa actual del
+/// atleta (#14) y el resultado es determinista. La carga de fuerza se deriva del máximo del atleta
+/// y nunca llega al fallo (#11); el bloque de skill se ajusta por la palanca del atleta en los
+/// skills apalancados (#68). El RIR baja de 3 a 1 en las tres primeras semanas, lo que sube las
+/// reps y el volumen (#12); la semana 4 es un deload con RIR 4 y ~50 % del volumen de la semana 3
+/// (#13). Solo se prueba por su interfaz pública.
 /// </summary>
 public sealed class PlanGeneratorTests
 {
@@ -34,6 +35,107 @@ public sealed class PlanGeneratorTests
         Assert.Equal(3, result.Value.TrainingDays);
         Assert.Equal(4, result.Value.Microcycles.Count);
         Assert.All(result.Value.Microcycles, microcycle => Assert.Equal(3, microcycle.Sessions.Count));
+    }
+
+    [Fact]
+    public void Generate_for_four_days_alternates_upper_and_lower_sessions()
+    {
+        var plan = PlanGenerator.Generate(BuildProfile(4), BuildObjective(), FirstStageOrder, Catalog()).Value;
+
+        Assert.Equal(4, plan.TrainingDays);
+        Assert.All(plan.Microcycles, microcycle => Assert.Equal(4, microcycle.Sessions.Count));
+
+        foreach (var microcycle in plan.Microcycles)
+        {
+            // Días 1 y 3: tren superior (bloque de skill + empuje + tirón + core).
+            foreach (var day in new[] { 1, 3 })
+            {
+                var session = microcycle.Sessions.Single(s => s.Day == day);
+                Assert.Equal(
+                    new[]
+                    {
+                        SessionItemRole.Skill,
+                        SessionItemRole.Strength,
+                        SessionItemRole.Strength,
+                        SessionItemRole.Core,
+                    },
+                    session.Items.Select(item => item.Role));
+                Assert.Equal(
+                    new[] { "push_up", "pull_up" },
+                    session.Items
+                        .Where(item => item.Role == SessionItemRole.Strength)
+                        .Select(item => item.ExerciseId));
+            }
+
+            // Días 2 y 4: tren inferior (pierna + core).
+            foreach (var day in new[] { 2, 4 })
+            {
+                var session = microcycle.Sessions.Single(s => s.Day == day);
+                Assert.Equal(
+                    new[] { SessionItemRole.Strength, SessionItemRole.Core },
+                    session.Items.Select(item => item.Role));
+                Assert.Equal(
+                    new[] { "squat" },
+                    session.Items
+                        .Where(item => item.Role == SessionItemRole.Strength)
+                        .Select(item => item.ExerciseId));
+            }
+        }
+    }
+
+    [Fact]
+    public void Generate_for_four_days_puts_the_skill_block_only_on_upper_days()
+    {
+        var plan = PlanGenerator.Generate(BuildProfile(4), BuildObjective(), FirstStageOrder, Catalog()).Value;
+
+        foreach (var microcycle in plan.Microcycles)
+        {
+            // El skill se practica fresco en los dos días de tren superior (1 y 3) y no aparece en
+            // los de tren inferior (2 y 4).
+            Assert.All(
+                microcycle.Sessions.Where(session => session.Day is 1 or 3),
+                session => Assert.Equal(SessionItemRole.Skill, session.Items[0].Role));
+
+            Assert.All(
+                microcycle.Sessions.Where(session => session.Day is 2 or 4),
+                session => Assert.DoesNotContain(session.Items, item => item.Role == SessionItemRole.Skill));
+        }
+    }
+
+    [Fact]
+    public void Generate_for_four_days_gives_every_strength_pattern_work_twice_per_week()
+    {
+        var plan = PlanGenerator.Generate(BuildProfile(4), BuildObjective(), FirstStageOrder, Catalog()).Value;
+
+        foreach (var microcycle in plan.Microcycles)
+        {
+            var workByPattern = microcycle.Sessions
+                .SelectMany(session => session.Items)
+                .Where(item => item.Role == SessionItemRole.Strength)
+                .GroupBy(item => item.Pattern!.Value)
+                .ToDictionary(group => group.Key, group => group.Count());
+
+            // El reparto alterno (US-12) da a cada patrón exactamente 2×/semana: empuje y tirón
+            // trabajan en los días superiores y la pierna en los inferiores.
+            Assert.Equal(2, workByPattern[ExerciseGroup.Push]);
+            Assert.Equal(2, workByPattern[ExerciseGroup.Pull]);
+            Assert.Equal(2, workByPattern[ExerciseGroup.Leg]);
+        }
+    }
+
+    [Fact]
+    public void Generate_for_four_days_applies_the_rir_wave_to_the_upper_day_strength()
+    {
+        // La onda de RIR (#12) atraviesa el reparto: con un máximo de 10, el tope prescrito en el
+        // tren superior sube 7 → 8 → 9 en las tres primeras semanas.
+        const int maximum = 10;
+        var plan = PlanGenerator
+            .Generate(BuildProfile(4, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Value;
+
+        Assert.Equal(7, StrengthItem(plan, 0, day: 1, "push_up").RepsMax); // RIR 3 (base)
+        Assert.Equal(8, StrengthItem(plan, 1, day: 1, "push_up").RepsMax); // RIR 2
+        Assert.Equal(9, StrengthItem(plan, 2, day: 1, "push_up").RepsMax); // RIR 1
     }
 
     [Fact]
@@ -451,25 +553,26 @@ public sealed class PlanGeneratorTests
         }
     }
 
-    [Fact]
-    public void Generate_is_deterministic()
+    [Theory]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void Generate_is_deterministic_for_the_supported_frequencies(int trainingDays)
     {
-        var first = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog()).Value;
-        var second = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var first = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var second = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog()).Value;
 
         Assert.Equal(Snapshot(first), Snapshot(second));
     }
 
     [Theory]
-    [InlineData(4)]
     [InlineData(5)]
-    public void Generate_fails_for_a_frequency_other_than_three_days(int trainingDays)
+    public void Generate_fails_for_a_frequency_without_a_declared_weekly_split(int trainingDays)
     {
         var result = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog());
 
         Assert.True(result.IsFailure);
         Assert.Equal(DomainErrors.Plan.UnsupportedFrequency, result.Error);
-        Assert.Contains("3 días", result.Error.Description);
+        Assert.Contains("solo se puede generar un plan de 3 o 4 días", result.Error.Description);
     }
 
     private static string Snapshot(Plan plan) =>
@@ -486,6 +589,10 @@ public sealed class PlanGeneratorTests
 
     private static SessionItem StrengthItem(Plan plan, int microcycleIndex, string exerciseId) =>
         plan.Microcycles[microcycleIndex].Sessions[0].Items.Single(item => item.ExerciseId == exerciseId);
+
+    private static SessionItem StrengthItem(Plan plan, int microcycleIndex, int day, string exerciseId) =>
+        plan.Microcycles[microcycleIndex].Sessions.Single(session => session.Day == day)
+            .Items.Single(item => item.ExerciseId == exerciseId);
 
     private static IEnumerable<SessionItem> StrengthItems(Plan plan) =>
         plan.Microcycles[0].Sessions[0].Items.Where(item => item.Role == SessionItemRole.Strength);
