@@ -9,7 +9,8 @@ namespace Barrapp.Domain.UnitTests;
 /// <summary>
 /// Reglas del motor de generación (#10): da un mesociclo de cuatro semanas con reparto full-body
 /// de 3 días, cada patrón recibe trabajo al menos dos veces por semana, cada sesión empieza por el
-/// bloque de skill y el resultado es determinista. Solo se prueba por su interfaz pública.
+/// bloque de skill y el resultado es determinista. La carga de fuerza se deriva del máximo del
+/// atleta y nunca llega al fallo (#11). Solo se prueba por su interfaz pública.
 /// </summary>
 public sealed class PlanGeneratorTests
 {
@@ -99,6 +100,79 @@ public sealed class PlanGeneratorTests
     }
 
     [Fact]
+    public void Generate_derives_strength_reps_from_each_athletes_maximum()
+    {
+        var plan = PlanGenerator
+            .Generate(
+                BuildProfile(3, pushUpMaximum: 8, pullUpMaximum: 4, squatMaximum: 20),
+                BuildObjective(),
+                Catalog())
+            .Value;
+
+        Assert.Equal(3, StrengthItem(plan, "push_up").RepsMin);
+        Assert.Equal(5, StrengthItem(plan, "push_up").RepsMax);
+        Assert.Equal(1, StrengthItem(plan, "pull_up").RepsMin);
+        Assert.Equal(1, StrengthItem(plan, "pull_up").RepsMax);
+        Assert.Equal(15, StrengthItem(plan, "squat").RepsMin);
+        Assert.Equal(17, StrengthItem(plan, "squat").RepsMax);
+    }
+
+    [Fact]
+    public void Generate_scales_strength_reps_with_the_maximum()
+    {
+        var lowMaximums = PlanGenerator
+            .Generate(BuildProfile(3, pushUpMaximum: 6, pullUpMaximum: 6, squatMaximum: 6), BuildObjective(), Catalog())
+            .Value;
+        var highMaximums = PlanGenerator
+            .Generate(BuildProfile(3, pushUpMaximum: 15, pullUpMaximum: 15, squatMaximum: 15), BuildObjective(), Catalog())
+            .Value;
+
+        foreach (var exerciseId in new[] { "push_up", "pull_up", "squat" })
+        {
+            Assert.True(
+                StrengthItem(highMaximums, exerciseId).RepsMax > StrengthItem(lowMaximums, exerciseId).RepsMax,
+                $"{exerciseId} debe prescribir más reps con un máximo mayor");
+        }
+    }
+
+    [Fact]
+    public void Generate_never_prescribes_strength_reps_to_failure()
+    {
+        var profile = BuildProfile(3, pushUpMaximum: 7, pullUpMaximum: 2, squatMaximum: 12);
+
+        var plan = PlanGenerator.Generate(profile, BuildObjective(), Catalog()).Value;
+
+        foreach (var item in StrengthItems(plan))
+        {
+            var maximum = profile.Maximums
+                .Single(current => current.ExerciseCode == item.ExerciseId)
+                .Repetitions;
+
+            Assert.True(item.RepsMin >= 1, $"{item.ExerciseId} no puede prescribir 0 repeticiones");
+            Assert.True(item.RepsMin <= item.RepsMax, $"{item.ExerciseId} tiene un rango invertido");
+            Assert.True(
+                item.RepsMax < maximum,
+                $"{item.ExerciseId}: {item.RepsMax} reps llegan al fallo con un máximo de {maximum}");
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Generate_keeps_a_positive_strength_prescription_for_a_degenerate_maximum(int maximum)
+    {
+        var result = PlanGenerator
+            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), Catalog());
+
+        Assert.True(result.IsSuccess);
+        Assert.All(StrengthItems(result.Value), item =>
+        {
+            Assert.True(item.RepsMin >= 1);
+            Assert.True(item.RepsMax >= 1);
+        });
+    }
+
+    [Fact]
     public void Generate_is_deterministic()
     {
         var first = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), Catalog()).Value;
@@ -128,7 +202,17 @@ public sealed class PlanGeneratorTests
                         $"{microcycle.Number}:{session.Day}:{item.ExerciseId}:{item.Role}:{item.Pattern}:"
                         + $"{item.Sets}:{item.RepsMin}-{item.RepsMax}:{item.HoldSecondsMin}-{item.HoldSecondsMax}"))));
 
-    private static AthleteProfile BuildProfile(int trainingDays) =>
+    private static SessionItem StrengthItem(Plan plan, string exerciseId) =>
+        plan.Microcycles[0].Sessions[0].Items.Single(item => item.ExerciseId == exerciseId);
+
+    private static IEnumerable<SessionItem> StrengthItems(Plan plan) =>
+        plan.Microcycles[0].Sessions[0].Items.Where(item => item.Role == SessionItemRole.Strength);
+
+    private static AthleteProfile BuildProfile(
+        int trainingDays,
+        int pushUpMaximum = 10,
+        int pullUpMaximum = 5,
+        int squatMaximum = 20) =>
         AthleteProfile.Create(
             UserId,
             78,
@@ -137,9 +221,9 @@ public sealed class PlanGeneratorTests
             85,
             trainingDays,
             [
-                new MaximumInput("push_up", 10),
-                new MaximumInput("pull_up", 5),
-                new MaximumInput("squat", 20),
+                new MaximumInput("push_up", pushUpMaximum),
+                new MaximumInput("pull_up", pullUpMaximum),
+                new MaximumInput("squat", squatMaximum),
             ]).Value;
 
     private static Objective BuildObjective() =>
