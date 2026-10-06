@@ -72,6 +72,14 @@ _Avoid_: semana
 Semana de descarga (la cuarta del mesociclo) con menor volumen o intensidad.
 _Avoid_: descanso, recuperación
 
+**Adherencia**:
+Proporción de sesiones completadas respecto de las programadas en un mesociclo.
+_Avoid_: cumplimiento, constancia
+
+**Volumen semanal**:
+Número de series prescritas o ejecutadas para un *patrón* en un *microciclo*.
+_Avoid_: carga semanal, tonelaje
+
 **RIR**:
 Repeticiones en reserva; margen de repeticiones que el atleta deja antes del fallo. Es la unidad con la que se fija la intensidad semanal del mesociclo.
 _Avoid_: RPE, margen
@@ -79,6 +87,10 @@ _Avoid_: RPE, margen
 **Sesión**:
 Unidad de entrenamiento dentro de un microciclo; contiene un bloque de skill y bloques de fuerza por patrón.
 _Avoid_: entrenamiento, workout, día
+
+**Día de entrenamiento**:
+Día de la semana, elegido por el atleta, al que el mesociclo asigna una *sesión*.
+_Avoid_: jornada, día de entreno
 
 **Sesión suelta**:
 Sesión puntual generada a demanda, fuera del mesociclo, para adaptarse al tiempo, la energía o las ganas del atleta; no altera la progresión.
@@ -102,10 +114,14 @@ _Avoid_: tempo, velocidad
 Número máximo de repeticiones estrictas sin lastre que el atleta logra en un ejercicio básico.
 _Avoid_: 1RM, récord, PR
 
+**Lastre**:
+Peso extra añadido a un ejercicio de fuerza para elevar su dificultad; se registra por serie y no altera el *máximo*, que se mide a peso corporal.
+_Avoid_: sobrecarga, peso extra, añadido
+
 **Progresión de skill**:
 Etapa actual del atleta dentro de la escalera de progresión de un skill; cada etapa se mide en segundos mantenidos o en repeticiones, según el skill.
 _Avoid_: nivel, avance
 
 **Registro**:
-Anotación de lo realmente ejecutado en una sesión, serie a serie: reps en ejercicios de fuerza y segundos en holds, con el RIR/RPE real opcional.
+Anotación de lo realmente ejecutado en una sesión, serie a serie: reps en ejercicios de fuerza y segundos en holds, con el RIR real y el lastre opcionales.
 _Avoid_: log, tracking
