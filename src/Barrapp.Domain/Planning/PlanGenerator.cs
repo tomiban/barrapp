@@ -18,7 +18,8 @@ namespace Barrapp.Domain.Planning;
 /// skill practica la etapa actual del atleta (#14) y, en los skills apalancados, ajusta ±1 serie
 /// según la <see cref="AthleteLever"/> y añade su nota de ritmo esperado (#68); el criterio de
 /// etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3; el deload de
-/// la semana 4 (#13) se apoyará en este mismo punto de entrada.
+/// la semana 4 (#13) se apoyará en este mismo punto de entrada. Con un máximo de 0 en algún patrón,
+/// el hueco de fuerza se cubre con la regresión del ejercicio (#17).
 /// </remarks>
 public static class PlanGenerator
 {
@@ -123,10 +124,32 @@ public static class PlanGenerator
                     DomainErrors.AthleteProfile.MissingExerciseMaximum);
             }
 
-            slots.Add(new StrengthSlot(ToGroup(basic.Pattern), exercise.Id, maximum.Value));
+            slots.Add(ResolveStrengthSlot(catalog, exercise, ToGroup(basic.Pattern), maximum.Value));
         }
 
         return Result.Success<IReadOnlyList<StrengthSlot>>(slots);
+    }
+
+    // D3 (#17): un máximo de 0 no admite prescripción sobre el ancla (no hay margen ni para una
+    // repetición), así que el hueco de fuerza de ese patrón pasa a la regresión del ejercicio,
+    // prescrita sobre una base de trabajo asumida y modesta (`StrengthLoad.RegressionWorkableReps`).
+    // La onda de RIR sigue aplicando sobre esa base, de modo que la regresión nunca se prescribe al
+    // fallo ni con 0 repeticiones. El catálogo valida que toda regresión referenciada exista y se
+    // resuelva; si no se pudiera resolver, se conserva el marcador neutro previo al #17.
+    private static StrengthSlot ResolveStrengthSlot(
+        IGenerationCatalog catalog,
+        Exercise exercise,
+        ExerciseGroup pattern,
+        int maximum)
+    {
+        if (maximum == 0
+            && exercise.RegressionId is not null
+            && catalog.FindExercise(exercise.RegressionId) is { } regression)
+        {
+            return new StrengthSlot(pattern, regression.Id, StrengthLoad.RegressionWorkableReps);
+        }
+
+        return new StrengthSlot(pattern, exercise.Id, maximum);
     }
 
     private static IReadOnlyList<SessionItem> BuildItems(
