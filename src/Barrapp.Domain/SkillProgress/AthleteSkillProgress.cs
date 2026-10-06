@@ -16,6 +16,12 @@ namespace Barrapp.Domain.SkillProgress;
 /// </remarks>
 public sealed class AthleteSkillProgress
 {
+    /// <summary>
+    /// Etapa con la que arranca toda escalera: la que rige mientras el atleta no tiene una
+    /// progresión guardada.
+    /// </summary>
+    public const int InitialStageOrder = 1;
+
     private AthleteSkillProgress(Guid id, Guid userId, string skillId, int stageOrder)
     {
         Id = id;

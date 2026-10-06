@@ -1,6 +1,7 @@
 using Barrapp.Application.Abstractions;
 using Barrapp.Application.Common;
 using Barrapp.Domain.Common;
+using Barrapp.Domain.SkillProgress;
 using Microsoft.EntityFrameworkCore;
 
 namespace Barrapp.Application.Features.SkillProgress;
@@ -29,7 +30,9 @@ internal sealed class GetSkillProgressQueryHandler(
         IReadOnlyList<SkillProgressResponse> progress = knowledgeBase.Skills
             .Select(skill => new SkillProgressResponse(
                 skill.Id,
-                savedStageBySkill.TryGetValue(skill.Id, out var stageOrder) ? stageOrder : 1))
+                savedStageBySkill.TryGetValue(skill.Id, out var stageOrder)
+                    ? stageOrder
+                    : AthleteSkillProgress.InitialStageOrder))
             .ToList();
 
         return Result.Success(progress);

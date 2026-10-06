@@ -96,10 +96,10 @@ public static class DomainErrors
             "plan.unsupported_frequency",
             "Por ahora solo se puede generar un plan de 3 días.");
 
-        /// <summary>El skill objetivo no tiene una etapa inicial resoluble en su escalera.</summary>
-        public static readonly Error MissingSkillStage = Error.Validation(
-            "plan.missing_skill_stage",
-            "El skill objetivo no tiene una etapa inicial en su escalera.");
+        /// <summary>El skill objetivo no tiene la etapa actual del atleta en su escalera.</summary>
+        public static readonly Error UnknownStage = Error.Validation(
+            "plan.unknown_stage",
+            "El skill objetivo no tiene la etapa actual del atleta en su escalera.");
 
         /// <summary>Falta un ejercicio obligatorio en el catálogo.</summary>
         public static Error UnknownExercise(string exerciseId) => Error.Validation(

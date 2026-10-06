@@ -7,10 +7,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Barrapp.Application.Features.Plans;
 
 /// <summary>
-/// Carga el perfil (con sus máximos) y el objetivo, y delega la generación en el motor de dominio.
-/// La regla de programación vive entera en <see cref="PlanGenerator"/>; el handler solo orquesta y
-/// proyecta a DTO. Es la excepción pragmática a «las queries proyectan directo a DTO»: el motor
-/// necesita el agregado del atleta como entrada.
+/// Carga el perfil (con sus máximos), el objetivo y la etapa actual del atleta en ese skill, y
+/// delega la generación en el motor de dominio. La regla de programación vive entera en
+/// <see cref="PlanGenerator"/>; el handler solo orquesta y proyecta a DTO. Es la excepción
+/// pragmática a «las queries proyectan directo a DTO»: el motor necesita el agregado del atleta
+/// como entrada.
 /// </summary>
 internal sealed class GetPlanQueryHandler(IApplicationDbContext dbContext, IKnowledgeBase catalog)
     : IQueryHandler<GetPlanQuery, PlanResponse>
@@ -36,7 +37,13 @@ internal sealed class GetPlanQueryHandler(IApplicationDbContext dbContext, IKnow
             return Result.Failure<PlanResponse>(DomainErrors.Objective.NotFound);
         }
 
-        var generation = PlanGenerator.Generate(profile, objective, catalog);
+        var progress = await dbContext.AthleteSkillProgresses
+            .FirstOrDefaultAsync(
+                candidate => candidate.UserId == SingleUser.Id && candidate.SkillId == objective.SkillId,
+                cancellationToken);
+
+        // Sin progreso guardado, el motor practica la primera etapa de la escalera.
+        var generation = PlanGenerator.Generate(profile, objective, progress?.StageOrder, catalog);
 
         return generation.IsFailure
             ? Result.Failure<PlanResponse>(generation.Error)
