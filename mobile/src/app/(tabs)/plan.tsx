@@ -115,7 +115,7 @@ export default function PlanScreen() {
 
           <PlanView plan={state.plan} />
 
-{!state.offline ? (
+          {!state.offline ? (
             <StageAdvanceAction state={advanceState} onAdvance={advance} testID="plan-advance" />
           ) : null}
 
