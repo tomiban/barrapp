@@ -115,6 +115,11 @@ public static class DomainErrors
             "mesocycle.already_closed",
             "Este mesociclo ya estaba cerrado.");
 
+        /// <summary>No hay ningún mesociclo en curso para cerrarlo.</summary>
+        public static readonly Error NotActive = Error.Conflict(
+            "mesocycle.not_active",
+            "No hay ningún mesociclo en curso para cerrar.");
+
         /// <summary>No hay ningún mesociclo guardado con ese identificador.</summary>
         public static readonly Error NotFound = Error.NotFound(
             "mesocycle.not_found",
