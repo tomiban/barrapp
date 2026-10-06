@@ -11,7 +11,8 @@ namespace Barrapp.Domain.UnitTests;
 /// de 3 días, cada patrón recibe trabajo al menos dos veces por semana, cada sesión empieza por el
 /// bloque de skill en la etapa actual del atleta (#14) y el resultado es determinista. La carga de
 /// fuerza se deriva del máximo del atleta y nunca llega al fallo (#11); el bloque de skill se
-/// ajusta por la palanca del atleta en los skills apalancados (#68). Solo se prueba por su interfaz
+/// ajusta por la palanca del atleta en los skills apalancados (#68). El RIR baja de 3 a 1 en las
+/// tres primeras semanas, lo que sube las reps y el volumen (#12). Solo se prueba por su interfaz
 /// pública.
 /// </summary>
 public sealed class PlanGeneratorTests
@@ -213,6 +214,59 @@ public sealed class PlanGeneratorTests
         }
     }
 
+    [Fact]
+    public void Generate_descends_the_strength_reserve_across_the_first_three_microcycles()
+    {
+        // Onda de RIR (#12): la semana 1 deja 3 reps en reserva, la 2 dos y la 3 una. Con un mismo
+        // máximo, el tope prescrito sube una repetición por semana.
+        const int maximum = 10;
+
+        var plan = PlanGenerator
+            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Value;
+
+        foreach (var exerciseId in new[] { "push_up", "pull_up", "squat" })
+        {
+            Assert.Equal(7, StrengthItem(plan, 0, exerciseId).RepsMax); // RIR 3 (base)
+            Assert.Equal(8, StrengthItem(plan, 1, exerciseId).RepsMax); // RIR 2
+            Assert.Equal(9, StrengthItem(plan, 2, exerciseId).RepsMax); // RIR 1
+        }
+    }
+
+    [Fact]
+    public void Generate_raises_strength_volume_across_the_first_three_microcycles()
+    {
+        // Al bajar el RIR suben las reps prescritas y, con las series fijas, el volumen total
+        // (series × reps) crece semana a semana.
+        var plan = PlanGenerator
+            .Generate(BuildProfile(3, 10, 10, 10), BuildObjective(), FirstStageOrder, Catalog())
+            .Value;
+
+        var volumeByMicrocycle = VolumeByMicrocycle(plan, 3);
+
+        Assert.True(volumeByMicrocycle[0] < volumeByMicrocycle[1], "el volumen de la semana 2 debe superar al de la 1");
+        Assert.True(volumeByMicrocycle[1] < volumeByMicrocycle[2], "el volumen de la semana 3 debe superar al de la 2");
+    }
+
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(10)]
+    public void Generate_never_reduces_strength_volume_across_the_first_three_microcycles(int maximum)
+    {
+        // La onda nunca quita volumen: lo sube o, cuando el máximo no da margen para reservar más
+        // reps (≤ 2), lo deja plano. Convertir ese caso en una regresión real es #17.
+        var plan = PlanGenerator
+            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Value;
+
+        var volumeByMicrocycle = VolumeByMicrocycle(plan, 3);
+
+        Assert.True(volumeByMicrocycle[0] <= volumeByMicrocycle[1], "la semana 2 no puede bajar el volumen de la 1");
+        Assert.True(volumeByMicrocycle[1] <= volumeByMicrocycle[2], "la semana 3 no puede bajar el volumen de la 2");
+    }
+
     [Theory]
     [InlineData(2, 2, 2)]
     [InlineData(7, 2, 12)]
@@ -227,7 +281,7 @@ public sealed class PlanGeneratorTests
 
         var plan = PlanGenerator.Generate(profile, BuildObjective(), FirstStageOrder, Catalog()).Value;
 
-        foreach (var item in StrengthItems(plan))
+        foreach (var item in AllStrengthItems(plan))
         {
             var maximum = profile.MaximumFor(item.ExerciseId);
             Assert.NotNull(maximum);
@@ -368,10 +422,29 @@ public sealed class PlanGeneratorTests
                         + $"{item.Sets}:{item.RepsMin}-{item.RepsMax}:{item.HoldSecondsMin}-{item.HoldSecondsMax}:{item.Note}"))));
 
     private static SessionItem StrengthItem(Plan plan, string exerciseId) =>
-        plan.Microcycles[0].Sessions[0].Items.Single(item => item.ExerciseId == exerciseId);
+        StrengthItem(plan, 0, exerciseId);
+
+    private static SessionItem StrengthItem(Plan plan, int microcycleIndex, string exerciseId) =>
+        plan.Microcycles[microcycleIndex].Sessions[0].Items.Single(item => item.ExerciseId == exerciseId);
 
     private static IEnumerable<SessionItem> StrengthItems(Plan plan) =>
         plan.Microcycles[0].Sessions[0].Items.Where(item => item.Role == SessionItemRole.Strength);
+
+    private static IEnumerable<SessionItem> AllStrengthItems(Plan plan) =>
+        plan.Microcycles
+            .SelectMany(microcycle => microcycle.Sessions)
+            .SelectMany(session => session.Items)
+            .Where(item => item.Role == SessionItemRole.Strength);
+
+    /// <summary>Volumen de fuerza (series × reps) de las primeras <paramref name="microcycleCount"/> semanas.</summary>
+    private static int[] VolumeByMicrocycle(Plan plan, int microcycleCount) =>
+        plan.Microcycles
+            .Take(microcycleCount)
+            .Select(microcycle => microcycle.Sessions
+                .SelectMany(session => session.Items)
+                .Where(item => item.Role == SessionItemRole.Strength)
+                .Sum(item => item.Sets * item.RepsMax!.Value))
+            .ToArray();
 
     private static AthleteProfile BuildProfile(
         int trainingDays,

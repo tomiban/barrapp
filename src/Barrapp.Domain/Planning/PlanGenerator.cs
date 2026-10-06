@@ -17,8 +17,8 @@ namespace Barrapp.Domain.Planning;
 /// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. El bloque de
 /// skill practica la etapa actual del atleta (#14) y, en los skills apalancados, ajusta ±1 serie
 /// según la <see cref="AthleteLever"/> y añade su nota de ritmo esperado (#68); el criterio de
-/// etapa no cambia. La onda semanal de RIR (#12) y el deload (#13) se apoyarán en este mismo punto
-/// de entrada.
+/// etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3; el deload de
+/// la semana 4 (#13) se apoyará en este mismo punto de entrada.
 /// </remarks>
 public static class PlanGenerator
 {
@@ -89,10 +89,11 @@ public static class PlanGenerator
         var microcycles = new List<Microcycle>(MicrocycleCount);
         for (var number = 1; number <= MicrocycleCount; number++)
         {
+            var repsInReserve = RirWave.RepsInReserve(number);
             var sessions = new List<Session>(profile.TrainingDays);
             for (var day = 1; day <= profile.TrainingDays; day++)
             {
-                sessions.Add(new Session(day, BuildItems(currentStage, strength.Value, lever)));
+                sessions.Add(new Session(day, BuildItems(currentStage, strength.Value, lever, repsInReserve)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
@@ -131,7 +132,8 @@ public static class PlanGenerator
     private static IReadOnlyList<SessionItem> BuildItems(
         SkillStage stage,
         IReadOnlyList<StrengthSlot> strength,
-        AthleteLever? lever)
+        AthleteLever? lever,
+        int repsInReserve)
     {
         var items = new List<SessionItem>(strength.Count + 2)
         {
@@ -140,8 +142,9 @@ public static class PlanGenerator
 
         foreach (var slot in strength)
         {
-            // La onda por microciclo de #12 pasará su propio valor de reserva; hoy la semana base.
-            var reps = StrengthLoad.Derive(slot.MaximumRepetitions, StrengthLoad.BaseRepsInReserve);
+            // La onda por microciclo (#12) fija cuántas repeticiones se dejan en reserva; el RIR
+            // baja de 3 a 1 en las tres primeras semanas.
+            var reps = StrengthLoad.Derive(slot.MaximumRepetitions, repsInReserve);
 
             items.Add(new SessionItem(
                 slot.ExerciseId,
