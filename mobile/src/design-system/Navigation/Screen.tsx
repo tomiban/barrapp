@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { View, type ViewProps } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { ScrollView, View, type ViewProps } from 'react-native';
+import type { Edge } from 'react-native-safe-area-context';
 
 import { cn } from '../utils/cn';
+import { SafeAreaView } from './SafeAreaView';
 
 /**
  * Props de `Screen`: las de un `View` más el encabezado y el área de contenido.
@@ -15,6 +16,12 @@ export type ScreenProps = ViewProps & {
    * así que permiten quitar el margen (p. ej. `px-0`) para contenido a sangre.
    */
   contentClassName?: string;
+  /**
+   * Si `true`, el contenido va dentro de un `ScrollView` (pantallas más largas
+   * que la ventana). Por defecto el contenido es un `View` fijo; las pantallas
+   * cortas no pagan el coste del scroll.
+   */
+  scrollable?: boolean;
   /**
    * Bordes seguros a respetar. Por defecto `top`/`left`/`right`: el borde
    * inferior lo gestiona la `TabBar` (que envuelve su franja en
@@ -40,10 +47,13 @@ export function Screen({
   children,
   className,
   contentClassName,
+  scrollable = false,
   edges = DEFAULT_EDGES,
   testID,
   ...rest
 }: ScreenProps) {
+  const contentTestID = testID ? `${testID}-content` : undefined;
+
   return (
     <SafeAreaView
       edges={edges}
@@ -52,12 +62,19 @@ export function Screen({
       {...rest}
     >
       {header}
-      <View
-        className={cn('flex-1 px-margin py-md', contentClassName)}
-        testID={testID ? `${testID}-content` : undefined}
-      >
-        {children}
-      </View>
+      {scrollable ? (
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName={cn('px-margin py-md', contentClassName)}
+          testID={contentTestID}
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View className={cn('flex-1 px-margin py-md', contentClassName)} testID={contentTestID}>
+          {children}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

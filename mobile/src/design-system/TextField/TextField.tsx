@@ -79,7 +79,7 @@ export function TextField({
         value={value}
         onChangeText={onChangeText}
         className={`${cn(BASE_INPUT_CLASSES, colorClass, className)} ${widthClass}`}
-        placeholderTextColorClassName="text-text-muted"
+        placeholderTextColorClassName="accent-text-muted"
         accessibilityLabel={label}
         onFocus={(event) => {
           setFocused(true);
