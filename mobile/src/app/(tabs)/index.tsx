@@ -14,6 +14,7 @@ import {
   type SaveFeedback,
 } from '@/features/sessionLog/SessionLoggingView';
 import { SoloSessionView } from '@/features/suelta/SoloSessionView';
+import { SoloSessionHistory } from '@/features/suelta/SoloSessionHistory';
 
 type LoadState =
   | { status: 'loading' }
@@ -105,6 +106,7 @@ export default function TrainScreen() {
       <Stack gap="sm">
         <SectionHeader label="Sesión suelta" testID="train-suelta-header" />
         <SoloSessionView />
+        <SoloSessionHistory />
       </Stack>
     </Screen>
   );
