@@ -6,7 +6,9 @@ import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { CloudOff } from '@/design-system/Icon';
 import { Stack } from '@/design-system/layout';
+import { SectionHeader } from '@/design-system/ListRow';
 import { Header, Screen } from '@/design-system/Navigation';
+import { MesocycleHistory } from '@/features/history/MesocycleHistory';
 import { PlanView } from '@/features/plan/PlanView';
 import { openPlanStore } from '@/offline/planStore';
 import { readPlan, type PlanReadResult } from '@/offline/readPlan';
@@ -84,6 +86,9 @@ export default function PlanScreen() {
             />
           ) : null}
           <PlanView plan={state.plan} />
+
+          <SectionHeader label="Historial de mesociclos" testID="plan-history-header" />
+          <MesocycleHistory />
         </Stack>
       ) : null}
     </Screen>
