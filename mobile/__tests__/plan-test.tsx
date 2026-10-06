@@ -2,6 +2,17 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import PlanScreen from '../src/app/(tabs)/plan';
 
+/** Almacén local falseado: la pantalla guarda/lee la caché sin tocar expo-sqlite. */
+jest.mock('../src/offline/planStore', () => {
+  const store = {
+    async savePlan(): Promise<void> {},
+    async loadPlan(): Promise<null> {
+      return null;
+    },
+  };
+  return { openPlanStore: jest.fn(async () => store) };
+});
+
 /** Respuesta mínima con la forma que consume el módulo de API. */
 function jsonResponse(status: number, body: unknown): Response {
   return {
