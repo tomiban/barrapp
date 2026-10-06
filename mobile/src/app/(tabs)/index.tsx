@@ -6,12 +6,14 @@ import { fetchSessionLogs, registerSessionLog, type SessionLog } from '@/api/ses
 import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { Stack } from '@/design-system/layout';
+import { SectionHeader } from '@/design-system/ListRow';
 import { Header, Screen } from '@/design-system/Navigation';
 import {
   SessionLoggingView,
   type ExerciseSetsPayload,
   type SaveFeedback,
 } from '@/features/sessionLog/SessionLoggingView';
+import { SoloSessionView } from '@/features/suelta/SoloSessionView';
 
 type LoadState =
   | { status: 'loading' }
@@ -22,7 +24,8 @@ type LoadState =
  * Pantalla Entrenar: lee `GET /plan` (el motor lo genera a partir del perfil y el objetivo) y
  * `GET /session-logs`, y delega el registro set a set en `SessionLoggingView`. Al guardar envía
  * un `POST /session-logs` por ejercicio y relee los registros del servidor, sin fiarse del
- * estado local (spec 0001, US-34).
+ * estado local (spec 0001, US-34). Debajo queda el generador de sesión suelta (#28), que no
+ * depende del plan.
  */
 export default function TrainScreen() {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
@@ -98,6 +101,11 @@ export default function TrainScreen() {
           onSave={handleSave}
         />
       ) : null}
+
+      <Stack gap="sm">
+        <SectionHeader label="Sesión suelta" testID="train-suelta-header" />
+        <SoloSessionView />
+      </Stack>
     </Screen>
   );
 }

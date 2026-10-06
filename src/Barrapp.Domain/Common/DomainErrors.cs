@@ -107,7 +107,7 @@ public static class DomainErrors
             $"El ejercicio obligatorio '{exerciseId}' no existe en el catálogo.");
     }
 
-    /// <summary>Errores del registro de sesión (serie a serie).</summary>
+/// <summary>Errores del registro de sesión (serie a serie).</summary>
     public static class SessionLog
     {
         /// <summary>No se puede registrar una sesión sin ninguna serie.</summary>
@@ -144,6 +144,20 @@ public static class DomainErrors
         public static readonly Error UnknownExercise = Error.Validation(
             "session_log.unknown_exercise",
             "El ejercicio indicado no existe en el catálogo.");
+    }
+
+    /// <summary>Errores de la sesión suelta (#28).</summary>
+    public static class SessionSuelta
+    {
+        /// <summary>El foco de patrón no indica ningún grupo.</summary>
+        public static readonly Error PatternRequired = Error.Validation(
+            "session_suelta.pattern_required",
+            "Debes elegir un patrón como foco de la sesión suelta.");
+
+        /// <summary>El foco de patrón pide un grupo que no es un patrón de fuerza general.</summary>
+        public static readonly Error UnsupportedPattern = Error.Validation(
+            "session_suelta.unsupported_pattern",
+            "El foco de patrón debe ser empuje, tirón o pierna.");
     }
 
     /// <summary>Errores de la base de conocimiento (catálogo, escaleras y rutinas).</summary>
