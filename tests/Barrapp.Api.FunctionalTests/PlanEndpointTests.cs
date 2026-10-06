@@ -8,7 +8,8 @@ namespace Barrapp.Api.FunctionalTests;
 
 /// <summary>
 /// El plan del mesociclo se lee con <c>GET /plan</c>: necesita perfil y objetivo guardados y, hoy,
-/// genera el reparto full-body de 3 días o el alterno tren superior / tren inferior de 4 días (#15).
+/// genera el reparto full-body de 3 días, el alterno tren superior / tren inferior de 4 días (#15)
+/// o el reparto por patrón de 5 días (#16).
 /// </summary>
 public sealed class PlanEndpointTests(BarrappApiFactory factory)
     : IClassFixture<BarrappApiFactory>
@@ -158,18 +159,46 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
     }
 
     [Fact]
-    public async Task Get_plan_for_an_unsupported_frequency_returns_400_with_a_spanish_detail()
+    public async Task Get_plan_for_a_five_day_profile_splits_every_session_by_pattern()
     {
         using var client = factory.CreateClient();
         await client.PutAsJsonAsync("/profile", PlanTestData.Profile(5));
         await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
 
         using var response = await client.GetAsync("/plan");
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.NotNull(problem);
-        Assert.Contains("Por ahora solo se puede generar un plan de 3 o 4 días.", problem!.Detail);
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+        Assert.Equal("planche", plan!.SkillId);
+        Assert.Equal(5, plan.TrainingDays);
+        Assert.Equal(4, plan.Microcycles.Count);
+        Assert.All(plan.Microcycles, microcycle => Assert.Equal(5, microcycle.Sessions.Count));
+        Assert.All(
+            plan.Microcycles,
+            microcycle => Assert.Equal(new[] { 1, 2, 3, 4, 5 }, microcycle.Sessions.Select(session => session.Day)));
+
+        // Reparto por patrón (#16): D1 empuje+skill, D2 tirón, D3 pierna, D4 empuje+skill y
+        // D5 tirón+pierna; el bloque de skill abre todas las sesiones.
+        Assert.All(
+            plan.Microcycles,
+            microcycle =>
+            {
+                var strengthByDay = microcycle.Sessions.ToDictionary(
+                    session => session.Day,
+                    session => session.Items
+                        .Where(item => item.Role == "strength")
+                        .Select(item => item.Pattern)
+                        .ToArray());
+
+                Assert.Equal(new[] { "push" }, strengthByDay[1]);
+                Assert.Equal(new[] { "pull" }, strengthByDay[2]);
+                Assert.Equal(new[] { "leg" }, strengthByDay[3]);
+                Assert.Equal(new[] { "push" }, strengthByDay[4]);
+                Assert.Equal(new[] { "pull", "leg" }, strengthByDay[5]);
+
+                Assert.All(microcycle.Sessions, session => Assert.Equal("skill", session.Items[0].Role));
+            });
     }
 }
 
