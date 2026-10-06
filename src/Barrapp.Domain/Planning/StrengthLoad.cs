@@ -4,7 +4,8 @@ namespace Barrapp.Domain.Planning;
 /// Deriva la prescripción de repeticiones de fuerza a partir del máximo del atleta (#11): la
 /// semana base deja <see cref="BaseRepsInReserve"/> repeticiones en reserva, de modo que ninguna
 /// serie llega al fallo (ver <c>GLOSSARY.md</c>, término <i>RIR</i>). La onda semanal de RIR (#12)
-/// reutilizará <see cref="Derive"/> variando las repeticiones en reserva por microciclo.
+/// reutiliza <see cref="Derive"/> variando las repeticiones en reserva por microciclo
+/// (<see cref="RirWave"/>).
 /// </summary>
 /// <remarks>
 /// En un ejercicio medido en repeticiones, prescribir <c>M − rir</c> reps equivale a un

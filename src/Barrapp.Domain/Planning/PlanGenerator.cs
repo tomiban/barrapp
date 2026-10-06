@@ -14,7 +14,8 @@ namespace Barrapp.Domain.Planning;
 /// Ticket #10 implementa el reparto de 3 días/semana; las frecuencias 4 y 5 devuelven
 /// <see cref="DomainErrors.Plan.UnsupportedFrequency"/>. La carga de fuerza se deriva del máximo
 /// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. La onda
-/// semanal de RIR (#12) y el deload (#13) se apoyarán en este mismo punto de entrada.
+/// semanal de RIR (#12) sube el volumen en las semanas 2 y 3; el deload de la semana 4 (#13) se
+/// apoyará en este mismo punto de entrada.
 /// </remarks>
 public static class PlanGenerator
 {
@@ -73,10 +74,11 @@ public static class PlanGenerator
         var microcycles = new List<Microcycle>(MicrocycleCount);
         for (var number = 1; number <= MicrocycleCount; number++)
         {
+            var repsInReserve = RirWave.RepsInReserve(number);
             var sessions = new List<Session>(profile.TrainingDays);
             for (var day = 1; day <= profile.TrainingDays; day++)
             {
-                sessions.Add(new Session(day, BuildItems(firstStage, strength.Value)));
+                sessions.Add(new Session(day, BuildItems(firstStage, strength.Value, repsInReserve)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
@@ -114,7 +116,8 @@ public static class PlanGenerator
 
     private static IReadOnlyList<SessionItem> BuildItems(
         SkillStage stage,
-        IReadOnlyList<StrengthSlot> strength)
+        IReadOnlyList<StrengthSlot> strength,
+        int repsInReserve)
     {
         var items = new List<SessionItem>(strength.Count + 2)
         {
@@ -123,8 +126,9 @@ public static class PlanGenerator
 
         foreach (var slot in strength)
         {
-            // La onda por microciclo de #12 pasará su propio valor de reserva; hoy la semana base.
-            var reps = StrengthLoad.Derive(slot.MaximumRepetitions, StrengthLoad.BaseRepsInReserve);
+            // La onda por microciclo (#12) fija cuántas repeticiones se dejan en reserva; el RIR
+            // baja de 3 a 1 en las tres primeras semanas.
+            var reps = StrengthLoad.Derive(slot.MaximumRepetitions, repsInReserve);
 
             items.Add(new SessionItem(
                 slot.ExerciseId,
