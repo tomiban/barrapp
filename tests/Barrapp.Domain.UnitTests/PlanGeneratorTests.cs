@@ -459,32 +459,43 @@ public sealed class PlanGeneratorTests
         Assert.True(volumeByMicrocycle[1] <= volumeByMicrocycle[2], "la semana 3 no puede bajar el volumen de la 2");
     }
 
-    [Fact]
-    public void Generate_raises_the_strength_reserve_to_four_in_the_deload_microcycle()
+    [Theory]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Generate_raises_the_strength_reserve_to_four_in_the_deload_microcycle(int trainingDays)
     {
         // Deload (#13): la semana 4 deja 4 reps en reserva (RIR 4), el tope más conservador de la
-        // onda. Con un mismo máximo, el tope prescrito baja respecto a la semana 3 (RIR 1).
+        // onda, en todas las frecuencias. Con un mismo máximo, el tope prescrito baja respecto a la
+        // semana 3 (RIR 1).
         const int maximum = 10;
 
         var plan = PlanGenerator
-            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(trainingDays, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
             .Value;
 
         foreach (var exerciseId in new[] { "push_up", "pull_up", "squat" })
         {
-            Assert.Equal(9, StrengthItem(plan, 2, exerciseId).RepsMax); // RIR 1 (semana 3)
-            Assert.Equal(6, StrengthItem(plan, 3, exerciseId).RepsMax); // RIR 4 (deload)
+            Assert.All(
+                StrengthItemsInMicrocycle(plan, 2, exerciseId),
+                item => Assert.Equal(9, item.RepsMax)); // RIR 1 (semana 3)
+            Assert.All(
+                StrengthItemsInMicrocycle(plan, 3, exerciseId),
+                item => Assert.Equal(6, item.RepsMax)); // RIR 4 (deload)
         }
     }
 
-    [Fact]
-    public void Generate_halves_the_strength_volume_in_the_deload_microcycle()
+    [Theory]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Generate_halves_the_strength_volume_in_the_deload_microcycle(int trainingDays)
     {
         // Deload (#13): la semana 4 baja las series de fuerza (3 → 2) y sube el RIR a 4, dejando el
-        // volumen (series × reps) en ~50 % del de la semana 3. Con los máximos concretos del
-        // fixture (10/5/20) el cociente queda en ~48 %.
+        // volumen (series × reps) en ~50 % del de la semana 3, en todas las frecuencias. Con los
+        // máximos concretos del fixture (10/5/20) el cociente queda en ~48 %.
         var plan = PlanGenerator
-            .Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog())
             .Value;
 
         var volume = VolumeByMicrocycle(plan, 4);
@@ -742,6 +753,15 @@ public sealed class PlanGeneratorTests
 
     private static IEnumerable<SessionItem> StrengthItems(Plan plan) =>
         plan.Microcycles[0].Sessions[0].Items.Where(item => item.Role == SessionItemRole.Strength);
+
+    /// <summary>
+    /// Ítems de fuerza de un ejercicio en una semana, en todas las sesiones de esa semana (cada
+    /// patrón aparece más de una vez en las frecuencias de 4 y 5 días).
+    /// </summary>
+    private static IEnumerable<SessionItem> StrengthItemsInMicrocycle(Plan plan, int microcycleIndex, string exerciseId) =>
+        plan.Microcycles[microcycleIndex].Sessions
+            .SelectMany(session => session.Items)
+            .Where(item => item.Role == SessionItemRole.Strength && item.ExerciseId == exerciseId);
 
     private static IEnumerable<SessionItem> AllStrengthItems(Plan plan) =>
         plan.Microcycles
