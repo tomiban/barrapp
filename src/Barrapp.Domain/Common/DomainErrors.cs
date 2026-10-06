@@ -141,7 +141,7 @@ public static class DomainErrors
             "El ejercicio indicado no existe en el catálogo.");
     }
 
-    /// <summary>Errores de la sesión suelta (#28).</summary>
+    /// <summary>Errores de la sesión suelta (#28) y su historial (#29).</summary>
     public static class SessionSuelta
     {
         /// <summary>El foco de patrón no indica ningún grupo.</summary>
@@ -153,6 +153,56 @@ public static class DomainErrors
         public static readonly Error UnsupportedPattern = Error.Validation(
             "session_suelta.unsupported_pattern",
             "El foco de patrón debe ser empuje, tirón o pierna.");
+
+        /// <summary>El tiempo de la suelta no es uno de los cuatro admitidos.</summary>
+        public static readonly Error TimeMinutesOutOfRange = Error.Validation(
+            "session_suelta.time_minutes_out_of_range",
+            "El tiempo debe ser 15, 30, 45 o 60 minutos.");
+
+        /// <summary>El foco resuelto no trae ni patrón ni skill.</summary>
+        public static readonly Error CompositionRequired = Error.Validation(
+            "session_suelta.composition_required",
+            "La sesión suelta debe resolver a un patrón o a un skill.");
+
+        /// <summary>El foco resuelto trae un patrón y un skill a la vez.</summary>
+        public static readonly Error CompositionConflict = Error.Validation(
+            "session_suelta.composition_conflict",
+            "La sesión suelta no puede resolver a un patrón y a un skill a la vez.");
+
+        /// <summary>La suelta no tiene filas que guardar en el historial.</summary>
+        public static readonly Error ItemsRequired = Error.Validation(
+            "session_suelta.items_required",
+            "La sesión suelta necesita al menos una fila.");
+
+        /// <summary>Una fila del snapshot no declara el ejercicio.</summary>
+        public static readonly Error ItemExerciseRequired = Error.Validation(
+            "session_suelta.item_exercise_required",
+            "Cada fila de la sesión suelta necesita un ejercicio.");
+
+        /// <summary>Una fila del snapshot no declara series positivas.</summary>
+        public static readonly Error ItemSetsMustBePositive = Error.Validation(
+            "session_suelta.item_sets_must_be_positive",
+            "Las series de cada fila de la sesión suelta deben ser mayores que 0.");
+
+        /// <summary>Una fila del snapshot no declara ningún rango completo.</summary>
+        public static readonly Error ItemRequiresRange = Error.Validation(
+            "session_suelta.item_requires_range",
+            "Cada fila de la sesión suelta debe declarar un rango de repeticiones o de segundos.");
+
+        /// <summary>El mínimo de un rango de una fila supera a su máximo.</summary>
+        public static readonly Error ItemRangeMinGreaterThanMax = Error.Validation(
+            "session_suelta.item_range_min_greater_than_max",
+            "El mínimo de un rango de la sesión suelta no puede superar al máximo.");
+
+        /// <summary>La suelta ya estaba registrada y no se puede registrar dos veces.</summary>
+        public static readonly Error AlreadyRecorded = Error.Conflict(
+            "session_suelta.already_recorded",
+            "Esta sesión suelta ya estaba registrada.");
+
+        /// <summary>No hay ninguna sesión suelta guardada con ese identificador.</summary>
+        public static readonly Error NotFound = Error.NotFound(
+            "session_suelta.not_found",
+            "No hay ninguna sesión suelta guardada con ese identificador.");
     }
 
     /// <summary>Errores de la base de conocimiento (catálogo, escaleras y rutinas).</summary>

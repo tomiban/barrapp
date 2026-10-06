@@ -20,6 +20,7 @@ import {
   type SaveFeedback,
 } from '@/features/sessionLog/SessionLoggingView';
 import { SoloSessionView } from '@/features/suelta/SoloSessionView';
+import { SoloSessionHistory } from '@/features/suelta/SoloSessionHistory';
 import { openPlanStore } from '@/offline/planStore';
 import { readPlan } from '@/offline/readPlan';
 import {
@@ -245,6 +246,7 @@ export default function TrainScreen() {
       <Stack gap="sm">
         <SectionHeader label="Sesión suelta" testID="train-suelta-header" />
         <SoloSessionView />
+        <SoloSessionHistory />
       </Stack>
     </Screen>
   );

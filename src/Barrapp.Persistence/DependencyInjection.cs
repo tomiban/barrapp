@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IObjectiveRepository, ObjectiveRepository>();
         services.AddScoped<IAthleteSkillProgressRepository, AthleteSkillProgressRepository>();
         services.AddScoped<ISessionLogRepository, SessionLogRepository>();
+        services.AddScoped<ISessionSueltaRepository, SessionSueltaRepository>();
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IUnitOfWork>(provider =>
