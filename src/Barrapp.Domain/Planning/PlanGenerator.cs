@@ -21,8 +21,8 @@ namespace Barrapp.Domain.Planning;
 /// ±1 serie según la <see cref="AthleteLever"/> y añade su nota de ritmo esperado (#68); el
 /// criterio de etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3;
 /// la semana 4 es un <i>deload</i> (#13) con RIR 4 y ~50 % del volumen, bajando las series de
-/// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión. Con un máximo de 0
-/// en algún patrón, el hueco de fuerza se cubre con la regresión del ejercicio (#17).
+/// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión. Con un máximo de 0 o 1
+/// en algún patrón, el hueco de fuerza se cubre con la regresión del ejercicio (#17/#91).
 /// </remarks>
 public static class PlanGenerator
 {
@@ -183,19 +183,20 @@ public static class PlanGenerator
         return Result.Success<IReadOnlyList<StrengthSlot>>(slots);
     }
 
-    // D3 (#17): un máximo de 0 no admite prescripción sobre el ancla (no hay margen ni para una
-    // repetición), así que el hueco de fuerza de ese patrón pasa a la regresión del ejercicio,
-    // prescrita sobre una base de trabajo asumida y modesta (`StrengthLoad.RegressionWorkableReps`).
-    // La onda de RIR sigue aplicando sobre esa base, de modo que la regresión nunca se prescribe al
-    // fallo ni con 0 repeticiones. El catálogo valida que toda regresión referenciada exista y se
-    // resuelva; si no se pudiera resolver, se conserva el marcador neutro previo al #17.
+    // D3 (#17/#91): un máximo de 0 o 1 no admite prescripción sobre el ancla (no hay margen ni para
+    // una repetición reservada), así que el hueco de fuerza de ese patrón pasa a la regresión del
+    // ejercicio, prescrita sobre una base de trabajo asumida y modesta
+    // (`StrengthLoad.RegressionWorkableReps`). La onda de RIR sigue aplicando sobre esa base, de modo
+    // que la regresión nunca se prescribe al fallo ni con 0 repeticiones. El catálogo valida que toda
+    // regresión referenciada exista y se resuelva; si no se pudiera resolver, se conserva el marcador
+    // neutro previo al #17.
     private static StrengthSlot ResolveStrengthSlot(
         IGenerationCatalog catalog,
         Exercise exercise,
         ExerciseGroup pattern,
         int maximum)
     {
-        if (maximum == 0
+        if (maximum <= 1
             && exercise.RegressionId is not null
             && catalog.FindExercise(exercise.RegressionId) is { } regression)
         {

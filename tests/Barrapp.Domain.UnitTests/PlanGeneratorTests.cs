@@ -15,8 +15,8 @@ namespace Barrapp.Domain.UnitTests;
 /// y nunca llega al fallo (#11); el bloque de skill se ajusta por la palanca del atleta en los
 /// skills apalancados (#68). El RIR baja de 3 a 1 en las tres primeras semanas, lo que sube las
 /// reps y el volumen (#12); la semana 4 es un deload con RIR 4 y ~50 % del volumen de la semana 3
-/// (#13). Con un máximo de 0, el hueco de fuerza de ese patrón pasa a la regresión del ejercicio
-/// (#17). Solo se prueba por su interfaz pública.
+/// (#13). Con un máximo de 0 o 1, el hueco de fuerza de ese patrón pasa a la regresión del ejercicio
+/// (#17, #91). Solo se prueba por su interfaz pública.
 /// </summary>
 public sealed class PlanGeneratorTests
 {
@@ -613,19 +613,27 @@ public sealed class PlanGeneratorTests
     }
 
     [Fact]
-    public void Generate_keeps_a_neutral_strength_placeholder_for_a_maximum_of_one()
+    public void Generate_uses_the_pattern_regression_when_an_anchor_maximum_is_one()
     {
-        var result = PlanGenerator
-            .Generate(BuildProfile(3, 1, 1, 1), BuildObjective(), FirstStageOrder, Catalog());
+        // #91/#17: un máximo de 1 tampoco admite prescripción segura (no hay margen para reservar la
+        // repetición que el motor nunca alcanza), así que igual que el 0 pasa a la regresión del
+        // patrón en vez del marcador neutro (1,1).
+        var plan = PlanGenerator
+            .Generate(BuildProfile(3, 1, 1, 1), BuildObjective(), FirstStageOrder, Catalog())
+            .Value;
 
-        Assert.True(result.IsSuccess);
+        Assert.Equal(
+            new[] { "incline-push-up", "negative-pull-up", "box-squat" },
+            StrengthItems(plan).Select(item => item.ExerciseId));
 
-        // (1,1) es el marcador neutro documentado, no una prescripción segura. Un máximo de 1 no
-        // deja margen para reservar, pero tampoco entra en la regresión (#17 solo aplica al 0).
-        Assert.All(StrengthItems(result.Value), item =>
+        // La regresión se prescribe sobre la base de trabajo asumida y modesta (RIR 3 → 3–5) y nunca
+        // con 0 repeticiones ni un rango invertido.
+        Assert.All(StrengthItems(plan), item =>
         {
-            Assert.Equal(1, item.RepsMin);
-            Assert.Equal(1, item.RepsMax);
+            Assert.Equal(3, item.RepsMin);
+            Assert.Equal(5, item.RepsMax);
+            Assert.True(item.RepsMin >= 1, $"{item.ExerciseId} no puede prescribir 0 repeticiones");
+            Assert.True(item.RepsMin <= item.RepsMax, $"{item.ExerciseId} tiene un rango invertido");
         });
     }
 
