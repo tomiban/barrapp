@@ -60,6 +60,8 @@ export default function ProfileScreen() {
   const [loadError, setLoadError] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
+  const [armSpan, setArmSpan] = useState('');
+  const [inseam, setInseam] = useState('');
   const [trainingDays, setTrainingDays] = useState(DEFAULT_TRAINING_DAYS);
   const [maximumDrafts, setMaximumDrafts] = useState<Record<string, string>>(emptyMaximumDrafts);
   const [fieldErrors, setFieldErrors] = useState<AthleteProfileFieldErrors>({});
@@ -72,6 +74,8 @@ export default function ProfileScreen() {
     if (profile) {
       setWeight(String(profile.weightKilograms));
       setHeight(String(profile.heightCentimeters));
+      setArmSpan(String(profile.armSpanCentimeters));
+      setInseam(String(profile.inseamCentimeters));
       setTrainingDays(String(profile.trainingDays));
       setMaximumDrafts(
         Object.fromEntries(
@@ -122,9 +126,11 @@ export default function ProfileScreen() {
     const {
       weightKilograms,
       heightCentimeters,
+      armSpanCentimeters,
+      inseamCentimeters,
       trainingDays: selectedTrainingDays,
       errors,
-    } = validateAthleteProfileDraft(weight, height, Number(trainingDays));
+    } = validateAthleteProfileDraft(weight, height, armSpan, inseam, Number(trainingDays));
 
     const drafts: MaximumDraft[] = BASIC_EXERCISES.map((exercise) => ({
       exerciseCode: exercise.code,
@@ -139,6 +145,8 @@ export default function ProfileScreen() {
     if (
       weightKilograms === null ||
       heightCentimeters === null ||
+      armSpanCentimeters === null ||
+      inseamCentimeters === null ||
       selectedTrainingDays === null ||
       maximumValidation.maximums === null
     ) {
@@ -150,6 +158,8 @@ export default function ProfileScreen() {
       await saveAthleteProfile({
         weightKilograms,
         heightCentimeters,
+        armSpanCentimeters,
+        inseamCentimeters,
         trainingDays: selectedTrainingDays,
         maximums: maximumValidation.maximums,
       });
@@ -163,7 +173,7 @@ export default function ProfileScreen() {
     } finally {
       setSaving(false);
     }
-  }, [applyProfile, height, maximumDrafts, trainingDays, weight]);
+  }, [applyProfile, armSpan, height, inseam, maximumDrafts, trainingDays, weight]);
 
   return (
     <Screen testID="profile-screen" header={<Header title="Perfil" />}>
@@ -206,6 +216,24 @@ export default function ProfileScreen() {
                 placeholder="181"
                 error={fieldErrors.height}
                 testID="profile-height"
+              />
+              <TextField
+                label="Envergadura (cm)"
+                value={armSpan}
+                onChangeText={setArmSpan}
+                keyboardType="decimal-pad"
+                placeholder="180"
+                error={fieldErrors.armSpan}
+                testID="profile-arm-span"
+              />
+              <TextField
+                label="Entrepierna (cm)"
+                value={inseam}
+                onChangeText={setInseam}
+                keyboardType="decimal-pad"
+                placeholder="85"
+                error={fieldErrors.inseam}
+                testID="profile-inseam"
               />
               <Stack gap="xs">
                 <Text variant="labelTechnical" className="text-text-muted">
@@ -273,8 +301,9 @@ export default function ProfileScreen() {
               {persisted ? (
                 <>
                   <Text variant="bodyMd" testID="profile-persisted-values">
-                    {persisted.weightKilograms} kg · {persisted.heightCentimeters} cm ·{' '}
-                    {persisted.trainingDays} días/semana
+                    {persisted.weightKilograms} kg · {persisted.heightCentimeters} cm · Envergadura{' '}
+                    {persisted.armSpanCentimeters} cm · Entrepierna {persisted.inseamCentimeters} cm
+                    · {persisted.trainingDays} días/semana
                   </Text>
                   <Text variant="bodySm" testID="profile-persisted-maximums">
                     {BASIC_EXERCISES.map((exercise) => {

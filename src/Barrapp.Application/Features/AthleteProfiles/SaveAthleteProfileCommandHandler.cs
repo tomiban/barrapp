@@ -26,6 +26,8 @@ internal sealed class SaveAthleteProfileCommandHandler(
                 SingleUser.Id,
                 request.WeightKilograms,
                 request.HeightCentimeters,
+                request.ArmSpanCentimeters,
+                request.InseamCentimeters,
                 request.TrainingDays,
                 request.Maximums);
 
@@ -42,6 +44,8 @@ internal sealed class SaveAthleteProfileCommandHandler(
             var update = profile.Update(
                 request.WeightKilograms,
                 request.HeightCentimeters,
+                request.ArmSpanCentimeters,
+                request.InseamCentimeters,
                 request.TrainingDays,
                 request.Maximums);
             if (update.IsFailure)
@@ -55,6 +59,8 @@ internal sealed class SaveAthleteProfileCommandHandler(
         return new AthleteProfileResponse(
             profile.WeightKilograms,
             profile.HeightCentimeters,
+            profile.ArmSpanCentimeters,
+            profile.InseamCentimeters,
             profile.TrainingDays,
             MaximumResponses.From(profile.Maximums));
     }
