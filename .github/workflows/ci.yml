@@ -33,15 +33,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore barrapp.slnx
       - name: Verify formatting
-        run: dotnet format Barrapp.sln --verify-no-changes
+        run: dotnet format barrapp.slnx --verify-no-changes
       - name: Test
-        run: |
-          dotnet test tests/Barrapp.Domain.UnitTests/Barrapp.Domain.UnitTests.csproj --no-restore
-          dotnet test tests/Barrapp.Api.FunctionalTests/Barrapp.Api.FunctionalTests.csproj --no-restore
-          dotnet test tests/Barrapp.ArchitectureTests/Barrapp.ArchitectureTests.csproj --no-restore
-          dotnet test tests/Barrapp.Persistence.IntegrationTests/Barrapp.Persistence.IntegrationTests.csproj --no-restore
+        run: dotnet test barrapp.slnx --no-restore
 
   mobile:
     name: Mobile (Expo)
