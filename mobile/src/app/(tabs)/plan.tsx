@@ -4,29 +4,47 @@ import { messageOf } from '@/api/messageOf';
 import { fetchPlan, type Plan } from '@/api/plan';
 import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
+import { CloudOff } from '@/design-system/Icon';
 import { Stack } from '@/design-system/layout';
 import { Header, Screen } from '@/design-system/Navigation';
 import { PlanView } from '@/features/plan/PlanView';
+import { openPlanStore } from '@/offline/planStore';
+import { readPlan, type PlanReadResult } from '@/offline/readPlan';
 
 type LoadState =
-  { status: 'loading' } | { status: 'ready'; plan: Plan } | { status: 'error'; message: string };
+  | { status: 'loading' }
+  | { status: 'ready'; plan: Plan; offline: boolean }
+  | { status: 'error'; message: string };
+
+/** Traduce el resultado de `readPlan` al estado de la pantalla. */
+function toLoadState(result: PlanReadResult): LoadState {
+  if (result.source === 'failure') {
+    return { status: 'error', message: result.message };
+  }
+  return { status: 'ready', plan: result.plan, offline: result.source === 'cache' };
+}
 
 /**
  * Pantalla de planificación: lee `GET /plan` (el motor lo genera en el servidor a partir del
- * perfil y el objetivo guardados) y delega el pintado semana a semana en `PlanView`.
+ * perfil y el objetivo guardados) y, si no hay conexión, sirve la copia guardada en el almacén
+ * local. Cada plan fresco se guarda en la caché para la próxima lectura offline.
  */
 export default function PlanScreen() {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
 
   const load = useCallback((signal?: AbortSignal) => {
-    fetchPlan(signal)
-      .then((plan) => setState({ status: 'ready', plan }))
-      .catch((error: unknown) => {
+    void (async () => {
+      try {
+        const store = await openPlanStore();
+        const result = await readPlan(fetchPlan, store, signal);
+        setState(toLoadState(result));
+      } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
           return;
         }
         setState({ status: 'error', message: messageOf(error) });
-      });
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -55,7 +73,19 @@ export default function PlanScreen() {
         </Stack>
       ) : null}
 
-      {state.status === 'ready' ? <PlanView plan={state.plan} /> : null}
+      {state.status === 'ready' ? (
+        <Stack gap="sm">
+          {state.offline ? (
+            <Banner
+              role="inactive"
+              icon={CloudOff}
+              message="Sin conexión: mostrando el plan guardado."
+              testID="plan-offline-banner"
+            />
+          ) : null}
+          <PlanView plan={state.plan} />
+        </Stack>
+      ) : null}
     </Screen>
   );
 }
