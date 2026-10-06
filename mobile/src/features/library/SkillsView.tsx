@@ -9,6 +9,7 @@ import {
   type StageCriterion,
 } from '@/api/catalog/skills';
 import { fetchSkillProgress } from '@/api/catalog/progress';
+import { messageOf } from '@/api/messageOf';
 import { Button } from '@/design-system/Button';
 import { Banner, EmptyState, Loading } from '@/design-system/Feedback';
 import { Stack } from '@/design-system/layout';
@@ -26,10 +27,6 @@ type LoadState =
       currentStageBySkill: Map<string, number>;
     }
   | { status: 'error'; message: string };
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : 'Error desconocido';
-}
 
 /** Texto del criterio de una etapa, p. ej. `3 × 20 s` o `3 × 5 reps`. */
 function formatCriterion(criterion: StageCriterion): string {

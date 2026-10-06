@@ -9,6 +9,7 @@ import {
   type RoutineProgram,
 } from '@/api/catalog/routines';
 import { fetchSkillCatalog } from '@/api/catalog/skills';
+import { messageOf } from '@/api/messageOf';
 import { Button } from '@/design-system/Button';
 import { Banner, EmptyState, Loading } from '@/design-system/Feedback';
 import { Stack } from '@/design-system/layout';
@@ -21,10 +22,6 @@ type LoadState =
   | { status: 'loading' }
   | { status: 'ready'; programs: RoutineProgram[]; exerciseNames: Map<string, string> }
   | { status: 'error'; message: string };
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : 'Error desconocido';
-}
 
 /** Texto de una rutina: intensidad y duración, p. ej. `Intensidad 2 · 14 min`. */
 function formatRoutineMeta(routine: ProgramRoutine): string {

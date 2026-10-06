@@ -14,6 +14,7 @@ import {
   type MaximumDraft,
   type MaximumFieldErrors,
 } from '@/api/athleteProfile';
+import { messageOf } from '@/api/messageOf';
 import { Button } from '@/design-system/Button';
 import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
 import { Banner, Loading } from '@/design-system/Feedback';
@@ -45,10 +46,6 @@ const DEFAULT_TRAINING_DAYS = String(TRAINING_DAYS_LIMITS.min);
 /** Un borrador vacío por cada ejercicio básico. */
 function emptyMaximumDrafts(): Record<string, string> {
   return Object.fromEntries(BASIC_EXERCISES.map((exercise) => [exercise.code, '']));
-}
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : 'Error desconocido';
 }
 
 /**

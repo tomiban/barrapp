@@ -5,6 +5,7 @@ import {
   fetchExerciseCatalog,
   type ExerciseCatalog,
 } from '@/api/catalog/exercises';
+import { messageOf } from '@/api/messageOf';
 import { Button } from '@/design-system/Button';
 import { Banner, EmptyState, Loading } from '@/design-system/Feedback';
 import { Stack } from '@/design-system/layout';
@@ -14,10 +15,6 @@ type LoadState =
   | { status: 'loading' }
   | { status: 'ready'; catalog: ExerciseCatalog }
   | { status: 'error'; message: string };
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : 'Error desconocido';
-}
 
 /**
  * Vista «Ejercicios» de la Biblioteca: lee `GET /catalog/exercises` y pinta la lista
