@@ -20,15 +20,10 @@ namespace Barrapp.Domain.Planning;
 /// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. El bloque de
 /// skill practica la etapa actual del atleta (#14) y, en los skills apalancados, ajusta ±1 serie
 /// según la <see cref="AthleteLever"/> y añade su nota de ritmo esperado (#68); el criterio de
-<<<<<<< HEAD
 /// etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3; la
 /// semana 4 es un <i>deload</i> (#13) con RIR 4 y ~50 % del volumen, bajando las series de
-/// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión.
-=======
-/// etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3; el deload de
-/// la semana 4 (#13) se apoyará en este mismo punto de entrada. Con un máximo de 0 en algún patrón,
-/// el hueco de fuerza se cubre con la regresión del ejercicio (#17).
->>>>>>> feat/17-session-frontier
+/// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión. Con un máximo de 0
+/// en algún patrón, el hueco de fuerza se cubre con la regresión del ejercicio (#17).
 /// </remarks>
 public static class PlanGenerator
 {
