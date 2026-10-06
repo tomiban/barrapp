@@ -3,8 +3,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { messageOf } from '@/api/messageOf';
 import { fetchPlan, type Plan, type PlanSessionItem } from '@/api/plan';
 import {
+  deleteSessionLog,
   fetchSessionLogs,
   registerSessionLog,
+  updateSessionLog,
   type SessionLog,
   type SessionLogMetric,
 } from '@/api/sessionLogs';
@@ -18,6 +20,7 @@ import {
   SessionLoggingView,
   type ExerciseSetsPayload,
   type SaveFeedback,
+  type SessionLogSetPayload,
 } from '@/features/sessionLog/SessionLoggingView';
 import { SoloSessionView } from '@/features/suelta/SoloSessionView';
 import { SoloSessionHistory } from '@/features/suelta/SoloSessionHistory';
@@ -145,6 +148,23 @@ export default function TrainScreen() {
     load();
   }, [load]);
 
+  /** Vuelve a leer los registros (servidor + cola local) y refresca el estado de la sesión. */
+  const refreshLogs = useCallback(async () => {
+    const [serverLogs, pending] = await Promise.all([
+      fetchLogsOrEmpty(),
+      getSessionLogOutbox().then((outbox) => outbox.listPending()),
+    ]);
+    setState((current) =>
+      current.status === 'ready'
+        ? {
+            ...current,
+            logs: mergeSessionLogs(serverLogs, pending),
+            offline: pending.length > 0,
+          }
+        : current,
+    );
+  }, []);
+
   const handleSave = useCallback(
     async (day: number, exercises: ExerciseSetsPayload[]) => {
       setSaving(true);
@@ -181,17 +201,7 @@ export default function TrainScreen() {
 
         // El propio guardado aprovecha para subir la cola pendiente: sin duplicados.
         await syncPendingSessionLogs(outbox, registerSessionLog);
-
-        const [serverLogs, pending] = await Promise.all([fetchLogsOrEmpty(), outbox.listPending()]);
-        setState((current) =>
-          current.status === 'ready'
-            ? {
-                ...current,
-                logs: mergeSessionLogs(serverLogs, pending),
-                offline: pending.length > 0,
-              }
-            : current,
-        );
+        await refreshLogs();
         setFeedback({
           role: 'confirmed',
           message:
@@ -205,7 +215,43 @@ export default function TrainScreen() {
         setSaving(false);
       }
     },
-    [state],
+    [refreshLogs, state],
+  );
+
+  /** Edita un registro confirmado vía `PUT /session-logs/{id}` y recarga los registros. */
+  const handleUpdate = useCallback(
+    async (logId: string, sets: SessionLogSetPayload[]) => {
+      setSaving(true);
+      setFeedback(null);
+      try {
+        await updateSessionLog(logId, { sets });
+        await refreshLogs();
+        setFeedback({ role: 'confirmed', message: 'Registro actualizado.' });
+      } catch (error) {
+        setFeedback({ role: 'error', message: messageOf(error) });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [refreshLogs],
+  );
+
+  /** Elimina un registro confirmado vía `DELETE /session-logs/{id}` y recarga los registros. */
+  const handleDelete = useCallback(
+    async (logId: string) => {
+      setSaving(true);
+      setFeedback(null);
+      try {
+        await deleteSessionLog(logId);
+        await refreshLogs();
+        setFeedback({ role: 'confirmed', message: 'Registro borrado.' });
+      } catch (error) {
+        setFeedback({ role: 'error', message: messageOf(error) });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [refreshLogs],
   );
 
   return (
@@ -239,6 +285,8 @@ export default function TrainScreen() {
             saving={saving}
             feedback={feedback}
             onSave={handleSave}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
           />
         </Stack>
       ) : null}

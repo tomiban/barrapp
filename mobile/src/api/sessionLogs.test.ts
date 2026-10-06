@@ -1,4 +1,9 @@
-import { deleteSessionLog, fetchSessionLogs, registerSessionLog, updateSessionLog } from './sessionLogs';
+import {
+  deleteSessionLog,
+  fetchSessionLogs,
+  registerSessionLog,
+  updateSessionLog,
+} from './sessionLogs';
 
 /**
  * El cliente de registro habla con `POST /session-logs` y `GET /session-logs`. Se mockea
@@ -158,9 +163,9 @@ describe('updateSessionLog', () => {
         jsonResponse({ detail: 'El registro de sesión indicado no existe.' }, 404),
       );
 
-    await expect(updateSessionLog('ghost', { sets: [{ setNumber: 1, value: 12 }] })).rejects.toThrow(
-      'El registro de sesión indicado no existe.',
-    );
+    await expect(
+      updateSessionLog('ghost', { sets: [{ setNumber: 1, value: 12 }] }),
+    ).rejects.toThrow('El registro de sesión indicado no existe.');
   });
 });
 
