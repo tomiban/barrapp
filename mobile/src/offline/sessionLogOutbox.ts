@@ -199,6 +199,8 @@ export function pendingToSessionLog(pending: PendingSessionLog): SessionLog {
     sessionDay: pending.sessionDay,
     recordedAtUtc: pending.updatedAt,
     sets: pending.sets,
+    // La única marca que distingue en la vista lo que sigue en la cola (#26) de lo confirmado (#22).
+    pending: true,
   };
 }
 

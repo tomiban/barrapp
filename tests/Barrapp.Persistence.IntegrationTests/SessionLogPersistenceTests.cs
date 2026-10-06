@@ -119,6 +119,79 @@ public sealed class SessionLogPersistenceTests : IDisposable
         Assert.Equal([10, 11], loaded.Sets.Select(set => set.Value));
     }
 
+    [Fact]
+    public async Task An_updated_log_is_written_and_read_back_with_its_new_sets()
+    {
+        var log = SessionLog.Create(
+            SingleUser.Id,
+            "push_up",
+            mesocycleId: null,
+            sessionDay: 1,
+            new DateTimeOffset(2026, 10, 5, 18, 30, 0, TimeSpan.Zero),
+            [new SessionLogSetInput(1, 10), new SessionLogSetInput(2, 11)]);
+        _dbContext.SessionLogs.Add(log.Value);
+        await _dbContext.SaveChangesAsync();
+
+        log.Value.Update([new SessionLogSetInput(1, 12), new SessionLogSetInput(2, 13, 2)]);
+        await _dbContext.SaveChangesAsync();
+
+        var reloaded = await ReadLogsAsync();
+
+        var loaded = Assert.Single(reloaded);
+        Assert.Equal([12, 13], loaded.Sets.Select(set => set.Value));
+        Assert.Equal(2, loaded.Sets.ElementAt(1).Effort);
+        Assert.Equal("push_up", loaded.ExerciseId);
+    }
+
+    [Fact]
+    public async Task A_deleted_log_disappears_together_with_its_sets()
+    {
+        var log = SessionLog.Create(
+            SingleUser.Id,
+            "push_up",
+            mesocycleId: null,
+            sessionDay: 1,
+            new DateTimeOffset(2026, 10, 5, 18, 30, 0, TimeSpan.Zero),
+            [new SessionLogSetInput(1, 10), new SessionLogSetInput(2, 11)]);
+        _dbContext.SessionLogs.Add(log.Value);
+        await _dbContext.SaveChangesAsync();
+
+        var repository = new SessionLogRepository(_dbContext);
+        var loaded = await repository.GetByIdAsync(log.Value.Id);
+        Assert.NotNull(loaded);
+        repository.Remove(loaded!);
+        await _dbContext.SaveChangesAsync();
+
+        Assert.Empty(await ReadLogsAsync());
+    }
+
+    [Fact]
+    public async Task The_update_and_delete_commands_run_through_the_pipeline()
+    {
+        using (var services = CreateServices(_dbContext))
+        {
+            var isender = services.GetRequiredService<ISender>();
+            var saved = await isender.Send(
+                new RegisterSessionLogCommand("push_up", null, 1, [new SessionLogSetInput(1, 10)]));
+            Assert.True(saved.IsSuccess);
+
+            var updated = await isender.Send(
+                new UpdateSessionLogCommand(saved.Value.Id, [new SessionLogSetInput(1, 15), new SessionLogSetInput(2, 16, 3)]));
+            Assert.True(updated.IsSuccess);
+            Assert.Equal([15, 16], updated.Value.Sets.Select(set => set.Value));
+            Assert.Equal(3, updated.Value.Sets.ElementAt(1).Effort);
+
+            var deleted = await isender.Send(new DeleteSessionLogCommand(saved.Value.Id));
+            Assert.True(deleted.IsSuccess);
+        }
+
+        using var readContext = CreateContext();
+        using var readServices = CreateServices(readContext);
+        var logs = await readServices.GetRequiredService<ISender>().Send(new GetSessionLogsQuery());
+        Assert.True(logs.IsSuccess);
+        Assert.Empty(logs.Value);
+    }
+
     private async Task<IReadOnlyList<SessionLog>> ReadLogsAsync()
     {
         await using var readContext = CreateContext();

@@ -187,4 +187,103 @@ public sealed class SessionLogTests
         Assert.True(result.IsFailure);
         Assert.Equal(DomainErrors.SessionLog.SessionDayOutOfRange, result.Error);
     }
+
+    [Fact]
+    public void Update_replaces_the_set_values_of_an_existing_log()
+    {
+        var result = SessionLog.Create(
+            UserId,
+            "push_up",
+            null,
+            1,
+            Recorded,
+            Sets(new SessionLogSetInput(1, 10), new SessionLogSetInput(2, 11), new SessionLogSetInput(3, 9)));
+        var log = result.Value;
+
+        var update = log.Update(
+            Sets(new SessionLogSetInput(1, 12), new SessionLogSetInput(2, 13, 2), new SessionLogSetInput(3, 10)));
+
+        Assert.True(update.IsSuccess);
+        Assert.Equal([12, 13, 10], log.Sets.Select(set => set.Value));
+        Assert.Equal([null, 2, null], log.Sets.Select(set => set.Effort).ToArray());
+        Assert.Equal(1, log.SessionDay);
+    }
+
+    [Fact]
+    public void Update_rejects_a_log_without_sets_and_keeps_its_values()
+    {
+        var result = SessionLog.Create(
+            UserId,
+            "push_up",
+            null,
+            1,
+            Recorded,
+            Sets(new SessionLogSetInput(1, 10), new SessionLogSetInput(2, 11)));
+        var log = result.Value;
+
+        var update = log.Update([]);
+
+        Assert.True(update.IsFailure);
+        Assert.Equal(DomainErrors.SessionLog.SetsRequired, update.Error);
+        Assert.Equal([10, 11], log.Sets.Select(set => set.Value));
+    }
+
+    [Fact]
+    public void Update_rejects_a_negative_value_and_keeps_the_previous_sets()
+    {
+        var result = SessionLog.Create(
+            UserId,
+            "push_up",
+            null,
+            1,
+            Recorded,
+            Sets(new SessionLogSetInput(1, 10)));
+        var log = result.Value;
+
+        var update = log.Update(Sets(new SessionLogSetInput(1, -2)));
+
+        Assert.True(update.IsFailure);
+        Assert.Equal(DomainErrors.SessionLog.ValueMustBeNonNegative, update.Error);
+        Assert.Equal([10], log.Sets.Select(set => set.Value));
+    }
+
+    [Fact]
+    public void Update_rejects_non_consecutive_set_numbers_and_keeps_the_previous_sets()
+    {
+        var result = SessionLog.Create(
+            UserId,
+            "push_up",
+            null,
+            1,
+            Recorded,
+            Sets(new SessionLogSetInput(1, 10), new SessionLogSetInput(2, 11)));
+        var log = result.Value;
+
+        var update = log.Update(Sets(new SessionLogSetInput(1, 12), new SessionLogSetInput(3, 13)));
+
+        Assert.True(update.IsFailure);
+        Assert.Equal(DomainErrors.SessionLog.SetNumbersNotConsecutive, update.Error);
+        Assert.Equal([10, 11], log.Sets.Select(set => set.Value));
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(11)]
+    public void Update_rejects_an_effort_out_of_range_and_keeps_the_previous_sets(int effort)
+    {
+        var result = SessionLog.Create(
+            UserId,
+            "push_up",
+            null,
+            1,
+            Recorded,
+            Sets(new SessionLogSetInput(1, 10)));
+        var log = result.Value;
+
+        var update = log.Update(Sets(new SessionLogSetInput(1, 12, effort)));
+
+        Assert.True(update.IsFailure);
+        Assert.Equal(DomainErrors.SessionLog.EffortOutOfRange, update.Error);
+        Assert.Equal([10], log.Sets.Select(set => set.Value));
+    }
 }

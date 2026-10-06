@@ -158,6 +158,11 @@ public static class DomainErrors
         public static readonly Error UnknownExercise = Error.Validation(
             "session_log.unknown_exercise",
             "El ejercicio indicado no existe en el catálogo.");
+
+        /// <summary>El registro de sesión indicado no existe.</summary>
+        public static readonly Error NotFound = Error.NotFound(
+            "session_log.not_found",
+            "El registro de sesión indicado no existe.");
     }
 
     /// <summary>Errores de la sesión suelta (#28) y su historial (#29).</summary>

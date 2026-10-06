@@ -6,6 +6,7 @@ import {
   SessionLoggingView,
   type ExerciseSetsPayload,
   type SaveFeedback,
+  type SessionLogSetPayload,
 } from './SessionLoggingView';
 
 /** Plan mínimo de 3 días con un bloque de skill, dos de fuerza y uno de core en el día 1. */
@@ -153,6 +154,8 @@ const strengthPlan: Plan = {
 async function renderView(options?: {
   logs?: SessionLog[];
   onSave?: (day: number, exercises: ExerciseSetsPayload[]) => void;
+  onUpdate?: (logId: string, sets: SessionLogSetPayload[]) => void;
+  onDelete?: (logId: string) => void;
   feedback?: SaveFeedback | null;
   saving?: boolean;
 }) {
@@ -164,6 +167,8 @@ async function renderView(options?: {
       saving={options?.saving ?? false}
       feedback={options?.feedback ?? null}
       onSave={onSave}
+      onUpdate={options?.onUpdate ?? jest.fn()}
+      onDelete={options?.onDelete ?? jest.fn()}
     />,
   );
   return { onSave };
@@ -205,6 +210,8 @@ describe('SessionLoggingView', () => {
         saving={false}
         feedback={null}
         onSave={onSave}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
       />,
     );
 
@@ -244,6 +251,8 @@ describe('SessionLoggingView', () => {
         saving={false}
         feedback={null}
         onSave={onSave}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
       />,
     );
 
@@ -303,6 +312,8 @@ describe('SessionLoggingView', () => {
         saving={false}
         feedback={null}
         onSave={onSave}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
       />,
     );
 
@@ -372,6 +383,8 @@ describe('SessionLoggingView', () => {
         saving={false}
         feedback={null}
         onSave={onSave}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
       />,
     );
 
@@ -400,6 +413,8 @@ describe('SessionLoggingView', () => {
         saving={false}
         feedback={null}
         onSave={onSave}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
       />,
     );
 
@@ -472,6 +487,8 @@ describe('SessionLoggingView', () => {
         saving={false}
         feedback={null}
         onSave={onSave}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
       />,
     );
 
@@ -512,6 +529,8 @@ describe('SessionLoggingView', () => {
         saving={false}
         feedback={null}
         onSave={onSave}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
       />,
     );
 
@@ -533,6 +552,8 @@ describe('SessionLoggingView', () => {
         saving={false}
         feedback={null}
         onSave={jest.fn()}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
       />,
     );
 
@@ -587,10 +608,131 @@ describe('SessionLoggingView', () => {
         saving={false}
         feedback={null}
         onSave={jest.fn()}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
       />,
     );
 
     expect(screen.getByTestId('session-log-no-items')).toBeOnTheScreen();
     expect(screen.getByText('Esta sesión no tiene ejercicios que registrar.')).toBeOnTheScreen();
+  });
+
+  it('ofrece editar y borrar un registro confirmado', async () => {
+    await renderView({ logs: [savedLog] });
+
+    expect(screen.getByTestId('session-log-edit-push_up')).toBeOnTheScreen();
+    expect(screen.getByTestId('session-log-delete-push_up')).toBeOnTheScreen();
+  });
+
+  it('no ofrece editar ni borrar un registro que sigue pendiente en la cola local', async () => {
+    await renderView({ logs: [{ ...savedLog, id: 'client-1', pending: true }] });
+
+    expect(screen.queryByTestId('session-log-edit-push_up')).toBeNull();
+    expect(screen.queryByTestId('session-log-delete-push_up')).toBeNull();
+  });
+
+  it('edita un registro: re-habilita los campos con sus valores y guarda los cambios', async () => {
+    const onSave = jest.fn();
+    const onUpdate = jest.fn();
+    await render(
+      <SessionLoggingView
+        plan={strengthPlan}
+        logs={[savedLog]}
+        saving={false}
+        feedback={null}
+        onSave={onSave}
+        onUpdate={onUpdate}
+        onDelete={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('session-log-set-push_up-1')).toHaveProp('editable', false);
+    expect(screen.queryByLabelText('Editando')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('session-log-edit-push_up'));
+
+    expect(screen.getByTestId('session-log-set-push_up-1')).toHaveProp('editable', true);
+    expect(screen.getByLabelText('Editando')).toBeOnTheScreen();
+    expect(screen.getByTestId('session-log-effort-push_up-1')).toBeOnTheScreen();
+
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-1'), '15');
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-3'), '16');
+    await fireEvent.changeText(screen.getByTestId('session-log-effort-push_up-2'), '2');
+    await fireEvent.press(screen.getByTestId('session-log-update-push_up'));
+
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    expect(onUpdate).toHaveBeenCalledWith('log-1', [
+      { setNumber: 1, value: 15, effort: null },
+      { setNumber: 2, value: 11, effort: 2 },
+      { setNumber: 3, value: 16, effort: null },
+    ]);
+  });
+
+  it('cancela la edición sin guardar cambios', async () => {
+    const onUpdate = jest.fn();
+    await render(
+      <SessionLoggingView
+        plan={strengthPlan}
+        logs={[savedLog]}
+        saving={false}
+        feedback={null}
+        onSave={jest.fn()}
+        onUpdate={onUpdate}
+        onDelete={jest.fn()}
+      />,
+    );
+
+    await fireEvent.press(screen.getByTestId('session-log-edit-push_up'));
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-1'), '99');
+    await fireEvent.press(screen.getByTestId('session-log-cancel-push_up'));
+
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.getByTestId('session-log-set-push_up-1')).toHaveProp('editable', false);
+    expect(screen.getByTestId('session-log-set-push_up-1')).toHaveProp('value', '10');
+  });
+
+  it('avisa si la edición deja alguna serie vacía', async () => {
+    const onUpdate = jest.fn();
+    await render(
+      <SessionLoggingView
+        plan={strengthPlan}
+        logs={[savedLog]}
+        saving={false}
+        feedback={null}
+        onSave={jest.fn()}
+        onUpdate={onUpdate}
+        onDelete={jest.fn()}
+      />,
+    );
+
+    await fireEvent.press(screen.getByTestId('session-log-edit-push_up'));
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-1'), '');
+    await fireEvent.press(screen.getByTestId('session-log-update-push_up'));
+
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('Completa los valores de todas las series antes de guardar.'),
+    ).toBeOnTheScreen();
+  });
+
+  it('borra un registro guardado con su acción', async () => {
+    const onSave = jest.fn();
+    const onDelete = jest.fn();
+    await render(
+      <SessionLoggingView
+        plan={strengthPlan}
+        logs={[savedLog]}
+        saving={false}
+        feedback={null}
+        onSave={onSave}
+        onUpdate={jest.fn()}
+        onDelete={onDelete}
+      />,
+    );
+
+    await fireEvent.press(screen.getByTestId('session-log-delete-push_up'));
+
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    expect(onDelete).toHaveBeenCalledWith('log-1');
   });
 });

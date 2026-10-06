@@ -218,6 +218,160 @@ public sealed class SessionLogEndpointTests(BarrappApiFactory factory)
         Assert.NotNull(problem);
         Assert.Contains("El valor real de una serie no puede ser negativo.", problem!.Detail);
     }
+
+    [Fact]
+    public async Task Put_updates_the_sets_of_an_existing_log_and_returns_the_updated_log()
+    {
+        using var client = factory.CreateClient();
+
+        var created = await PostPushUpAsync(client, values: [10, 11]);
+
+        using var putResponse = await client.PutAsJsonAsync(
+            $"/session-logs/{created.Id}",
+            new
+            {
+                sets = new[]
+                {
+                    new { setNumber = 1, value = 12, effort = (int?)2 },
+                    new { setNumber = 2, value = 13, effort = (int?)null },
+                },
+            });
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+
+        var updated = await putResponse.Content.ReadFromJsonAsync<SessionLogResponse>();
+        Assert.NotNull(updated);
+        Assert.Equal(created.Id, updated!.Id);
+        Assert.Equal([12, 13], updated.Sets.Select(set => set.Value));
+        Assert.Equal(2, updated.Sets.ElementAt(0).Effort);
+        Assert.Null(updated.Sets.ElementAt(1).Effort);
+        Assert.Equal("reps", updated.Metric);
+
+        var logs = await client.GetFromJsonAsync<List<SessionLogResponse>>("/session-logs");
+        Assert.NotNull(logs);
+        var loaded = Assert.Single(logs!, log => log.Id == created.Id);
+        Assert.Equal([12, 13], loaded.Sets.Select(set => set.Value));
+    }
+
+    [Fact]
+    public async Task Put_derives_the_unit_of_the_exercise_in_the_response()
+    {
+        using var client = factory.CreateClient();
+
+        using var postResponse = await client.PostAsJsonAsync(
+            "/session-logs",
+            new
+            {
+                exerciseId = "hollow-body-hold",
+                sessionDay = 1,
+                sets = new[] { new { setNumber = 1, value = 25 } },
+            });
+        var created = await postResponse.Content.ReadFromJsonAsync<SessionLogResponse>();
+
+        using var putResponse = await client.PutAsJsonAsync(
+            $"/session-logs/{created!.Id}",
+            new { sets = new[] { new { setNumber = 1, value = 30 } } });
+
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        var updated = await putResponse.Content.ReadFromJsonAsync<SessionLogResponse>();
+        Assert.NotNull(updated);
+        Assert.Equal("seconds", updated!.Metric);
+        Assert.Equal("Cuerpo hueco", updated.ExerciseName);
+        Assert.Equal([30], updated.Sets.Select(set => set.Value));
+    }
+
+    [Fact]
+    public async Task Put_with_an_unknown_id_returns_404()
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            $"/session-logs/{Guid.NewGuid()}",
+            new { sets = new[] { new { setNumber = 1, value = 12 } } });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains("El registro de sesión indicado no existe.", problem!.Detail);
+    }
+
+    [Fact]
+    public async Task Put_without_sets_returns_400()
+    {
+        using var client = factory.CreateClient();
+        var created = await PostPushUpAsync(client, values: [10]);
+
+        using var response = await client.PutAsJsonAsync(
+            $"/session-logs/{created.Id}",
+            new { sets = Array.Empty<object>() });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Put_with_a_negative_value_returns_400_and_keeps_the_original_sets()
+    {
+        using var client = factory.CreateClient();
+        var created = await PostPushUpAsync(client, values: [10]);
+
+        using var response = await client.PutAsJsonAsync(
+            $"/session-logs/{created.Id}",
+            new { sets = new[] { new { setNumber = 1, value = -3 } } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains("El valor real de una serie no puede ser negativo.", problem!.Detail);
+
+        var logs = await client.GetFromJsonAsync<List<SessionLogResponse>>("/session-logs");
+        Assert.NotNull(logs);
+        var loaded = Assert.Single(logs!, log => log.Id == created.Id);
+        Assert.Equal([10], loaded.Sets.Select(set => set.Value));
+    }
+
+    [Fact]
+    public async Task Delete_removes_the_log_and_returns_no_content()
+    {
+        using var client = factory.CreateClient();
+        var created = await PostPushUpAsync(client, values: [10, 11]);
+
+        using var response = await client.DeleteAsync($"/session-logs/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var logs = await client.GetFromJsonAsync<List<SessionLogResponse>>("/session-logs");
+        Assert.NotNull(logs);
+        Assert.DoesNotContain(logs!, log => log.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task Delete_with_an_unknown_id_returns_404()
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.DeleteAsync($"/session-logs/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains("El registro de sesión indicado no existe.", problem!.Detail);
+    }
+
+    private static async Task<SessionLogResponse> PostPushUpAsync(
+        HttpClient client,
+        IReadOnlyList<int> values)
+    {
+        using var postResponse = await client.PostAsJsonAsync(
+            "/session-logs",
+            new
+            {
+                exerciseId = "push_up",
+                sessionDay = 2,
+                sets = values.Select((value, index) => new { setNumber = index + 1, value }),
+            });
+        var saved = await postResponse.Content.ReadFromJsonAsync<SessionLogResponse>();
+        Assert.NotNull(saved);
+        return saved!;
+    }
 }
 
 /// <summary>
