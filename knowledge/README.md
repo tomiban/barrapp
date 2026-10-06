@@ -1,6 +1,6 @@
 # Base de conocimiento
 
-Contenido curado de la app, en **JSON versionado y embebido** (ADR-0009). Un cargador
+Contenido curado de la app, en **JSON versionado y embebido** (ADR-0010). Un cargador
 (`Barrapp.Persistence`, ticket #63) lee los tres ficheros al arrancar, los valida con
 **fail-fast** y los expone como catálogo en memoria. Retocar una escalera o añadir un
 ejercicio **no** recompila el dominio ni genera una migración.
@@ -24,7 +24,7 @@ actualizar el cargador.
   "schemaVersion": 1,
   "exercises": [
     {
-      "id": "push-up",            // slug estable, único
+      "id": "push_up",            // slug estable, único
       "name": "Flexiones",        // español
       "kind": "conditioning",     // "conditioning" | "skill"
       "group": "push",            // "push" | "pull" | "leg" | "core" | "cardio"; null si kind=skill
