@@ -25,4 +25,7 @@ public interface IApplicationDbContext
 
     /// <summary>Registros de sesión (serie a serie).</summary>
     DbSet<SessionLog> SessionLogs { get; }
+
+    /// <summary>Historial de sesiones sueltas (aislado de los registros de sesión).</summary>
+    DbSet<SessionSuelta> SessionSuelta { get; }
 }

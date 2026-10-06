@@ -31,6 +31,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     /// <summary>Registros de sesión (serie a serie).</summary>
     public DbSet<SessionLog> SessionLogs => Set<SessionLog>();
 
+    /// <summary>Historial de sesiones sueltas, aislado de los registros de sesión (D8).</summary>
+    public DbSet<SessionSuelta> SessionSuelta => Set<SessionSuelta>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
