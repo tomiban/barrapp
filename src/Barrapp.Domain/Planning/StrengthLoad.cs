@@ -7,8 +7,11 @@ namespace Barrapp.Domain.Planning;
 /// reutilizará <see cref="Derive"/> variando las repeticiones en reserva por microciclo.
 /// </summary>
 /// <remarks>
-/// Es pura y determinista. Un máximo de 0 (o 1) no permite derivar una carga con margen: hasta que
-/// #17 resuelva la regresión, cae a una prescripción neutra y positiva, nunca a 0 repeticiones.
+/// Es pura y determinista. Siempre que el máximo lo permita (≥ 2) la derivación deja al menos una
+/// repetición en reserva y el tope prescrito queda estrictamente por debajo del máximo. Un máximo
+/// de 0 o 1 no admite reserva alguna, así que cae a un marcador neutro y positivo
+/// (<see cref="NeutralReps"/>), nunca a 0 repeticiones. Convertir ese caso en una regresión real
+/// es responsabilidad de #17.
 /// </remarks>
 internal static class StrengthLoad
 {
@@ -18,25 +21,29 @@ internal static class StrengthLoad
     /// <summary>Amplitud del rango prescrito por debajo del objetivo, en repeticiones.</summary>
     internal const int RepsRangeWidth = 2;
 
-    /// <summary>Repetición mínima de la prescripción neutra de regresión (#17 pendiente).</summary>
-    internal const int RegressionReps = 1;
+    /// <summary>
+    /// Repetición neutra y positiva que se usa cuando el máximo no permite dejar reserva (0 o 1).
+    /// Es un marcador pendiente de la regresión (#17), no una garantía de seguridad.
+    /// </summary>
+    internal const int NeutralReps = 1;
 
     /// <summary>
     /// Repeticiones (mínimo y máximo) que le corresponden a un máximo dado, dejando
-    /// <paramref name="repsInReserve"/> repeticiones antes del fallo. Para un máximo sin margen
-    /// suficiente (0, 1 o menor que la reserva) devuelve la prescripción neutra de regresión.
+    /// <paramref name="repsInReserve"/> repeticiones antes del fallo. Si el máximo lo permite
+    /// (≥ 2) deja al menos una repetición reservada y el tope queda por debajo del máximo; con un
+    /// máximo de 0 o 1 no hay margen y devuelve el marcador neutro (<see cref="NeutralReps"/>).
     /// </summary>
     internal static (int Min, int Max) Derive(int maximum, int repsInReserve)
     {
         // El motor nunca prescribe al fallo: se reserva al menos una repetición, aunque el llamador
         // pida una intensidad mayor (la onda de #12 bajará hasta RIR 1, nunca a 0).
-        var reserved = Math.Max(RegressionReps, repsInReserve);
+        var reserved = Math.Max(NeutralReps, repsInReserve);
         var target = maximum - reserved;
-        if (target < RegressionReps)
+        if (target < NeutralReps)
         {
-            return (RegressionReps, RegressionReps);
+            return (NeutralReps, NeutralReps);
         }
 
-        return (Math.Max(RegressionReps, target - RepsRangeWidth), target);
+        return (Math.Max(NeutralReps, target - RepsRangeWidth), target);
     }
 }

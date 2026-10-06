@@ -100,8 +100,9 @@ public sealed class PlanGeneratorTests
     }
 
     [Fact]
-    public void Generate_derives_strength_reps_from_each_athletes_maximum()
+    public void Generate_characterises_the_base_week_strength_reps_for_each_maximum()
     {
+        // Semana base (RIR 3): el tope es máximo - 3 y el rango baja dos repeticiones.
         var plan = PlanGenerator
             .Generate(
                 BuildProfile(3, pushUpMaximum: 8, pullUpMaximum: 4, squatMaximum: 20),
@@ -135,18 +136,30 @@ public sealed class PlanGeneratorTests
         }
     }
 
-    [Fact]
-    public void Generate_never_prescribes_strength_reps_to_failure()
+    [Theory]
+    [InlineData(2, 2, 2)]
+    [InlineData(7, 2, 12)]
+    [InlineData(3, 4, 6)]
+    [InlineData(20, 5, 8)]
+    public void Generate_never_prescribes_strength_reps_to_failure(
+        int pushUpMaximum,
+        int pullUpMaximum,
+        int squatMaximum)
     {
-        var profile = BuildProfile(3, pushUpMaximum: 7, pullUpMaximum: 2, squatMaximum: 12);
+        var profile = BuildProfile(3, pushUpMaximum, pullUpMaximum, squatMaximum);
 
         var plan = PlanGenerator.Generate(profile, BuildObjective(), Catalog()).Value;
 
         foreach (var item in StrengthItems(plan))
         {
-            var maximum = profile.Maximums
-                .Single(current => current.ExerciseCode == item.ExerciseId)
-                .Repetitions;
+            var maximum = profile.MaximumFor(item.ExerciseId);
+            Assert.NotNull(maximum);
+
+            // Un máximo de 0 o 1 no admite reserva; ese caso lo cubre el test de degenerados.
+            if (maximum < 2)
+            {
+                continue;
+            }
 
             Assert.True(item.RepsMin >= 1, $"{item.ExerciseId} no puede prescribir 0 repeticiones");
             Assert.True(item.RepsMin <= item.RepsMax, $"{item.ExerciseId} tiene un rango invertido");
@@ -159,16 +172,19 @@ public sealed class PlanGeneratorTests
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
-    public void Generate_keeps_a_positive_strength_prescription_for_a_degenerate_maximum(int maximum)
+    public void Generate_keeps_a_neutral_strength_placeholder_for_a_degenerate_maximum(int maximum)
     {
         var result = PlanGenerator
             .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), Catalog());
 
         Assert.True(result.IsSuccess);
+
+        // (1,1) es el marcador neutro documentado, no una prescripción segura: convertir un máximo
+        // de 0 en una regresión real (ejercicio más fácil) es responsabilidad de #17.
         Assert.All(StrengthItems(result.Value), item =>
         {
-            Assert.True(item.RepsMin >= 1);
-            Assert.True(item.RepsMax >= 1);
+            Assert.Equal(1, item.RepsMin);
+            Assert.Equal(1, item.RepsMax);
         });
     }
 

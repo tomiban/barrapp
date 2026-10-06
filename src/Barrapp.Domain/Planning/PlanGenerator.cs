@@ -76,9 +76,7 @@ public static class PlanGenerator
             var sessions = new List<Session>(profile.TrainingDays);
             for (var day = 1; day <= profile.TrainingDays; day++)
             {
-                sessions.Add(new Session(
-                    day,
-                    BuildItems(firstStage, strength.Value, StrengthLoad.BaseRepsInReserve)));
+                sessions.Add(new Session(day, BuildItems(firstStage, strength.Value)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
@@ -91,11 +89,6 @@ public static class PlanGenerator
         IGenerationCatalog catalog,
         AthleteProfile profile)
     {
-        var maximumsByCode = profile.Maximums.ToDictionary(
-            maximum => maximum.ExerciseCode,
-            maximum => maximum.Repetitions,
-            StringComparer.Ordinal);
-
         var slots = new List<StrengthSlot>(BasicExercises.All.Count);
         foreach (var basic in BasicExercises.All)
         {
@@ -106,10 +99,14 @@ public static class PlanGenerator
                     DomainErrors.Plan.UnknownExercise(basic.Code));
             }
 
-            slots.Add(new StrengthSlot(
-                ToGroup(basic.Pattern),
-                exercise.Id,
-                maximumsByCode.GetValueOrDefault(basic.Code)));
+            var maximum = profile.MaximumFor(basic.Code);
+            if (maximum is null)
+            {
+                return Result.Failure<IReadOnlyList<StrengthSlot>>(
+                    DomainErrors.AthleteProfile.MissingExerciseMaximum);
+            }
+
+            slots.Add(new StrengthSlot(ToGroup(basic.Pattern), exercise.Id, maximum.Value));
         }
 
         return Result.Success<IReadOnlyList<StrengthSlot>>(slots);
@@ -117,8 +114,7 @@ public static class PlanGenerator
 
     private static IReadOnlyList<SessionItem> BuildItems(
         SkillStage stage,
-        IReadOnlyList<StrengthSlot> strength,
-        int repsInReserve)
+        IReadOnlyList<StrengthSlot> strength)
     {
         var items = new List<SessionItem>(strength.Count + 2)
         {
@@ -127,7 +123,8 @@ public static class PlanGenerator
 
         foreach (var slot in strength)
         {
-            var reps = StrengthLoad.Derive(slot.MaximumRepetitions, repsInReserve);
+            // La onda por microciclo de #12 pasará su propio valor de reserva; hoy la semana base.
+            var reps = StrengthLoad.Derive(slot.MaximumRepetitions, StrengthLoad.BaseRepsInReserve);
 
             items.Add(new SessionItem(
                 slot.ExerciseId,

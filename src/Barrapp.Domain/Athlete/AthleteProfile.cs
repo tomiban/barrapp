@@ -96,6 +96,16 @@ public sealed class AthleteProfile
     public IReadOnlyCollection<Maximum> Maximums => _maximums;
 
     /// <summary>
+    /// Devuelve las repeticiones máximas del atleta para <paramref name="exerciseCode"/>, o
+    /// <c>null</c> si ese código no está entre sus máximos. El perfil es el dueño del emparejado
+    /// código → repeticiones, de modo que quien lo consulte no lo reconstruya por su cuenta.
+    /// </summary>
+    public int? MaximumFor(string exerciseCode) =>
+        _maximums
+            .FirstOrDefault(current => string.Equals(current.ExerciseCode, exerciseCode, StringComparison.Ordinal))
+            ?.Repetitions;
+
+    /// <summary>
     /// Crea un perfil para <paramref name="userId"/>. Falla si el peso (30–200 kg), la
     /// altura (120–220 cm), la envergadura (100–250 cm), la entrepierna (50–130 cm) o los
     /// días de entrenamiento (3–5) están fuera de rango, o si los máximos no cubren
