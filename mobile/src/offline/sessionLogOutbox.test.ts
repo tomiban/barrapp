@@ -179,6 +179,35 @@ describe('sessionLogOutbox', () => {
       ]);
     });
 
+    it('propagates an optional effort (RIR/RPE) per set through the outbox', async () => {
+      const outbox = createSessionLogOutbox(createInMemoryOutboxTable(), OPTIONS);
+
+      await outbox.enqueue({
+        ...PUSH_UP_INPUT,
+        sets: [
+          { setNumber: 1, value: 10, effort: 2 },
+          { setNumber: 2, value: 11, effort: null },
+        ],
+      });
+
+      const pending = await outbox.listPending();
+      expect(pending).toEqual([
+        {
+          clientId: 'client-1',
+          exerciseId: 'push_up',
+          exerciseName: 'Flexiones',
+          metric: 'reps',
+          mesocycleId: null,
+          sessionDay: 2,
+          sets: [
+            { setNumber: 1, value: 10, effort: 2 },
+            { setNumber: 2, value: 11, effort: null },
+          ],
+          updatedAt: '2026-10-05T10:00:00.000Z',
+        },
+      ]);
+    });
+
     it('queues different exercises separately and lists them oldest first', async () => {
       const clock = { current: Date.parse('2026-10-05T10:00:00.000Z') };
       const outbox = createSessionLogOutbox(createInMemoryOutboxTable(), {
