@@ -1,3 +1,4 @@
+using System.Globalization;
 using Barrapp.Application.Common;
 using Barrapp.Domain.Athlete;
 using Barrapp.Persistence.Repositories;
@@ -45,7 +46,7 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
     [Fact]
     public async Task A_new_profile_is_written_and_read_back_with_the_same_measurements()
     {
-        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4, Maximums()).Value;
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 180, 85, 4, Maximums()).Value;
         _dbContext.AthleteProfiles.Add(profile);
         await _dbContext.SaveChangesAsync();
 
@@ -55,13 +56,15 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
         Assert.Equal(profile.Id, reloaded!.Id);
         Assert.Equal(78.5, reloaded.WeightKilograms);
         Assert.Equal(181, reloaded.HeightCentimeters);
+        Assert.Equal(180, reloaded.ArmSpanCentimeters);
+        Assert.Equal(85, reloaded.InseamCentimeters);
         Assert.Equal(4, reloaded.TrainingDays);
     }
 
     [Fact]
     public async Task A_new_profile_is_written_and_read_back_with_the_same_maximums()
     {
-        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4, Maximums(pushUp: 12, pullUp: 3, squat: 20)).Value;
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 180, 85, 4, Maximums(pushUp: 12, pullUp: 3, squat: 20)).Value;
         _dbContext.AthleteProfiles.Add(profile);
         await _dbContext.SaveChangesAsync();
 
@@ -78,7 +81,7 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
     [Fact]
     public async Task A_zero_maximum_round_trips_through_sqlite()
     {
-        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4, Maximums(pushUp: 0)).Value;
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 180, 85, 4, Maximums(pushUp: 0)).Value;
         _dbContext.AthleteProfiles.Add(profile);
         await _dbContext.SaveChangesAsync();
 
@@ -101,13 +104,34 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
     }
 
     [Fact]
+    public async Task The_lever_measurement_columns_default_to_the_domain_minimums()
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText =
+            "SELECT name, dflt_value FROM pragma_table_info('AthleteProfiles') "
+            + "WHERE name IN ('ArmSpanCentimeters', 'InseamCentimeters')";
+
+        var defaults = new Dictionary<string, double>(StringComparer.Ordinal);
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            defaults[reader.GetString(0)] = double.Parse(
+                reader.GetString(1),
+                CultureInfo.InvariantCulture);
+        }
+
+        Assert.Equal(AthleteProfile.MinArmSpanCentimeters, defaults["ArmSpanCentimeters"]);
+        Assert.Equal(AthleteProfile.MinInseamCentimeters, defaults["InseamCentimeters"]);
+    }
+
+    [Fact]
     public async Task Updating_a_profile_overwrites_the_stored_measurements_and_maximums()
     {
-        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 4, Maximums()).Value;
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 180, 85, 4, Maximums()).Value;
         _dbContext.AthleteProfiles.Add(profile);
         await _dbContext.SaveChangesAsync();
 
-        profile.Update(82, 181.5, 5, Maximums(pushUp: 15, pullUp: 1, squat: 0));
+        profile.Update(82, 181.5, 190, 90, 5, Maximums(pushUp: 15, pullUp: 1, squat: 0));
         await _dbContext.SaveChangesAsync();
 
         var reloaded = await ReadProfileAsync();
@@ -115,6 +139,8 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
         Assert.NotNull(reloaded);
         Assert.Equal(82, reloaded!.WeightKilograms);
         Assert.Equal(181.5, reloaded.HeightCentimeters);
+        Assert.Equal(190, reloaded.ArmSpanCentimeters);
+        Assert.Equal(90, reloaded.InseamCentimeters);
         Assert.Equal(5, reloaded.TrainingDays);
         var maximums = reloaded.Maximums.ToDictionary(maximum => maximum.ExerciseCode);
         Assert.Equal(15, maximums["push_up"].Repetitions);

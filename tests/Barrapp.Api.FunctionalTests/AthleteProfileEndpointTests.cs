@@ -19,8 +19,16 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         double weightKilograms,
         double heightCentimeters,
         int trainingDays,
-        IReadOnlyList<MaximumResponse>? maximums = null) =>
-        new(weightKilograms, heightCentimeters, trainingDays, maximums ?? Maximums());
+        IReadOnlyList<MaximumResponse>? maximums = null,
+        double armSpanCentimeters = 180,
+        double inseamCentimeters = 85) =>
+        new(
+            weightKilograms,
+            heightCentimeters,
+            armSpanCentimeters,
+            inseamCentimeters,
+            trainingDays,
+            maximums ?? Maximums());
 
     [Fact]
     public async Task Put_profile_then_get_profile_returns_the_saved_values()
@@ -35,6 +43,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         Assert.NotNull(saved);
         Assert.Equal(77.5, saved!.WeightKilograms);
         Assert.Equal(180, saved.HeightCentimeters);
+        Assert.Equal(180, saved.ArmSpanCentimeters);
+        Assert.Equal(85, saved.InseamCentimeters);
         Assert.Equal(4, saved.TrainingDays);
 
         using var getResponse = await client.GetAsync("/profile");
@@ -44,6 +54,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         Assert.NotNull(loaded);
         Assert.Equal(77.5, loaded!.WeightKilograms);
         Assert.Equal(180, loaded.HeightCentimeters);
+        Assert.Equal(180, loaded.ArmSpanCentimeters);
+        Assert.Equal(85, loaded.InseamCentimeters);
         Assert.Equal(4, loaded.TrainingDays);
         Assert.Equal(3, loaded.Maximums.Count);
         Assert.Equal(10, loaded.Maximums.Single(maximum => maximum.ExerciseCode == "push_up").Repetitions);
@@ -118,6 +130,72 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
     }
 
     [Theory]
+    [InlineData(100, 50)]
+    [InlineData(250, 130)]
+    public async Task Put_profile_accepts_the_lever_measurement_boundaries(
+        double armSpanCentimeters,
+        double inseamCentimeters)
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            "/profile",
+            Profile(
+                77.5,
+                180,
+                4,
+                armSpanCentimeters: armSpanCentimeters,
+                inseamCentimeters: inseamCentimeters));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var saved = await response.Content.ReadFromJsonAsync<AthleteProfileResponse>();
+        Assert.NotNull(saved);
+        Assert.Equal(armSpanCentimeters, saved!.ArmSpanCentimeters);
+        Assert.Equal(inseamCentimeters, saved.InseamCentimeters);
+    }
+
+    [Theory]
+    [InlineData(99.9, "La envergadura debe estar entre 100 y 250 cm.")]
+    [InlineData(250.1, "La envergadura debe estar entre 100 y 250 cm.")]
+    public async Task Put_profile_rejects_an_arm_span_out_of_range(
+        double armSpanCentimeters,
+        string expectedDetail)
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            "/profile",
+            Profile(77.5, 180, 4, armSpanCentimeters: armSpanCentimeters));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains(expectedDetail, problem!.Detail);
+    }
+
+    [Theory]
+    [InlineData(49.9, "La entrepierna debe estar entre 50 y 130 cm.")]
+    [InlineData(130.1, "La entrepierna debe estar entre 50 y 130 cm.")]
+    public async Task Put_profile_rejects_an_inseam_out_of_range(
+        double inseamCentimeters,
+        string expectedDetail)
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            "/profile",
+            Profile(77.5, 180, 4, inseamCentimeters: inseamCentimeters));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains(expectedDetail, problem!.Detail);
+    }
+
+    [Theory]
     [InlineData(3)]
     [InlineData(5)]
     public async Task Put_profile_accepts_the_training_days_boundaries(int trainingDays)
@@ -176,6 +254,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         var payload = new AthleteProfileResponse(
             77.5,
             180,
+            180,
+            85,
             4,
             [
                 new MaximumResponse("push_up", 10),
@@ -199,6 +279,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         var payload = new AthleteProfileResponse(
             77.5,
             180,
+            180,
+            85,
             4,
             [
                 new MaximumResponse("push_up", 10),
@@ -222,6 +304,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         {
             weightKilograms = 77.5,
             heightCentimeters = 180.0,
+            armSpanCentimeters = 180.0,
+            inseamCentimeters = 85.0,
             trainingDays = 4,
         };
 
@@ -241,6 +325,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         var payload = new AthleteProfileResponse(
             77.5,
             180,
+            180,
+            85,
             4,
             [
                 new MaximumResponse("push_up", 10),

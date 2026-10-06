@@ -36,22 +36,27 @@ export type Maximum = {
   repetitions: number;
 };
 
-/** Perfil del atleta: peso en kg, altura en cm, días de entrenamiento y máximos. */
+/** Perfil del atleta: peso y medidas en cm, días de entrenamiento y máximos. */
 export type AthleteProfile = {
   weightKilograms: number;
   heightCentimeters: number;
+  armSpanCentimeters: number;
+  inseamCentimeters: number;
   trainingDays: number;
   maximums: Maximum[];
 };
 
 /**
- * Límites de peso y altura que valida el API (spec 0001): 30–200 kg y 120–220 cm. Los
- * días de entrenamiento viven aparte, en `TRAINING_DAYS_LIMITS`. El cliente los replica
- * para avisar antes de enviar; el API sigue siendo la fuente de verdad.
+ * Límites de peso y medidas que valida el API (spec 0001): 30–200 kg, 120–220 cm,
+ * envergadura 100–250 cm y entrepierna 50–130 cm. Los días de entrenamiento viven aparte, en
+ * `TRAINING_DAYS_LIMITS`. El cliente los replica para avisar antes de enviar; el API sigue
+ * siendo la fuente de verdad.
  */
 export const BODY_MEASUREMENT_LIMITS = {
   weightKilograms: { min: 30, max: 200 },
   heightCentimeters: { min: 120, max: 220 },
+  armSpanCentimeters: { min: 100, max: 250 },
+  inseamCentimeters: { min: 50, max: 130 },
 } as const;
 
 /** Días de entrenamiento admitidos por semana (3–5). */
@@ -61,6 +66,8 @@ export const TRAINING_DAYS_LIMITS = { min: 3, max: 5 } as const;
 export type AthleteProfileFieldErrors = {
   weight?: string;
   height?: string;
+  armSpan?: string;
+  inseam?: string;
   trainingDays?: string;
 };
 
@@ -68,6 +75,8 @@ export type AthleteProfileFieldErrors = {
 export type AthleteProfileDraft = {
   weightKilograms: number | null;
   heightCentimeters: number | null;
+  armSpanCentimeters: number | null;
+  inseamCentimeters: number | null;
   trainingDays: number | null;
   errors: AthleteProfileFieldErrors;
 };
@@ -141,10 +150,16 @@ function validateTrainingDays(trainingDays: number): { value: number | null; err
 export function validateAthleteProfileDraft(
   weight: string,
   height: string,
+  armSpan: string,
+  inseam: string,
   trainingDays: number,
 ): AthleteProfileDraft {
-  const { weightKilograms: weightLimits, heightCentimeters: heightLimits } =
-    BODY_MEASUREMENT_LIMITS;
+  const {
+    weightKilograms: weightLimits,
+    heightCentimeters: heightLimits,
+    armSpanCentimeters: armSpanLimits,
+    inseamCentimeters: inseamLimits,
+  } = BODY_MEASUREMENT_LIMITS;
 
   const weightResult = validateMeasurement(
     weight,
@@ -158,6 +173,18 @@ export function validateAthleteProfileDraft(
     'Introduce la altura en cm.',
     `La altura debe estar entre ${heightLimits.min} y ${heightLimits.max} cm.`,
   );
+  const armSpanResult = validateMeasurement(
+    armSpan,
+    armSpanLimits,
+    'Introduce la envergadura en cm.',
+    `La envergadura debe estar entre ${armSpanLimits.min} y ${armSpanLimits.max} cm.`,
+  );
+  const inseamResult = validateMeasurement(
+    inseam,
+    inseamLimits,
+    'Introduce la entrepierna en cm.',
+    `La entrepierna debe estar entre ${inseamLimits.min} y ${inseamLimits.max} cm.`,
+  );
   const trainingDaysResult = validateTrainingDays(trainingDays);
 
   const errors: AthleteProfileFieldErrors = {};
@@ -167,6 +194,12 @@ export function validateAthleteProfileDraft(
   if (heightResult.error) {
     errors.height = heightResult.error;
   }
+  if (armSpanResult.error) {
+    errors.armSpan = armSpanResult.error;
+  }
+  if (inseamResult.error) {
+    errors.inseam = inseamResult.error;
+  }
   if (trainingDaysResult.error) {
     errors.trainingDays = trainingDaysResult.error;
   }
@@ -174,6 +207,8 @@ export function validateAthleteProfileDraft(
   return {
     weightKilograms: weightResult.value,
     heightCentimeters: heightResult.value,
+    armSpanCentimeters: armSpanResult.value,
+    inseamCentimeters: inseamResult.value,
     trainingDays: trainingDaysResult.value,
     errors,
   };

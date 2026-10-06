@@ -35,6 +35,8 @@ describe('athleteProfile api', () => {
       jsonResponse(200, {
         weightKilograms: 78,
         heightCentimeters: 181,
+        armSpanCentimeters: 180,
+        inseamCentimeters: 85,
         trainingDays: 4,
         maximums: MAXIMUMS,
       }),
@@ -44,6 +46,8 @@ describe('athleteProfile api', () => {
     await expect(fetchAthleteProfile()).resolves.toEqual({
       weightKilograms: 78,
       heightCentimeters: 181,
+      armSpanCentimeters: 180,
+      inseamCentimeters: 85,
       trainingDays: 4,
       maximums: MAXIMUMS,
     });
@@ -64,6 +68,8 @@ describe('athleteProfile api', () => {
     const body = {
       weightKilograms: 80,
       heightCentimeters: 182,
+      armSpanCentimeters: 185,
+      inseamCentimeters: 88,
       trainingDays: 5,
       maximums: MAXIMUMS,
     };
@@ -98,6 +104,8 @@ describe('athleteProfile api', () => {
       saveAthleteProfile({
         weightKilograms: 29.9,
         heightCentimeters: 180,
+        armSpanCentimeters: 180,
+        inseamCentimeters: 85,
         trainingDays: 4,
         maximums: MAXIMUMS,
       }),
@@ -121,55 +129,71 @@ describe('athleteProfile api', () => {
 
 describe('validateAthleteProfileDraft', () => {
   it('accepts the range boundaries', () => {
-    expect(validateAthleteProfileDraft('30', '120', 3)).toEqual({
+    expect(validateAthleteProfileDraft('30', '120', '100', '50', 3)).toEqual({
       weightKilograms: 30,
       heightCentimeters: 120,
+      armSpanCentimeters: 100,
+      inseamCentimeters: 50,
       trainingDays: 3,
       errors: {},
     });
 
-    expect(validateAthleteProfileDraft('200,0', '220', 5)).toEqual({
+    expect(validateAthleteProfileDraft('200,0', '220', '250', '130', 5)).toEqual({
       weightKilograms: 200,
       heightCentimeters: 220,
+      armSpanCentimeters: 250,
+      inseamCentimeters: 130,
       trainingDays: 5,
       errors: {},
     });
   });
 
   it('rejects values outside the range with a clear message per field', () => {
-    const result = validateAthleteProfileDraft('29.9', '220.1', 4);
+    const result = validateAthleteProfileDraft('29.9', '220.1', '99.9', '130.1', 4);
 
     expect(result.weightKilograms).toBeNull();
     expect(result.heightCentimeters).toBeNull();
+    expect(result.armSpanCentimeters).toBeNull();
+    expect(result.inseamCentimeters).toBeNull();
     expect(result.trainingDays).toBe(4);
     expect(result.errors.weight).toBe('El peso debe estar entre 30 y 200 kg.');
     expect(result.errors.height).toBe('La altura debe estar entre 120 y 220 cm.');
+    expect(result.errors.armSpan).toBe('La envergadura debe estar entre 100 y 250 cm.');
+    expect(result.errors.inseam).toBe('La entrepierna debe estar entre 50 y 130 cm.');
   });
 
   it('asks for a missing or non-numeric value', () => {
-    const result = validateAthleteProfileDraft('', 'abc', 4);
+    const result = validateAthleteProfileDraft('', 'abc', '', 'abc', 4);
 
     expect(result.weightKilograms).toBeNull();
     expect(result.heightCentimeters).toBeNull();
+    expect(result.armSpanCentimeters).toBeNull();
+    expect(result.inseamCentimeters).toBeNull();
     expect(result.errors.weight).toBe('Introduce el peso en kg.');
     expect(result.errors.height).toBe('Introduce la altura en cm.');
+    expect(result.errors.armSpan).toBe('Introduce la envergadura en cm.');
+    expect(result.errors.inseam).toBe('Introduce la entrepierna en cm.');
   });
 
   it('rejects trailing junk instead of coercing it', () => {
-    const result = validateAthleteProfileDraft('30kg', '120cm', 4);
+    const result = validateAthleteProfileDraft('30kg', '120cm', '180cm', '85cm', 4);
 
     expect(result.weightKilograms).toBeNull();
     expect(result.heightCentimeters).toBeNull();
+    expect(result.armSpanCentimeters).toBeNull();
+    expect(result.inseamCentimeters).toBeNull();
     expect(result.errors.weight).toBe('Introduce el peso en kg.');
     expect(result.errors.height).toBe('Introduce la altura en cm.');
+    expect(result.errors.armSpan).toBe('Introduce la envergadura en cm.');
+    expect(result.errors.inseam).toBe('Introduce la entrepierna en cm.');
   });
 
   it('rejects training days outside the 3–5 range with a clear message', () => {
-    const below = validateAthleteProfileDraft('30', '120', 2);
+    const below = validateAthleteProfileDraft('30', '120', '180', '85', 2);
     expect(below.trainingDays).toBeNull();
     expect(below.errors.trainingDays).toBe('Los días de entrenamiento deben estar entre 3 y 5.');
 
-    const above = validateAthleteProfileDraft('30', '120', 6);
+    const above = validateAthleteProfileDraft('30', '120', '180', '85', 6);
     expect(above.trainingDays).toBeNull();
     expect(above.errors.trainingDays).toBe('Los días de entrenamiento deben estar entre 3 y 5.');
   });
