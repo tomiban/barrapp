@@ -28,7 +28,7 @@ export default function LibraryScreen() {
   const [section, setSection] = useState<LibrarySection>('exercises');
 
   return (
-    <Screen testID="library-screen" header={<Header title="Biblioteca" />}>
+    <Screen testID="library-screen" header={<Header title="Biblioteca" />} scrollable>
       <Stack gap="md">
         <Text variant="labelTechnical" className="text-text-muted">
           BARRAPP · BIBLIOTECA

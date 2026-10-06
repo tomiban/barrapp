@@ -67,4 +67,20 @@ describe('Screen', () => {
     expect(edges.top).not.toBe('off');
     expect(edges.bottom).not.toBe('off');
   });
+
+  it('envuelve el contenido en un ScrollView cuando `scrollable`', async () => {
+    await render(
+      <Screen testID="screen" scrollable>
+        <Text>contenido</Text>
+      </Screen>,
+    );
+
+    expect(screen.getByText('contenido')).toBeOnTheScreen();
+    // `contentContainerClassName` es propio de `ScrollView`: su presencia prueba
+    // que el contenido scrollea y conserva el margen de página.
+    expect(screen.getByTestId('screen-content')).toHaveProp(
+      'contentContainerClassName',
+      expect.stringContaining('px-margin'),
+    );
+  });
 });

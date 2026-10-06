@@ -174,7 +174,7 @@ export default function ProfileScreen() {
   }, [applyProfile, armSpan, height, inseam, maximumDrafts, trainingDays, weight]);
 
   return (
-    <Screen testID="profile-screen" header={<Header title="Perfil" />}>
+    <Screen testID="profile-screen" header={<Header title="Perfil" />} scrollable>
       <Stack gap="md">
         <Text variant="labelTechnical" className="text-text-muted">
           BARRAPP · PERFIL DEL ATLETA

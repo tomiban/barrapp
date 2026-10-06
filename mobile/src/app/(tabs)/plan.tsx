@@ -41,7 +41,7 @@ export default function PlanScreen() {
   }, [load]);
 
   return (
-    <Screen testID="plan-screen" header={<Header title="Plan" />}>
+    <Screen testID="plan-screen" header={<Header title="Plan" />} scrollable>
       {state.status === 'loading' ? (
         <Loading label="Generando el plan…" testID="plan-loading" />
       ) : null}

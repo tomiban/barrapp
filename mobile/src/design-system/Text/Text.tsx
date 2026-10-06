@@ -20,6 +20,14 @@ export type TextVariant =
   | 'labelCode';
 
 /**
+ * Color base de toda variante: `text` sobre las superficies oscuras del tema
+ * dark-only. Sin él, RN aplicaría su negro por defecto y el texto quedaría casi
+ * invisible sobre `canvas`/`surface`. Un `className` del consumidor
+ * (`text-text-muted`, `text-primary`…) lo sobrescribe vía `cn()`.
+ */
+const BASE_CLASS = 'text-text';
+
+/**
  * Mapa variante → utilities de `@theme`. Siempre familia + tamaño: en SDK 57
  * cada peso es una familia propia (ver `02-fonts-expo-font.md`), así que el
  * peso lo fija el `font-*`, nunca un `fontWeight`.
@@ -59,7 +67,7 @@ export function Text({ variant = 'bodyMd', className, style, ...rest }: TextProp
 
   return (
     <RNText
-      className={cn(variantClasses[variant], className)}
+      className={cn(BASE_CLASS, variantClasses[variant], className)}
       style={isMetric ? [metricStyle, style] : style}
       {...rest}
     />
