@@ -42,6 +42,23 @@ internal static class PlanEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
+        app.MapPost(
+                "/plan/close",
+                async (ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(new CloseMesocycleCommand(), cancellationToken);
+
+                    return result.IsSuccess
+                        ? Results.Ok(result.Value)
+                        : result.Error.ToProblemDetails();
+                })
+            .WithName("CloseMesocycle")
+            .WithTags("Plan")
+            .WithSummary("Cierra el mesociclo activo, ajusta los máximos con las sesiones registradas y lo publica en el historial.")
+            .Produces<CloseMesocycleResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
         app.MapGet(
                 "/plan/history",
                 async (ISender sender, CancellationToken cancellationToken) =>
