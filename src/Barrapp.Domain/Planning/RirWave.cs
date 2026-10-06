@@ -1,16 +1,17 @@
 namespace Barrapp.Domain.Planning;
 
 /// <summary>
-/// Onda semanal de RIR del mesociclo (#12): la reserva baja de 3 (semana 1) a 1 (semana 3), de
-/// modo que las repeticiones prescritas y, con las series fijas, el volumen crecen semana a
-/// semana. El RIR es la unidad con la que se fija la intensidad del mesociclo (ver
-/// <c>GLOSSARY.md</c>, término <i>RIR</i>).
+/// Onda semanal de RIR del mesociclo (#12, #13): la reserva baja de 3 (semana 1) a 1 (semana 3) y
+/// sube a 4 en la semana 4 (<i>deload</i>). Con las series de las tres primeras semanas fijas, las
+/// repeticiones prescritas y el volumen crecen semana a semana hasta el deload. El RIR es la unidad
+/// con la que se fija la intensidad del mesociclo (ver <c>GLOSSARY.md</c>, término <i>RIR</i>).
 /// </summary>
 /// <remarks>
-/// Es pura y determinista. El motor nunca prescribe al fallo: la reserva mínima de la onda es 1 y
-/// <see cref="StrengthLoad"/> garantiza al menos una repetición reservada. La semana 4 será el
-/// <i>deload</i> (RIR 4 y ~50 % de volumen, ticket #13); hasta entonces conserva la reserva base
-/// para no alterar el comportamiento anterior.
+/// Es pura y determinista. El motor nunca prescribe al fallo: la reserva mínima de la onda es 1
+/// (semana 3) y <see cref="StrengthLoad"/> garantiza al menos una repetición reservada. La semana 4
+/// es el <i>deload</i> (<c>GLOSSARY.md</c>): RIR 4, el tope más conservador de la onda, y el
+/// volumen ~50 % que acompaña lo reduce <see cref="PlanGenerator"/> bajando las series del mismo
+/// microciclo.
 /// </remarks>
 internal static class RirWave
 {
@@ -20,10 +21,7 @@ internal static class RirWave
         1 => StrengthLoad.BaseRepsInReserve,     // RIR 3 — base
         2 => StrengthLoad.BaseRepsInReserve - 1, // RIR 2 — +volumen
         3 => StrengthLoad.BaseRepsInReserve - 2, // RIR 1 — +volumen
-
-        // TODO(#13): la semana 4 es el deload (RIR 4 y ~50 % del volumen). Mientras el deload no
-        // exista, conserva la reserva base para no cambiar el comportamiento previo.
-        4 => StrengthLoad.BaseRepsInReserve,
+        4 => StrengthLoad.BaseRepsInReserve + 1, // RIR 4 — deload
         _ => throw new ArgumentOutOfRangeException(nameof(microcycleNumber)),
     };
 }

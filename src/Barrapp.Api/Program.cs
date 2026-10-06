@@ -50,8 +50,10 @@ app.MapPingEndpoints();
 app.MapAthleteProfileEndpoints();
 app.MapObjectiveEndpoints();
 app.MapPlanEndpoints();
+app.MapSoloSessionEndpoints();
 app.MapCatalogEndpoints();
 app.MapSkillProgressEndpoints();
+app.MapSessionLogEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();

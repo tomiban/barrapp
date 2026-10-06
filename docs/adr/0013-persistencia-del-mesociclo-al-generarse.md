@@ -1,0 +1,21 @@
+# El mesociclo se persiste al generarse (snapshot del plan en columna JSON)
+
+Desde #27/#24 (decisión D7 del backlog M3–M7), el plan **se persiste cuando se genera**: `POST /plan` corre el motor (`PlanGenerator.Generate`) y guarda el resultado como un agregado `Mesocycle` en la tabla `Mesocycles` (Id, UserId, SkillId, TrainingDays, Status `Active|Closed`, StartedAtUtc, ClosedAtUtc?, y el **snapshot del plan completo en una única columna JSON**). `GET /plan` sirve el mesociclo **activo** persistido si existe; si no, conserva el comportamiento anterior de generación on-read. `GET /plan/history` lista los mesociclos **cerrados** (los pasados) y `GET /plan/history/{id}` abre su detalle, reconstruyendo el `Plan` desde el snapshot y proyectándolo con el mismo contrato que `GET /plan`.
+
+El snapshot es un **objeto valor puro del dominio** (`MesocycleSnapshot`): copia del `Plan` del motor (skill, frecuencia, etapa actual y las cuatro semanas con sesiones y filas) con `FromPlan(plan)` → `ToPlan()` sin pérdida. La serialización a columna JSON la hace la capa de persistencia con System.Text.Json (`JsonStringEnumConverter` para enums legibles); el round-trip queda probado en tests de persistencia.
+
+Complementa a `docs/adr/0012-generacion-de-plan-en-lado-lectura.md` (la excepción «las queries proyectan directo a DTO» sigue intacta: el motor sigue siendo la costura de la generación) y a `docs/adr/0008-efcore-en-application.md`. El **cierre** del mesociclo activo y el ajuste de máximos con los `SessionLog` es el ticket #24; aquí solo se persiste la generación y se prepara la transición de estado.
+
+## Cierre y ajuste de máximos (ticket #24, D7)
+
+`POST /plan/close` cierra el mesociclo **activo** (`Mesocycle.Close` → `Closed`, pasa al historial), ajusta los máximos del `AthleteProfile` con las sesiones registradas y persiste todo con la unidad de trabajo. La regla del ajuste es una función pura del dominio (`MaximumAdjustment.Compute`) y produce, para cada ejercicio básico, `nuevoMax = max(máximo actual, mejor marca real lograda)`; nunca baja. El siguiente `GET /plan` (sin mesociclo activo) o `POST /plan` ya usa los máximos ajustados.
+
+**Qué registros cuentan** (decisión del implementador sobre la ventana que deja abierta D7): los `SessionLog` del atleta que pertenecen al mesociclo que se cierra —los **etiquetados con su id** (`MesocycleId`) y los **registrados durante su vigencia** (entre `StartedAtUtc` y el momento del cierre), para cubrir a los clientes que no etiquetan el mesociclo al registrar (#26). La ventana se filtra en memoria: SQLite no compara `DateTimeOffset` en SQL (misma convención que el historial).
+
+**Qué es una «mejor marca»** (decisión del implementador sobre las variantes): solo cuentan los registros del **ejercicio básico en sí** (`push_up` / `pull_up` / `squat`), medidos en **repeticiones** y que arrastren máximo (`TracksMaximum`). Las variantes (p. ej. `dip`, `australian-row`) y las regresiones (p. ej. `incline-push-up`) **quedan fuera**: su dificultad no es comparable con la del básico, y traducir su marca al ancla sobreestimaría o perjudicaría la prescripción («nunca al fallo»). El ajuste nunca baja un máximo; sin registros o sin marcas superiores, el perfil no cambia.
+
+## Considered Options
+
+- **Tablas owned por nivel** (`MesocycleMicrocycles` → `…Sessions` → `…Items`): espejo fiel del agregado en el esquema, pero son tres tablas para un árbol que **solo se consulta entero** (el historial nunca filtra por semana, sesión o ítem por separado); más configuración y migración sin beneficio de lectura. Descartado.
+- **Snapshot en una columna JSON** (elegido): una sola columna `TEXT` con el árbol serializado; se escribe y lee completo, la migración es mínima y el round-trip se verifica con tests (dato fuera de la caché de EF). La elección concreta que deja abierta D7 para la tabla `Mesocycles` + «columnas del snapshot serializadas».
+- **Persistir solo al cerrar** (sin `POST /plan`): retrasa el historial, obliga a guardar el activo antes de poder cerrarlo y complica el reemplazo al regenerar; el `POST /plan` con contrato idéntico a la lectura es el punto natural para persistir. Descartado.

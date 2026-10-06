@@ -1,5 +1,6 @@
 using Barrapp.Application.Abstractions;
 using Barrapp.Application.Features.Catalog;
+using Barrapp.Domain.Knowledge;
 using Barrapp.Domain.Planning;
 
 namespace Barrapp.Application.Features.Plans;
@@ -14,7 +15,18 @@ internal static class PlanMappings
     public static PlanResponse ToResponse(Plan plan, IKnowledgeBase catalog) => new(
         plan.SkillId,
         plan.TrainingDays,
+        ToStage(plan.CurrentStage),
         plan.Microcycles.Select(microcycle => ToMicrocycle(microcycle, catalog)).ToList());
+
+    private static SkillStageResponse ToStage(SkillStage stage) => new(
+        stage.Order,
+        stage.Name,
+        stage.ExerciseId,
+        new StageCriterionResponse(
+            CatalogMappings.ToCode(stage.Criterion.Metric),
+            stage.Criterion.Target,
+            stage.Criterion.Sets),
+        stage.Notes);
 
     private static MicrocycleResponse ToMicrocycle(Microcycle microcycle, IKnowledgeBase catalog) => new(
         microcycle.Number,
@@ -27,7 +39,7 @@ internal static class PlanMappings
     private static SessionItemResponse ToItem(SessionItem item, IKnowledgeBase catalog) => new(
         item.ExerciseId,
         catalog.FindExercise(item.ExerciseId)?.Name ?? item.ExerciseId,
-        ToCode(item.Role),
+        CatalogMappings.ToCode(item.Role),
         item.Pattern is null ? null : CatalogMappings.ToCode(item.Pattern.Value),
         item.Sets,
         item.RepsMin,
@@ -35,12 +47,4 @@ internal static class PlanMappings
         item.HoldSecondsMin,
         item.HoldSecondsMax,
         item.Note);
-
-    private static string ToCode(SessionItemRole role) => role switch
-    {
-        SessionItemRole.Skill => "skill",
-        SessionItemRole.Strength => "strength",
-        SessionItemRole.Core => "core",
-        _ => throw new ArgumentOutOfRangeException(nameof(role)),
-    };
 }

@@ -2,6 +2,17 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import PlanScreen from '../src/app/(tabs)/plan';
 
+/** Almacén local falseado: la pantalla guarda/lee la caché sin tocar expo-sqlite. */
+jest.mock('../src/offline/planStore', () => {
+  const store = {
+    async savePlan(): Promise<void> {},
+    async loadPlan(): Promise<null> {
+      return null;
+    },
+  };
+  return { openPlanStore: jest.fn(async () => store) };
+});
+
 /** Respuesta mínima con la forma que consume el módulo de API. */
 function jsonResponse(status: number, body: unknown): Response {
   return {
@@ -67,6 +78,13 @@ function microcycle(number: number) {
 const PLAN = {
   skillId: 'planche',
   trainingDays: 3,
+  skillStage: {
+    order: 1,
+    name: 'Planche inclinada',
+    exerciseId: 'planche-lean',
+    criterion: { metric: 'seconds', target: 20, sets: 3 },
+    notes: 'Inclinación con los hombros por delante de las manos.',
+  },
   microcycles: [1, 2, 3, 4].map(microcycle),
 };
 
@@ -89,6 +107,10 @@ describe('PlanScreen', () => {
     expect(screen.getByTestId('plan-session-1')).toBeOnTheScreen();
     expect(screen.getByTestId('plan-session-2')).toBeOnTheScreen();
     expect(screen.getByTestId('plan-session-3')).toBeOnTheScreen();
+    // La etapa actual del skill y su criterio de avance abren el plan (#18).
+    expect(screen.getByText('Etapa 1 · Planche inclinada')).toBeOnTheScreen();
+    expect(screen.getByText('Supera 20 s × 3 series')).toBeOnTheScreen();
+    expect(screen.getByText('Etapa actual')).toBeOnTheScreen();
     // Cada una de las tres sesiones repite el bloque de skill, la fuerza y el core.
     expect(screen.getAllByText('Planche inclinada')).toHaveLength(3);
     expect(screen.getAllByText('Skill · 3 × 20–20 s')).toHaveLength(3);

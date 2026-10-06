@@ -70,6 +70,122 @@ namespace Barrapp.Persistence.Migrations
                     b.ToTable("Objectives", (string)null);
                 });
 
+            modelBuilder.Entity("Barrapp.Domain.Planning.Mesocycle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("ClosedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SkillId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Snapshot")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TrainingDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("Status = 0");
+
+                    b.ToTable("Mesocycles", (string)null);
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Sessions.SessionLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExerciseId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("MesocycleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SessionDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MesocycleId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "ClientId")
+                        .IsUnique()
+                        .HasFilter("ClientId IS NOT NULL");
+
+                    b.ToTable("SessionLogs", (string)null);
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Sessions.SessionSuelta", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Energy")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Focus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Pattern")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("RecordedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SkillId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TimeMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SessionSuelta", (string)null);
+                });
+
             modelBuilder.Entity("Barrapp.Domain.SkillProgress.AthleteSkillProgress", b =>
                 {
                     b.Property<Guid>("Id")
@@ -148,6 +264,105 @@ namespace Barrapp.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Planning.Mesocycle", b =>
+                {
+                    b.HasOne("Barrapp.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Sessions.SessionLog", b =>
+                {
+                    b.HasOne("Barrapp.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsMany("Barrapp.Domain.Sessions.SessionLogSet", "Sets", b1 =>
+                        {
+                            b1.Property<Guid>("SessionLogId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("SetNumber")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int?>("Effort")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Value")
+                                .HasColumnType("INTEGER");
+
+                            b1.HasKey("SessionLogId", "SetNumber");
+
+                            b1.ToTable("SessionLogSets", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("SessionLogId");
+                        });
+
+                    b.Navigation("Sets");
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Sessions.SessionSuelta", b =>
+                {
+                    b.HasOne("Barrapp.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsMany("Barrapp.Domain.Sessions.SessionSueltaItem", "Items", b1 =>
+                        {
+                            b1.Property<Guid>("SessionSueltaId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("Position")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("ExerciseId")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int?>("HoldSecondsMax")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int?>("HoldSecondsMin")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("Note")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int?>("Pattern")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int?>("RepsMax")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int?>("RepsMin")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Role")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Sets")
+                                .HasColumnType("INTEGER");
+
+                            b1.HasKey("SessionSueltaId", "Position");
+
+                            b1.ToTable("SessionSueltaItems", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("SessionSueltaId");
+                        });
+
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Barrapp.Domain.SkillProgress.AthleteSkillProgress", b =>
