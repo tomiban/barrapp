@@ -153,7 +153,7 @@ public static class PlanGenerator
             microcycles.Add(new Microcycle(number, sessions));
         }
 
-        return new Plan(skill.Id, profile.TrainingDays, microcycles);
+        return new Plan(skill.Id, profile.TrainingDays, currentStage, microcycles);
     }
 
     private static Result<IReadOnlyList<StrengthSlot>> ResolveStrengthSlots(

@@ -1,5 +1,6 @@
 using Barrapp.Application.Abstractions;
 using Barrapp.Application.Features.Catalog;
+using Barrapp.Domain.Knowledge;
 using Barrapp.Domain.Planning;
 
 namespace Barrapp.Application.Features.Plans;
@@ -14,7 +15,18 @@ internal static class PlanMappings
     public static PlanResponse ToResponse(Plan plan, IKnowledgeBase catalog) => new(
         plan.SkillId,
         plan.TrainingDays,
+        ToStage(plan.CurrentStage),
         plan.Microcycles.Select(microcycle => ToMicrocycle(microcycle, catalog)).ToList());
+
+    private static SkillStageResponse ToStage(SkillStage stage) => new(
+        stage.Order,
+        stage.Name,
+        stage.ExerciseId,
+        new StageCriterionResponse(
+            CatalogMappings.ToCode(stage.Criterion.Metric),
+            stage.Criterion.Target,
+            stage.Criterion.Sets),
+        stage.Notes);
 
     private static MicrocycleResponse ToMicrocycle(Microcycle microcycle, IKnowledgeBase catalog) => new(
         microcycle.Number,
