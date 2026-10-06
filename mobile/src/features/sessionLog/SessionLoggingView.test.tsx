@@ -107,6 +107,13 @@ const savedLog: SessionLog = {
 const strengthPlan: Plan = {
   skillId: 'planche',
   trainingDays: 3,
+  skillStage: {
+    order: 1,
+    name: 'Planche inclinada',
+    exerciseId: 'planche-lean',
+    criterion: { metric: 'seconds', target: 20, sets: 3 },
+    notes: 'Inclinación con los hombros por delante de las manos.',
+  },
   microcycles: [
     {
       number: 1,
