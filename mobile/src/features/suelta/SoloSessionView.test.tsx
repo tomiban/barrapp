@@ -78,7 +78,8 @@ describe('SoloSessionView', () => {
     await userEvent.setup().press(screen.getByTestId('suelta-generate'));
 
     expect(await screen.findByTestId('suelta-result')).toBeTruthy();
-    expect(screen.getByTestId('suelta-summary')).toHaveTextContent('Empuje');
+    expect(screen.getByTestId('suelta-summary')).toHaveTextContent(/Empuje/);
+    expect(screen.getByTestId('suelta-summary')).toHaveTextContent(/30 min/);
     expect(screen.getByTestId('suelta-item-push_up')).toBeTruthy();
     expect(screen.getByTestId('suelta-item-hollow-body-hold')).toBeTruthy();
 
