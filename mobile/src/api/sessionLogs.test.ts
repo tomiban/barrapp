@@ -77,6 +77,30 @@ describe('registerSessionLog', () => {
     expect(result).toEqual(savedLog);
   });
 
+  it('envía el esfuerzo (RIR/RPE) real de cada serie en el POST', async () => {
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(savedLog));
+
+    await registerSessionLog({
+      exerciseId: 'push_up',
+      mesocycleId: null,
+      sessionDay: 2,
+      sets: [
+        { setNumber: 1, value: 10, effort: 2 },
+        { setNumber: 2, value: 11 },
+      ],
+    });
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1]?.body as string)).toEqual({
+      exerciseId: 'push_up',
+      mesocycleId: null,
+      sessionDay: 2,
+      sets: [
+        { setNumber: 1, value: 10, effort: 2 },
+        { setNumber: 2, value: 11 },
+      ],
+    });
+  });
+
   it('propaga el detalle del Problem Details cuando el API rechaza el registro', async () => {
     jest
       .spyOn(globalThis, 'fetch')

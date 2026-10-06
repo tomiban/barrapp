@@ -49,6 +49,60 @@ public sealed class SessionLogEndpointTests(BarrappApiFactory factory)
     }
 
     [Fact]
+    public async Task Post_saves_and_returns_the_optional_effort_per_set()
+    {
+        using var client = factory.CreateClient();
+
+        using var postResponse = await client.PostAsJsonAsync(
+            "/session-logs",
+            new
+            {
+                exerciseId = "push_up",
+                mesocycleId = (Guid?)null,
+                sessionDay = 2,
+                sets = new[]
+                {
+                    new { setNumber = 1, value = 10, effort = 2 },
+                    new { setNumber = 2, value = 11 },
+                },
+            });
+        Assert.Equal(HttpStatusCode.OK, postResponse.StatusCode);
+
+        var saved = await postResponse.Content.ReadFromJsonAsync<SessionLogResponse>();
+        Assert.NotNull(saved);
+        Assert.Equal(2, saved!.Sets.ElementAt(0).Effort);
+        Assert.Null(saved.Sets.ElementAt(1).Effort);
+
+        var logs = await client.GetFromJsonAsync<List<SessionLogResponse>>("/session-logs");
+        Assert.NotNull(logs);
+        var loaded = Assert.Single(logs!, log => log.Id == saved.Id);
+        Assert.Equal(2, loaded.Sets.ElementAt(0).Effort);
+        Assert.Null(loaded.Sets.ElementAt(1).Effort);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(11)]
+    public async Task Post_with_an_effort_out_of_range_returns_400(int effort)
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PostAsJsonAsync(
+            "/session-logs",
+            new
+            {
+                exerciseId = "push_up",
+                sessionDay = 1,
+                sets = new[] { new { setNumber = 1, value = 10, effort } },
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains("El esfuerzo (RIR/RPE) debe estar entre 0 y 10.", problem!.Detail);
+    }
+
+    [Fact]
     public async Task Post_derives_seconds_for_a_hold_exercise()
     {
         using var client = factory.CreateClient();

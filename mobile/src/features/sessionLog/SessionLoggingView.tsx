@@ -20,7 +20,7 @@ export type SaveFeedback = { role: 'confirmed' | 'error'; message: string };
 /** Series parseadas de un ejercicio, listas para el API. */
 export type ExerciseSetsPayload = {
   exerciseId: string;
-  sets: { setNumber: number; value: number }[];
+  sets: { setNumber: number; value: number; effort?: number | null }[];
 };
 
 /** Props públicas de la vista de registro. */
@@ -46,7 +46,22 @@ function prescriptionOf(item: PlanSessionItem): string {
 /** Valores reales de un registro ya guardado, p. ej. `8 · 9 · 10 reps`. */
 function valuesOf(log: SessionLog): string {
   const values = log.sets.map((set) => String(set.value)).join(' · ');
-  return `${values} ${log.metric === 'seconds' ? 's' : 'reps'}`;
+  const unit = log.metric === 'seconds' ? 's' : 'reps';
+  return `${values} ${unit}${effortOf(log)}`;
+}
+
+/**
+ * El esfuerzo (RIR/RPE) anotado en el registro, p. ej. ` · RIR 2`; vacío si ninguna serie lo
+ * trae. Si las series anotadas difieren, se listan en orden de aparición (`RIR 2/3`).
+ */
+function effortOf(log: SessionLog): string {
+  const efforts = [
+    ...new Set(log.sets.map((set) => set.effort).filter((effort) => effort !== null)),
+  ];
+  if (efforts.length === 0) {
+    return '';
+  }
+  return ` · RIR ${efforts.join('/')}`;
 }
 
 /**
@@ -66,6 +81,7 @@ export function SessionLoggingView({
   const [week, setWeek] = useState(() => String(plan.microcycles[0]?.number ?? 1));
   const [day, setDay] = useState(() => String(plan.microcycles[0]?.sessions[0]?.day ?? 1));
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [effortDrafts, setEffortDrafts] = useState<Record<string, string>>({});
   const [validationError, setValidationError] = useState('');
 
   const microcycle = useMemo(
@@ -126,6 +142,14 @@ export function SessionLoggingView({
     setDrafts((current) => ({ ...current, [draftKey(exerciseId, setNumber)]: value }));
   };
 
+  const effortDraftFor = (item: PlanSessionItem, setNumber: number) =>
+    effortDrafts[draftKey(item.exerciseId, setNumber)] ?? '';
+
+  const setEffortDraft = (exerciseId: string, setNumber: number, value: string) => {
+    setValidationError('');
+    setEffortDrafts((current) => ({ ...current, [draftKey(exerciseId, setNumber)]: value }));
+  };
+
   const handleWeekChange = (value: string) => {
     setWeek(value);
     const next = plan.microcycles.find((candidate) => String(candidate.number) === value);
@@ -138,7 +162,7 @@ export function SessionLoggingView({
 
     const exercises: ExerciseSetsPayload[] = [];
     for (const item of unchecked) {
-      const sets: { setNumber: number; value: number }[] = [];
+      const sets: { setNumber: number; value: number; effort: number | null }[] = [];
       for (let setNumber = 1; setNumber <= item.sets; setNumber += 1) {
         const raw = draftFor(item, setNumber).trim();
         const value = Number(raw);
@@ -146,7 +170,19 @@ export function SessionLoggingView({
           setValidationError('Completa los valores de todas las series antes de guardar.');
           return;
         }
-        sets.push({ setNumber, value });
+
+        const rawEffort = effortDraftFor(item, setNumber).trim();
+        let effort: number | null = null;
+        if (rawEffort !== '') {
+          const parsedEffort = Number(rawEffort);
+          if (!Number.isInteger(parsedEffort) || parsedEffort < 0 || parsedEffort > 10) {
+            setValidationError('El RIR/RPE debe ser un número entre 0 y 10.');
+            return;
+          }
+          effort = parsedEffort;
+        }
+
+        sets.push({ setNumber, value, effort });
       }
       exercises.push({ exerciseId: item.exerciseId, sets });
     }
@@ -215,15 +251,25 @@ export function SessionLoggingView({
                 </Text>
 
                 {Array.from({ length: item.sets }, (_, index) => index + 1).map((setNumber) => (
-                  <TextField
-                    key={setNumber}
-                    label={`Serie ${setNumber}`}
-                    value={draftFor(item, setNumber)}
-                    onChangeText={(text) => setDraft(item.exerciseId, setNumber, text)}
-                    editable={logged === undefined}
-                    keyboardType="number-pad"
-                    testID={`session-log-set-${item.exerciseId}-${setNumber}`}
-                  />
+                  <Stack key={setNumber} gap="xs">
+                    <TextField
+                      label={`Serie ${setNumber}`}
+                      value={draftFor(item, setNumber)}
+                      onChangeText={(text) => setDraft(item.exerciseId, setNumber, text)}
+                      editable={logged === undefined}
+                      keyboardType="number-pad"
+                      testID={`session-log-set-${item.exerciseId}-${setNumber}`}
+                    />
+                    {logged === undefined ? (
+                      <TextField
+                        label="RIR/RPE"
+                        value={effortDraftFor(item, setNumber)}
+                        onChangeText={(text) => setEffortDraft(item.exerciseId, setNumber, text)}
+                        keyboardType="number-pad"
+                        testID={`session-log-effort-${item.exerciseId}-${setNumber}`}
+                      />
+                    ) : null}
+                  </Stack>
                 ))}
               </Stack>
             );
