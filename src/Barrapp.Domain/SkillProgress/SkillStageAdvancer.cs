@@ -19,10 +19,12 @@ namespace Barrapp.Domain.SkillProgress;
 /// superior, así que «consecutivas» se refiere a las sesiones en las que se practicó la etapa.
 /// </item>
 /// <item>
-/// Permanece <c>log.SessionDay</c> como identidad de sesión: el mesociclo aún no se persiste
-/// (ticket #27) y no hay <c>MesocycleId</c> real. Dos registros del mismo ejercicio en el mismo
-/// día se funden en una sola sesión, mandando el más reciente (<c>last-write-wins</c>, coherente
-/// con la sincronización offline, decisión D9).
+/// Permanece <c>log.SessionDay</c> como identidad de sesión: el motor no conoce el mesociclo, solo
+/// los registros que recibe. El caso de uso le pasa únicamente los del <b>mesociclo en curso</b>
+/// (#27, FIX-3), así que las sesiones de un mesociclo cerrado ya no llegan aquí. Dos registros del
+/// mismo ejercicio en el mismo día (dentro de esos registros) se funden en una sola sesión,
+/// mandando el más reciente (<c>last-write-wins</c>, coherente con la sincronización offline,
+/// decisión D9).
 /// </item>
 /// <item>
 /// El tiempo de una sesión es el de su registro más reciente (<see cref="SessionLog.RecordedAtUtc"/>).
@@ -43,9 +45,11 @@ public static class SkillStageAdvancer
 {
     /// <summary>
     /// Evalúa si <paramref name="currentStageOrder"/> debe avanzar con los registros
-    /// <paramref name="logs"/>. Falla con <see cref="DomainErrors.SkillProgress.UnknownSkill"/> si
-    /// el skill es nulo y con <see cref="DomainErrors.SkillProgress.UnknownStage"/> si la etapa no
-    /// existe en la escalera. Devolver la etapa de salida (subida o no) es determinista.
+    /// <paramref name="logs"/>. El llamador debe pasar solo los registros del mesociclo en curso
+    /// (FIX-3): el motor es puro y no conoce mesociclos. Falla con
+    /// <see cref="DomainErrors.SkillProgress.UnknownSkill"/> si el skill es nulo y con
+    /// <see cref="DomainErrors.SkillProgress.UnknownStage"/> si la etapa no existe en la escalera.
+    /// Devolver la etapa de salida (subida o no) es determinista.
     /// </summary>
     public static Result<StageAdvanceEvaluation> Evaluate(
         Skill? skill,
