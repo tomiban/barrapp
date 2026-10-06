@@ -4,6 +4,7 @@ using Barrapp.Application.Common;
 using Barrapp.Application.Features.Plans;
 using Barrapp.Domain.Athlete;
 using Barrapp.Domain.Common;
+using Barrapp.Domain.Knowledge;
 using Barrapp.Domain.Objectives;
 using Barrapp.Domain.Planning;
 using Barrapp.Domain.Sessions;
@@ -232,18 +233,39 @@ public sealed class CloseMesocyclePersistenceTests : IDisposable
         return mesocycle;
     }
 
+    /// <summary>
+    /// Sesión registrada con un único ítem (foto por ítem, ADR-0014): el ejercicio con sus series.
+    /// </summary>
     private static SessionLog Log(
         string exerciseId,
         Guid? mesocycleId,
         DateTimeOffset recordedAtUtc,
-        params (int Set, int Value)[] sets) =>
-        SessionLog.Create(
+        params (int Set, int Value)[] sets)
+    {
+        var log = SessionLog.Create(
             SingleUser.Id,
-            exerciseId,
+            SessionLogKind.Mesocycle,
+            DateOnly.FromDateTime(recordedAtUtc.UtcDateTime),
             mesocycleId,
+            microcycleNumber: 1,
             sessionDay: 1,
-            recordedAtUtc,
-            sets.Select(set => new SessionLogSetInput(set.Set, set.Value)).ToList()).Value;
+            recordedAtUtc).Value;
+        log.UpsertItem(new SessionLogItemInput(
+            exerciseId,
+            exerciseId,
+            SessionItemRole.Strength,
+            ExerciseGroup.Push,
+            Metric.Reps,
+            sets.Length,
+            1,
+            20,
+            null,
+            null,
+            null,
+            sets.Select(set => new SessionLogSetInput(set.Set, set.Value)).ToList()));
+
+        return log;
+    }
 
     private static Plan BuildPlan()
     {

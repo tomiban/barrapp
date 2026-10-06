@@ -3,6 +3,7 @@ using System;
 using Barrapp.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Barrapp.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261006173010_SessionLogSessionAggregate")]
+    partial class SessionLogSessionAggregate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
@@ -323,25 +326,7 @@ namespace Barrapp.Persistence.Migrations
                                 .HasForeignKey("AthleteProfileId");
                         });
 
-                    b.OwnsMany("Barrapp.Domain.Athlete.TrainingWeekday", "TrainingWeekdays", b1 =>
-                        {
-                            b1.Property<Guid>("AthleteProfileId")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<int>("Day")
-                                .HasColumnType("INTEGER");
-
-                            b1.HasKey("AthleteProfileId", "Day");
-
-                            b1.ToTable("TrainingWeekdays", (string)null);
-
-                            b1.WithOwner()
-                                .HasForeignKey("AthleteProfileId");
-                        });
-
                     b.Navigation("Maximums");
-
-                    b.Navigation("TrainingWeekdays");
                 });
 
             modelBuilder.Entity("Barrapp.Domain.Objectives.Objective", b =>

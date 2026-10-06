@@ -192,6 +192,16 @@ public static class DomainErrors
             "session_log.suelta_key_not_allowed",
             "Una sesión suelta no lleva mesociclo, microciclo ni día.");
 
+        /// <summary>El origen de la sesión no corresponde a <c>mesocycle</c> ni a <c>suelta</c>.</summary>
+        public static readonly Error KindOutOfRange = Error.Validation(
+            "session_log.kind_out_of_range",
+            "El tipo de sesión debe ser «mesocycle» o «suelta».");
+
+        /// <summary>El papel de la fila no corresponde a <c>skill</c>, <c>strength</c> ni a <c>core</c>.</summary>
+        public static readonly Error RoleOutOfRange = Error.Validation(
+            "session_log.role_out_of_range",
+            "El papel del ejercicio debe ser «skill», «strength» o «core».");
+
         /// <summary>El ítem registrado no trae ejercicio ni nombre.</summary>
         public static readonly Error ExerciseRequired = Error.Validation(
             "session_log.exercise_required",

@@ -19,9 +19,10 @@ public sealed class SessionLogItem
 {
     private readonly List<SessionLogSet> _sets = [];
 
-    private SessionLogItem(Guid id, int position)
+    private SessionLogItem(Guid id, Guid sessionLogId, int position)
     {
         Id = id;
+        SessionLogId = sessionLogId;
         Position = position;
     }
 
@@ -32,6 +33,9 @@ public sealed class SessionLogItem
 
     /// <summary>Identificador del ítem registrado.</summary>
     public Guid Id { get; private set; }
+
+    /// <summary>Identificador de la sesión a la que pertenece el ítem.</summary>
+    public Guid SessionLogId { get; private set; }
 
     /// <summary>Orden del ítem dentro de la sesión (desde 1), como en la prescripción.</summary>
     public int Position { get; private set; }
@@ -84,7 +88,10 @@ public sealed class SessionLogItem
     /// inválida (número &lt; 1, valor negativo, RIR real fuera de 0–10 o lastre negativo). Nunca
     /// muta nada: la sesión que lo invoca solo lo agrega si el resultado es exitoso.
     /// </summary>
-    public static Result<SessionLogItem> Create(int position, SessionLogItemInput input)
+    public static Result<SessionLogItem> Create(
+        Guid sessionLogId,
+        int position,
+        SessionLogItemInput input)
     {
         var built = TryBuild(input);
         if (built.IsFailure)
@@ -92,7 +99,7 @@ public sealed class SessionLogItem
             return Result.Failure<SessionLogItem>(built.Error);
         }
 
-        var item = new SessionLogItem(Guid.NewGuid(), position);
+        var item = new SessionLogItem(Guid.NewGuid(), sessionLogId, position);
         item.Copy(input);
         item._sets.AddRange(built.Value);
 

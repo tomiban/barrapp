@@ -161,7 +161,7 @@ public sealed class SessionLog
                 : existing;
         }
 
-        var creation = SessionLogItem.Create(_items.Count + 1, input);
+        var creation = SessionLogItem.Create(Id, _items.Count + 1, input);
         if (creation.IsFailure)
         {
             return creation;
