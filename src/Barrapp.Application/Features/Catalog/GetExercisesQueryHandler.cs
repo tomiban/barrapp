@@ -33,7 +33,7 @@ internal sealed class GetExercisesQueryHandler(IKnowledgeBase knowledgeBase)
 
         var groups = GroupOrder
             .Select(group => new ExerciseGroupResponse(
-                ToCode(group),
+                CatalogMappings.ToCode(group),
                 knowledgeBase.ExercisesByGroup(group).Select(ToResponse).ToList()))
             .Where(group => group.Exercises.Count > 0)
             .ToList();
@@ -44,12 +44,8 @@ internal sealed class GetExercisesQueryHandler(IKnowledgeBase knowledgeBase)
     private static ExerciseResponse ToResponse(Exercise exercise) => new(
         exercise.Id,
         exercise.Name,
-        ToCode(exercise.Metric),
+        CatalogMappings.ToCode(exercise.Metric),
         exercise.TracksMaximum,
         exercise.RegressionId,
         exercise.SkillId);
-
-    private static string ToCode(ExerciseGroup group) => group.ToString().ToLowerInvariant();
-
-    private static string ToCode(Metric metric) => metric.ToString().ToLowerInvariant();
 }

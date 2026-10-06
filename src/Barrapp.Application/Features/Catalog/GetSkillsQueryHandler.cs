@@ -25,7 +25,7 @@ internal sealed class GetSkillsQueryHandler(IKnowledgeBase knowledgeBase)
     private static SkillResponse ToResponse(Skill skill) => new(
         skill.Id,
         skill.Name,
-        ToCode(skill.Group),
+        CatalogMappings.ToCode(skill.Group),
         skill.Lever,
         skill.Stages.Select(ToResponse).ToList(),
         skill.PatternRoutines.Select(ToResponse).ToList());
@@ -35,7 +35,7 @@ internal sealed class GetSkillsQueryHandler(IKnowledgeBase knowledgeBase)
         stage.Name,
         stage.ExerciseId,
         new StageCriterionResponse(
-            ToCode(stage.Criterion.Metric),
+            CatalogMappings.ToCode(stage.Criterion.Metric),
             stage.Criterion.Target,
             stage.Criterion.Sets),
         stage.Notes);
@@ -45,21 +45,5 @@ internal sealed class GetSkillsQueryHandler(IKnowledgeBase knowledgeBase)
         routine.Name,
         routine.Intensity,
         routine.Equipment,
-        routine.Items.Select(ToResponse).ToList());
-
-    private static RoutineItemResponse ToResponse(RoutineItem item) => new(
-        item.ExerciseId,
-        item.Sets,
-        item.RepsMin,
-        item.RepsMax,
-        item.HoldSecondsMin,
-        item.HoldSecondsMax,
-        item.RestSeconds,
-        item.Tempo,
-        item.SupersetGroup,
-        item.Notes);
-
-    private static string ToCode(ExerciseGroup group) => group.ToString().ToLowerInvariant();
-
-    private static string ToCode(Metric metric) => metric.ToString().ToLowerInvariant();
+        routine.Items.Select(CatalogMappings.ToResponse).ToList());
 }

@@ -25,7 +25,7 @@ internal sealed class GetRoutinesQueryHandler(IKnowledgeBase knowledgeBase)
     private static RoutineProgramResponse ToResponse(RoutineProgram program) => new(
         program.Id,
         program.Name,
-        ToCode(program.Type),
+        CatalogMappings.ToCode(program.Type),
         program.Description,
         program.Routines.Select(ToResponse).ToList());
 
@@ -41,19 +41,5 @@ internal sealed class GetRoutinesQueryHandler(IKnowledgeBase knowledgeBase)
         block.Rounds,
         block.RestSeconds,
         block.Notes,
-        block.Items.Select(ToResponse).ToList());
-
-    private static RoutineItemResponse ToResponse(RoutineItem item) => new(
-        item.ExerciseId,
-        item.Sets,
-        item.RepsMin,
-        item.RepsMax,
-        item.HoldSecondsMin,
-        item.HoldSecondsMax,
-        item.RestSeconds,
-        item.Tempo,
-        item.SupersetGroup,
-        item.Notes);
-
-    private static string ToCode(RoutineProgramType type) => type.ToString().ToLowerInvariant();
+        block.Items.Select(CatalogMappings.ToResponse).ToList());
 }
