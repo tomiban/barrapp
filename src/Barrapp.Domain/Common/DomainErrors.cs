@@ -107,6 +107,45 @@ public static class DomainErrors
             $"El ejercicio obligatorio '{exerciseId}' no existe en el catálogo.");
     }
 
+    /// <summary>Errores del registro de sesión (serie a serie).</summary>
+    public static class SessionLog
+    {
+        /// <summary>No se puede registrar una sesión sin ninguna serie.</summary>
+        public static readonly Error SetsRequired = Error.Validation(
+            "session_log.sets_required",
+            "Debes registrar al menos una serie.");
+
+        /// <summary>El número de una serie no puede ser menor que 1.</summary>
+        public static readonly Error SetNumberOutOfRange = Error.Validation(
+            "session_log.set_number_out_of_range",
+            "El número de serie debe ser mayor o igual que 1.");
+
+        /// <summary>Los números de serie no son consecutivos desde 1.</summary>
+        public static readonly Error SetNumbersNotConsecutive = Error.Validation(
+            "session_log.set_numbers_not_consecutive",
+            "Los números de serie deben ser consecutivos desde 1.");
+
+        /// <summary>El valor real ejecutado de una serie no puede ser negativo.</summary>
+        public static readonly Error ValueMustBeNonNegative = Error.Validation(
+            "session_log.value_must_be_non_negative",
+            "El valor real de una serie no puede ser negativo.");
+
+        /// <summary>El esfuerzo real (RIR/RPE) escapa del rango admitido (0–10).</summary>
+        public static readonly Error EffortOutOfRange = Error.Validation(
+            "session_log.effort_out_of_range",
+            "El esfuerzo (RIR/RPE) debe estar entre 0 y 10.");
+
+        /// <summary>El día de la sesión no puede ser menor que 1.</summary>
+        public static readonly Error SessionDayOutOfRange = Error.Validation(
+            "session_log.session_day_out_of_range",
+            "El día de la sesión debe ser mayor o igual que 1.");
+
+        /// <summary>El ejercicio indicado no existe en el catálogo.</summary>
+        public static readonly Error UnknownExercise = Error.Validation(
+            "session_log.unknown_exercise",
+            "El ejercicio indicado no existe en el catálogo.");
+    }
+
     /// <summary>Errores de la sesión suelta (#28).</summary>
     public static class SessionSuelta
     {

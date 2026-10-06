@@ -1,5 +1,6 @@
 using Barrapp.Domain.Athlete;
 using Barrapp.Domain.Objectives;
+using Barrapp.Domain.Sessions;
 using Barrapp.Domain.SkillProgress;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,4 +22,7 @@ public interface IApplicationDbContext
 
     /// <summary>Etapa actual del atleta por skill.</summary>
     DbSet<AthleteSkillProgress> AthleteSkillProgresses { get; }
+
+    /// <summary>Registros de sesión (serie a serie).</summary>
+    DbSet<SessionLog> SessionLogs { get; }
 }
