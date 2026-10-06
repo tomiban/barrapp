@@ -15,8 +15,10 @@ namespace Barrapp.Domain.Planning;
 /// Es pura y determinista. Siempre que el máximo lo permita (≥ 2) la derivación deja al menos una
 /// repetición en reserva y el tope prescrito queda estrictamente por debajo del máximo. Un máximo
 /// de 0 o 1 no admite reserva alguna, así que cae a un marcador neutro y positivo
-/// (<see cref="NeutralReps"/>), nunca a 0 repeticiones. Convertir ese caso en una regresión real
-/// es responsabilidad de #17.
+/// (<see cref="NeutralReps"/>), nunca a 0 repeticiones. El máximo de 0 lo resuelve el llamador
+/// antes de derivar, sustituyendo el ancla por su regresión, prescrita sobre una base asumida
+/// (<see cref="RegressionWorkableReps"/>); el marcador neutro queda para el máximo de 1 y como
+/// salvaguarda frente a catálogos incompletos.
 /// </remarks>
 internal static class StrengthLoad
 {
@@ -28,15 +30,24 @@ internal static class StrengthLoad
 
     /// <summary>
     /// Repetición neutra y positiva que se usa cuando el máximo no permite dejar reserva (0 o 1).
-    /// Es un marcador pendiente de la regresión (#17), no una garantía de seguridad.
+    /// Es un marcador previo a la regresión (#17), no una garantía de seguridad.
     /// </summary>
     internal const int NeutralReps = 1;
+
+    /// <summary>
+    /// Máximo efectivo asumido para la regresión de un ejercicio cuyo máximo es 0 (#17). Es una
+    /// base de trabajo modesta y conservadora sobre la que la onda de RIR puede dejar reserva, de
+    /// modo que la regresión nunca se prescribe al fallo ni con 0 repeticiones. No es una medición
+    /// del atleta: es el punto de partida del mesociclo, ajustable en un futuro mesociclo.
+    /// </summary>
+    internal const int RegressionWorkableReps = 8;
 
     /// <summary>
     /// Repeticiones (mínimo y máximo) que le corresponden a un máximo dado, dejando
     /// <paramref name="repsInReserve"/> repeticiones antes del fallo. Si el máximo lo permite
     /// (≥ 2) deja al menos una repetición reservada y el tope queda por debajo del máximo; con un
-    /// máximo de 0 o 1 no hay margen y devuelve el marcador neutro (<see cref="NeutralReps"/>).
+    /// máximo de 1 no hay margen y devuelve el marcador neutro (<see cref="NeutralReps"/>). Un
+    /// máximo de 0 no debe llegar aquí: el llamador lo resuelve con la regresión (#17).
     /// </summary>
     internal static (int Min, int Max) Derive(int maximum, int repsInReserve)
     {
