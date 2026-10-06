@@ -11,10 +11,10 @@ namespace Barrapp.Domain.Planning;
 /// entradas, mismo plan.
 /// </summary>
 /// <remarks>
-/// Ticket #10 solo implementa el reparto de 3 días/semana; las frecuencias 4 y 5 devuelven
-/// <see cref="DomainErrors.Plan.UnsupportedFrequency"/>. Las prescripciones son la base neutra:
-/// la derivación desde los máximos (#11), la onda de RIR (#12) y el deload (#13) se apoyarán en
-/// este mismo punto de entrada.
+/// Ticket #10 implementa el reparto de 3 días/semana; las frecuencias 4 y 5 devuelven
+/// <see cref="DomainErrors.Plan.UnsupportedFrequency"/>. La carga de fuerza se deriva del máximo
+/// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. La onda
+/// semanal de RIR (#12) y el deload (#13) se apoyarán en este mismo punto de entrada.
 /// </remarks>
 public static class PlanGenerator
 {
@@ -28,8 +28,6 @@ public static class PlanGenerator
     private const string CoreExerciseId = "hollow-body-hold";
 
     private const int StrengthSets = 3;
-    private const int StrengthRepsMin = 8;
-    private const int StrengthRepsMax = 12;
     private const int CoreSets = 3;
     private const int CoreHoldSecondsMin = 20;
     private const int CoreHoldSecondsMax = 30;
@@ -61,7 +59,7 @@ public static class PlanGenerator
             return Result.Failure<Plan>(DomainErrors.Plan.MissingSkillStage);
         }
 
-        var strength = ResolveStrengthSlots(catalog);
+        var strength = ResolveStrengthSlots(catalog, profile);
         if (strength.IsFailure)
         {
             return Result.Failure<Plan>(strength.Error);
@@ -87,7 +85,9 @@ public static class PlanGenerator
         return new Plan(skill.Id, profile.TrainingDays, microcycles);
     }
 
-    private static Result<IReadOnlyList<StrengthSlot>> ResolveStrengthSlots(IGenerationCatalog catalog)
+    private static Result<IReadOnlyList<StrengthSlot>> ResolveStrengthSlots(
+        IGenerationCatalog catalog,
+        AthleteProfile profile)
     {
         var slots = new List<StrengthSlot>(BasicExercises.All.Count);
         foreach (var basic in BasicExercises.All)
@@ -99,7 +99,14 @@ public static class PlanGenerator
                     DomainErrors.Plan.UnknownExercise(basic.Code));
             }
 
-            slots.Add(new StrengthSlot(ToGroup(basic.Pattern), exercise.Id));
+            var maximum = profile.MaximumFor(basic.Code);
+            if (maximum is null)
+            {
+                return Result.Failure<IReadOnlyList<StrengthSlot>>(
+                    DomainErrors.AthleteProfile.MissingExerciseMaximum);
+            }
+
+            slots.Add(new StrengthSlot(ToGroup(basic.Pattern), exercise.Id, maximum.Value));
         }
 
         return Result.Success<IReadOnlyList<StrengthSlot>>(slots);
@@ -116,13 +123,16 @@ public static class PlanGenerator
 
         foreach (var slot in strength)
         {
+            // La onda por microciclo de #12 pasará su propio valor de reserva; hoy la semana base.
+            var reps = StrengthLoad.Derive(slot.MaximumRepetitions, StrengthLoad.BaseRepsInReserve);
+
             items.Add(new SessionItem(
                 slot.ExerciseId,
                 SessionItemRole.Strength,
                 slot.Pattern,
                 StrengthSets,
-                StrengthRepsMin,
-                StrengthRepsMax,
+                reps.Min,
+                reps.Max,
                 null,
                 null));
         }
@@ -165,6 +175,11 @@ public static class PlanGenerator
         _ => throw new ArgumentOutOfRangeException(nameof(pattern)),
     };
 
-    /// <summary>Patrón y ejercicio ancla que ocupan un hueco de fuerza en la sesión.</summary>
-    private readonly record struct StrengthSlot(ExerciseGroup Pattern, string ExerciseId);
+    /// <summary>
+    /// Patrón, ejercicio ancla y máximo del atleta que ocupan un hueco de fuerza en la sesión.
+    /// </summary>
+    private readonly record struct StrengthSlot(
+        ExerciseGroup Pattern,
+        string ExerciseId,
+        int MaximumRepetitions);
 }

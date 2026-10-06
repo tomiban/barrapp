@@ -182,6 +182,36 @@ public sealed class AthleteProfileTests
     }
 
     [Fact]
+    public void MaximumFor_returns_the_repetitions_of_a_known_exercise()
+    {
+        var profile = AthleteProfile
+            .Create(UserId, 78, 181, ArmSpanCentimeters, InseamCentimeters, 4, ValidMaximums())
+            .Value;
+
+        Assert.Equal(10, profile.MaximumFor("push_up"));
+    }
+
+    [Fact]
+    public void MaximumFor_returns_zero_when_the_maximum_is_zero()
+    {
+        var profile = AthleteProfile
+            .Create(UserId, 78, 181, ArmSpanCentimeters, InseamCentimeters, 4, ValidMaximums())
+            .Value;
+
+        Assert.Equal(0, profile.MaximumFor("pull_up"));
+    }
+
+    [Fact]
+    public void MaximumFor_returns_null_for_an_unknown_exercise()
+    {
+        var profile = AthleteProfile
+            .Create(UserId, 78, 181, ArmSpanCentimeters, InseamCentimeters, 4, ValidMaximums())
+            .Value;
+
+        Assert.Null(profile.MaximumFor("bench_press"));
+    }
+
+    [Fact]
     public void Create_rejects_a_missing_basic_exercise()
     {
         var maximums = new MaximumInput[]
