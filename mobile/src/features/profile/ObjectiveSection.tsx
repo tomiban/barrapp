@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { fetchObjective, OBJECTIVE_SKILLS, saveObjective, type Objective } from '@/api/objective';
+import { fetchSkillCatalog, type Skill } from '@/api/catalog/skills';
+import { messageOf } from '@/api/messageOf';
+import { fetchObjective, saveObjective, type Objective } from '@/api/objective';
 import { Button } from '@/design-system/Button';
 import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
 import { Banner, Loading } from '@/design-system/Feedback';
@@ -15,29 +17,15 @@ type Feedback = {
   message: string;
 };
 
-/** Una opción por cada skill del catálogo. */
-const SKILL_OPTIONS: readonly SegmentedOption[] = OBJECTIVE_SKILLS.map((skill) => ({
-  value: skill.id,
-  label: skill.name,
-}));
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : 'Error desconocido';
-}
-
-/** Nombre para la UI del skill guardado. */
-function nameOf(skillId: string): string {
-  return OBJECTIVE_SKILLS.find((skill) => skill.id === skillId)?.name ?? skillId;
-}
-
 /**
- * Selector del skill objetivo del mesociclo: lee `GET /profile/objective`, deja elegir entre los
- * cuatro skills del catálogo y guarda con `PUT /profile/objective`. Es la costura del Perfil con
- * el objetivo que consumirán el motor de generación (#10) y la etapa por skill (#9).
+ * Selector del skill objetivo del mesociclo: lee `GET /profile/objective` y `GET /catalog/skills`,
+ * deja elegir entre los skills del catálogo y guarda con `PUT /profile/objective`. Es la costura
+ * del Perfil con el objetivo que consumirán el motor de generación (#10) y la etapa por skill (#9).
  */
 export function ObjectiveSection() {
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [loadError, setLoadError] = useState('');
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [skillId, setSkillId] = useState('');
   const [persisted, setPersisted] = useState<Objective | null>(null);
   const [saving, setSaving] = useState(false);
@@ -50,8 +38,9 @@ export function ObjectiveSection() {
 
   const load = useCallback(
     (signal?: AbortSignal) => {
-      fetchObjective(signal)
-        .then((objective) => {
+      Promise.all([fetchObjective(signal), fetchSkillCatalog(signal)])
+        .then(([objective, catalog]) => {
+          setSkills(catalog);
           applyObjective(objective);
           setLoadState('ready');
         })
@@ -71,6 +60,17 @@ export function ObjectiveSection() {
     load(controller.signal);
     return () => controller.abort();
   }, [load]);
+
+  const skillOptions = useMemo<readonly SegmentedOption[]>(
+    () => skills.map((skill) => ({ value: skill.id, label: skill.name })),
+    [skills],
+  );
+
+  /** Nombre para la UI del skill guardado. */
+  const nameOf = useCallback(
+    (id: string) => skills.find((skill) => skill.id === id)?.name ?? id,
+    [skills],
+  );
 
   const handleRetry = useCallback(() => {
     setLoadState('loading');
@@ -124,7 +124,7 @@ export function ObjectiveSection() {
           </Text>
 
           <SegmentedControl
-            options={SKILL_OPTIONS}
+            options={skillOptions}
             value={skillId}
             onChange={setSkillId}
             label="Skill objetivo"

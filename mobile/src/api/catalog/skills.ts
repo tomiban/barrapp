@@ -60,5 +60,6 @@ export async function fetchSkillCatalog(signal?: AbortSignal): Promise<Skill[]> 
     throw await apiError(response);
   }
 
-  return (await response.json()) as Skill[];
+  const body = (await response.json()) as unknown;
+  return Array.isArray(body) ? (body as Skill[]) : [];
 }

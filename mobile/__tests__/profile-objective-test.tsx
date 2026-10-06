@@ -23,6 +23,18 @@ const PROFILE = {
   ],
 };
 
+/**
+ * El catálogo de skills que sirve `GET /catalog/skills`. Uno de los nombres difiere del espejo
+ * antiguo a propósito: así el test demuestra que las opciones salen del catálogo, no de una lista
+ * hardcodeada.
+ */
+const SKILL_CATALOG = [
+  { id: 'handstand', name: 'Pino' },
+  { id: 'front-lever', name: 'Front lever' },
+  { id: 'planche', name: 'Planche (catálogo)' },
+  { id: 'pistol-squat', name: 'Pistol squat' },
+];
+
 describe('ProfileScreen objective', () => {
   const originalFetch = global.fetch;
 
@@ -31,10 +43,13 @@ describe('ProfileScreen objective', () => {
     jest.restoreAllMocks();
   });
 
-  it('shows the four catalog skills and saves the chosen objective', async () => {
+  it('shows the catalog skills and saves the chosen objective', async () => {
     let saved: unknown = null;
     let objective: { skillId: string } | null = null;
     const fetchMock = jest.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith('/catalog/skills')) {
+        return Promise.resolve(jsonResponse(200, SKILL_CATALOG));
+      }
       if (String(input).endsWith('/profile/objective')) {
         if (init?.method === 'PUT') {
           saved = JSON.parse(String(init.body));
@@ -52,18 +67,27 @@ describe('ProfileScreen objective', () => {
 
     expect(screen.getByText('Pino')).toBeOnTheScreen();
     expect(screen.getByText('Front lever')).toBeOnTheScreen();
-    expect(screen.getByText('Planche')).toBeOnTheScreen();
+    expect(screen.getByText('Planche (catálogo)')).toBeOnTheScreen();
     expect(screen.getByText('Pistol squat')).toBeOnTheScreen();
+    // El nombre del espejo hardcodeado ya no existe: las opciones vienen del catálogo.
+    expect(screen.queryByText('Planche')).toBeNull();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/catalog/skills'),
+      expect.anything(),
+    );
 
     await fireEvent.press(screen.getByTestId('profile-objective-planche'));
     await fireEvent.press(screen.getByTestId('profile-objective-save'));
 
-    await waitFor(() => expect(screen.getByText('Objetivo: Planche')).toBeOnTheScreen());
+    await waitFor(() => expect(screen.getByText('Objetivo: Planche (catálogo)')).toBeOnTheScreen());
     expect(saved).toEqual({ skillId: 'planche' });
   });
 
-  it('reads and shows the persisted objective', async () => {
+  it('reads and shows the persisted objective with its catalog name', async () => {
     const fetchMock = jest.fn((input: RequestInfo | URL) => {
+      if (String(input).endsWith('/catalog/skills')) {
+        return Promise.resolve(jsonResponse(200, SKILL_CATALOG));
+      }
       if (String(input).endsWith('/profile/objective')) {
         return Promise.resolve(jsonResponse(200, { skillId: 'handstand' }));
       }

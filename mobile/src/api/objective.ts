@@ -1,22 +1,5 @@
 import { apiError, getApiBaseUrl } from '@/api/client';
 
-/** Skill que se puede elegir como objetivo del mesociclo. */
-export type ObjectiveSkill = {
-  id: string;
-  name: string;
-};
-
-/**
- * Los cuatro skills del catálogo, espejo de `knowledge/skills.json` (ids en inglés, nombres en
- * español). El selector de objetivo los ofrece en este orden.
- */
-export const OBJECTIVE_SKILLS: readonly ObjectiveSkill[] = [
-  { id: 'handstand', name: 'Pino' },
-  { id: 'front-lever', name: 'Front lever' },
-  { id: 'planche', name: 'Planche' },
-  { id: 'pistol-squat', name: 'Pistol squat' },
-];
-
 /** Objetivo del mesociclo: el slug del skill elegido. */
 export type Objective = {
   skillId: string;
