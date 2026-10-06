@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<IAthleteSkillProgressRepository, AthleteSkillProgressRepository>();
         services.AddScoped<ISessionLogRepository, SessionLogRepository>();
         services.AddScoped<ISessionSueltaRepository, SessionSueltaRepository>();
+        services.AddScoped<IMesocycleRepository, MesocycleRepository>();
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IUnitOfWork>(provider =>
