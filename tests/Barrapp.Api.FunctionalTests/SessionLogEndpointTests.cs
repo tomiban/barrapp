@@ -62,8 +62,8 @@ public sealed class SessionLogEndpointTests(BarrappApiFactory factory)
                 sessionDay = 2,
                 sets = new[]
                 {
-                    new { setNumber = 1, value = 10, effort = 2 },
-                    new { setNumber = 2, value = 11 },
+                    new { setNumber = 1, value = 10, effort = (int?)2 },
+                    new { setNumber = 2, value = 11, effort = (int?)null },
                 },
             });
         Assert.Equal(HttpStatusCode.OK, postResponse.StatusCode);
