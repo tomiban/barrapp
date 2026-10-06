@@ -43,4 +43,11 @@ describe('Header', () => {
     expect(screen.getByText('atrás')).toBeOnTheScreen();
     expect(screen.getByText('hecho')).toBeOnTheScreen();
   });
+
+  it('muestra el kicker sobre el título', async () => {
+    await render(<Header kicker="BARRAS" title="Inicio" />);
+
+    expect(screen.getByText('BARRAS')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Inicio' })).toBeOnTheScreen();
+  });
 });
