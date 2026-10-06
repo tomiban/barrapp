@@ -8,7 +8,7 @@ namespace Barrapp.Api.FunctionalTests;
 
 /// <summary>
 /// El plan del mesociclo se lee con <c>GET /plan</c>: necesita perfil y objetivo guardados y, hoy,
-/// solo sabe generar el reparto full-body de 3 días.
+/// genera el reparto full-body de 3 días o el alterno tren superior / tren inferior de 4 días (#15).
 /// </summary>
 public sealed class PlanEndpointTests(BarrappApiFactory factory)
     : IClassFixture<BarrappApiFactory>
@@ -115,6 +115,49 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
     }
 
     [Fact]
+    public async Task Get_plan_for_a_four_day_profile_alternates_upper_and_lower_sessions()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(4));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.GetAsync("/plan");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+        Assert.Equal("planche", plan!.SkillId);
+        Assert.Equal(4, plan.TrainingDays);
+        Assert.Equal(4, plan.Microcycles.Count);
+        Assert.All(plan.Microcycles, microcycle => Assert.Equal(4, microcycle.Sessions.Count));
+        Assert.All(
+            plan.Microcycles,
+            microcycle => Assert.Equal(new[] { 1, 2, 3, 4 }, microcycle.Sessions.Select(session => session.Day)));
+
+        // Días 1 y 3: tren superior, arrancan con el skill y cubren empuje y tirón. Días 2 y 4:
+        // tren inferior, sin skill y con pierna.
+        Assert.All(
+            plan.Microcycles,
+            microcycle =>
+            {
+                var upperItems = microcycle.Sessions
+                    .Where(session => session.Day is 1 or 3)
+                    .SelectMany(session => session.Items)
+                    .ToList();
+                Assert.Equal("skill", upperItems[0].Role);
+                Assert.Contains(upperItems, item => item.Role == "strength" && item.Pattern == "push");
+                Assert.Contains(upperItems, item => item.Role == "strength" && item.Pattern == "pull");
+
+                var lowerItems = microcycle.Sessions
+                    .Where(session => session.Day is 2 or 4)
+                    .SelectMany(session => session.Items)
+                    .ToList();
+                Assert.DoesNotContain(lowerItems, item => item.Role == "skill");
+                Assert.Contains(lowerItems, item => item.Role == "strength" && item.Pattern == "leg");
+            });
+    }
+
+    [Fact]
     public async Task Get_plan_for_an_unsupported_frequency_returns_400_with_a_spanish_detail()
     {
         using var client = factory.CreateClient();
@@ -126,7 +169,7 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
 
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         Assert.NotNull(problem);
-        Assert.Contains("Por ahora solo se puede generar un plan de 3 días.", problem!.Detail);
+        Assert.Contains("Por ahora solo se puede generar un plan de 3 o 4 días.", problem!.Detail);
     }
 }
 
