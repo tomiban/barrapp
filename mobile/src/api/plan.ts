@@ -1,5 +1,6 @@
 import { apiError, getApiBaseUrl } from '@/api/client';
 import type { ExerciseGroupCode } from '@/api/catalog/exercises';
+import type { SkillStage } from '@/api/catalog/skills';
 
 /** Papel de una fila dentro de la sesión del plan. */
 export type PlanItemRole = 'skill' | 'strength' | 'core';
@@ -33,6 +34,8 @@ export type PlanMicrocycle = {
 export type Plan = {
   skillId: string;
   trainingDays: number;
+  /** Etapa actual del skill objetivo, con su criterio para avanzar. */
+  skillStage: SkillStage;
   microcycles: PlanMicrocycle[];
 };
 
@@ -48,4 +51,37 @@ export async function fetchPlan(signal?: AbortSignal): Promise<Plan> {
   }
 
   return (await response.json()) as Plan;
+}
+
+/** Máximo de un ejercicio básico tras el ajuste del cierre. */
+export type ClosedMesocycleMaximum = {
+  exerciseCode: string;
+  repetitions: number;
+};
+
+/** Resultado de cerrar el mesociclo activo (`POST /plan/close`). */
+export type ClosedMesocycle = {
+  mesocycleId: string;
+  skillId: string;
+  skillName: string;
+  trainingDays: number;
+  startedAtUtc: string;
+  closedAtUtc: string;
+  /** Máximos del atleta tras el ajuste; nunca inferiores a los anteriores. */
+  maximums: ClosedMesocycleMaximum[];
+};
+
+/**
+ * Cierra el mesociclo activo (`POST /plan/close`): el servidor ajusta los máximos del atleta con
+ * las sesiones registradas del mesociclo, lo publica en el historial y devuelve los máximos ya
+ * ajustados. El siguiente `GET /plan` se genera con ellos.
+ */
+export async function closeMesocycle(signal?: AbortSignal): Promise<ClosedMesocycle> {
+  const response = await fetch(`${getApiBaseUrl()}/plan/close`, { method: 'POST', signal });
+
+  if (!response.ok) {
+    throw await apiError(response);
+  }
+
+  return (await response.json()) as ClosedMesocycle;
 }

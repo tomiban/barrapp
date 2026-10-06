@@ -1,3 +1,5 @@
+using Barrapp.Domain.Knowledge;
+
 namespace Barrapp.Domain.Planning;
 
 /// <summary>
@@ -7,14 +9,20 @@ namespace Barrapp.Domain.Planning;
 /// <remarks>
 /// Es un valor puro y determinista que produce <see cref="PlanGenerator"/>: mismos datos de
 /// entrada, mismo plan. No lleva identidad ni usuario porque todavía no se persiste; su forma es
-/// el propio contenido generado.
+/// el propio contenido generado. Junto al mesociclo guarda la etapa actual del skill objetivo
+/// (la misma que practica el bloque de skill), derivada de la escalera y la progresión del atleta.
 /// </remarks>
 public sealed class Plan
 {
-    internal Plan(string skillId, int trainingDays, IReadOnlyList<Microcycle> microcycles)
+    internal Plan(
+        string skillId,
+        int trainingDays,
+        SkillStage currentStage,
+        IReadOnlyList<Microcycle> microcycles)
     {
         SkillId = skillId;
         TrainingDays = trainingDays;
+        CurrentStage = currentStage;
         Microcycles = microcycles;
     }
 
@@ -23,6 +31,9 @@ public sealed class Plan
 
     /// <summary>Días de entrenamiento por semana.</summary>
     public int TrainingDays { get; }
+
+    /// <summary>Etapa actual del atleta en el skill objetivo, con su criterio de avance.</summary>
+    public SkillStage CurrentStage { get; }
 
     /// <summary>Semanas del mesociclo, en orden.</summary>
     public IReadOnlyList<Microcycle> Microcycles { get; }

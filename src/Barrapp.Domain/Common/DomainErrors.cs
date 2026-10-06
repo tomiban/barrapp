@@ -91,11 +91,6 @@ public static class DomainErrors
     /// <summary>Errores del motor de generación del plan.</summary>
     public static class Plan
     {
-        /// <summary>La frecuencia pedida todavía no tiene reparto implementado (solo 3 días).</summary>
-        public static readonly Error UnsupportedFrequency = Error.Validation(
-            "plan.unsupported_frequency",
-            "Por ahora solo se puede generar un plan de 3 días.");
-
         /// <summary>El skill objetivo no tiene la etapa actual del atleta en su escalera.</summary>
         public static readonly Error UnknownStage = Error.Validation(
             "plan.unknown_stage",
@@ -105,6 +100,138 @@ public static class DomainErrors
         public static Error UnknownExercise(string exerciseId) => Error.Validation(
             "plan.unknown_exercise",
             $"El ejercicio obligatorio '{exerciseId}' no existe en el catálogo.");
+    }
+
+    /// <summary>Errores del mesociclo persistido (#27, D7).</summary>
+    public static class Mesocycle
+    {
+        /// <summary>El plan que se quiere guardar no es un mesociclo íntegro.</summary>
+        public static readonly Error InvalidSnapshot = Error.Validation(
+            "mesocycle.invalid_snapshot",
+            "El plan del mesociclo no es un mesociclo íntegro.");
+
+        /// <summary>El mesociclo ya estaba cerrado y no se puede cerrar dos veces.</summary>
+        public static readonly Error AlreadyClosed = Error.Conflict(
+            "mesocycle.already_closed",
+            "Este mesociclo ya estaba cerrado.");
+
+        /// <summary>No hay ningún mesociclo en curso para cerrarlo.</summary>
+        public static readonly Error NotActive = Error.Conflict(
+            "mesocycle.not_active",
+            "No hay ningún mesociclo en curso para cerrar.");
+
+        /// <summary>No hay ningún mesociclo guardado con ese identificador.</summary>
+        public static readonly Error NotFound = Error.NotFound(
+            "mesocycle.not_found",
+            "No hay ningún mesociclo guardado con ese identificador.");
+    }
+
+    /// <summary>Errores del registro de sesión (serie a serie).</summary>
+    public static class SessionLog
+    {
+        /// <summary>No se puede registrar una sesión sin ninguna serie.</summary>
+        public static readonly Error SetsRequired = Error.Validation(
+            "session_log.sets_required",
+            "Debes registrar al menos una serie.");
+
+        /// <summary>El número de una serie no puede ser menor que 1.</summary>
+        public static readonly Error SetNumberOutOfRange = Error.Validation(
+            "session_log.set_number_out_of_range",
+            "El número de serie debe ser mayor o igual que 1.");
+
+        /// <summary>Los números de serie no son consecutivos desde 1.</summary>
+        public static readonly Error SetNumbersNotConsecutive = Error.Validation(
+            "session_log.set_numbers_not_consecutive",
+            "Los números de serie deben ser consecutivos desde 1.");
+
+        /// <summary>El valor real ejecutado de una serie no puede ser negativo.</summary>
+        public static readonly Error ValueMustBeNonNegative = Error.Validation(
+            "session_log.value_must_be_non_negative",
+            "El valor real de una serie no puede ser negativo.");
+
+        /// <summary>El esfuerzo real (RIR/RPE) escapa del rango admitido (0–10).</summary>
+        public static readonly Error EffortOutOfRange = Error.Validation(
+            "session_log.effort_out_of_range",
+            "El esfuerzo (RIR/RPE) debe estar entre 0 y 10.");
+
+        /// <summary>El día de la sesión no puede ser menor que 1.</summary>
+        public static readonly Error SessionDayOutOfRange = Error.Validation(
+            "session_log.session_day_out_of_range",
+            "El día de la sesión debe ser mayor o igual que 1.");
+
+        /// <summary>El ejercicio indicado no existe en el catálogo.</summary>
+        public static readonly Error UnknownExercise = Error.Validation(
+            "session_log.unknown_exercise",
+            "El ejercicio indicado no existe en el catálogo.");
+
+        /// <summary>El registro de sesión indicado no existe.</summary>
+        public static readonly Error NotFound = Error.NotFound(
+            "session_log.not_found",
+            "El registro de sesión indicado no existe.");
+    }
+
+    /// <summary>Errores de la sesión suelta (#28) y su historial (#29).</summary>
+    public static class SessionSuelta
+    {
+        /// <summary>El foco de patrón no indica ningún grupo.</summary>
+        public static readonly Error PatternRequired = Error.Validation(
+            "session_suelta.pattern_required",
+            "Debes elegir un patrón como foco de la sesión suelta.");
+
+        /// <summary>El foco de patrón pide un grupo que no es un patrón de fuerza general.</summary>
+        public static readonly Error UnsupportedPattern = Error.Validation(
+            "session_suelta.unsupported_pattern",
+            "El foco de patrón debe ser empuje, tirón o pierna.");
+
+        /// <summary>El tiempo de la suelta no es uno de los cuatro admitidos.</summary>
+        public static readonly Error TimeMinutesOutOfRange = Error.Validation(
+            "session_suelta.time_minutes_out_of_range",
+            "El tiempo debe ser 15, 30, 45 o 60 minutos.");
+
+        /// <summary>El foco resuelto no trae ni patrón ni skill.</summary>
+        public static readonly Error CompositionRequired = Error.Validation(
+            "session_suelta.composition_required",
+            "La sesión suelta debe resolver a un patrón o a un skill.");
+
+        /// <summary>El foco resuelto trae un patrón y un skill a la vez.</summary>
+        public static readonly Error CompositionConflict = Error.Validation(
+            "session_suelta.composition_conflict",
+            "La sesión suelta no puede resolver a un patrón y a un skill a la vez.");
+
+        /// <summary>La suelta no tiene filas que guardar en el historial.</summary>
+        public static readonly Error ItemsRequired = Error.Validation(
+            "session_suelta.items_required",
+            "La sesión suelta necesita al menos una fila.");
+
+        /// <summary>Una fila del snapshot no declara el ejercicio.</summary>
+        public static readonly Error ItemExerciseRequired = Error.Validation(
+            "session_suelta.item_exercise_required",
+            "Cada fila de la sesión suelta necesita un ejercicio.");
+
+        /// <summary>Una fila del snapshot no declara series positivas.</summary>
+        public static readonly Error ItemSetsMustBePositive = Error.Validation(
+            "session_suelta.item_sets_must_be_positive",
+            "Las series de cada fila de la sesión suelta deben ser mayores que 0.");
+
+        /// <summary>Una fila del snapshot no declara ningún rango completo.</summary>
+        public static readonly Error ItemRequiresRange = Error.Validation(
+            "session_suelta.item_requires_range",
+            "Cada fila de la sesión suelta debe declarar un rango de repeticiones o de segundos.");
+
+        /// <summary>El mínimo de un rango de una fila supera a su máximo.</summary>
+        public static readonly Error ItemRangeMinGreaterThanMax = Error.Validation(
+            "session_suelta.item_range_min_greater_than_max",
+            "El mínimo de un rango de la sesión suelta no puede superar al máximo.");
+
+        /// <summary>La suelta ya estaba registrada y no se puede registrar dos veces.</summary>
+        public static readonly Error AlreadyRecorded = Error.Conflict(
+            "session_suelta.already_recorded",
+            "Esta sesión suelta ya estaba registrada.");
+
+        /// <summary>No hay ninguna sesión suelta guardada con ese identificador.</summary>
+        public static readonly Error NotFound = Error.NotFound(
+            "session_suelta.not_found",
+            "No hay ninguna sesión suelta guardada con ese identificador.");
     }
 
     /// <summary>Errores de la base de conocimiento (catálogo, escaleras y rutinas).</summary>

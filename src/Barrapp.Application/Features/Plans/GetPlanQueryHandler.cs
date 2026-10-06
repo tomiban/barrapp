@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Barrapp.Application.Features.Plans;
 
 /// <summary>
-/// Carga el perfil (con sus máximos), el objetivo y la etapa actual del atleta en ese skill, y
-/// delega la generación en el motor de dominio. La regla de programación vive entera en
-/// <see cref="PlanGenerator"/>; el handler solo orquesta y proyecta a DTO. Es la excepción
-/// pragmática a «las queries proyectan directo a DTO»: el motor necesita el agregado del atleta
-/// como entrada.
+/// Devuelve el mesociclo en curso del atleta. Desde #27 (D7) el plan se persiste al generarse
+/// (<c>POST /plan</c>): si hay un mesociclo <see cref="MesocycleStatus.Active"/>, se sirve el
+/// snapshot guardado tal cual; si no, se genera on-read con el motor (comportamiento anterior,
+/// sin guardar). En ambos casos la regla de programación vive en <see cref="PlanGenerator"/>;
+/// la excepción pragmática a «las queries proyectan directo a DTO» sigue intacta (ver ADR-0012).
 /// </summary>
 internal sealed class GetPlanQueryHandler(IApplicationDbContext dbContext, IKnowledgeBase catalog)
     : IQueryHandler<GetPlanQuery, PlanResponse>
@@ -37,12 +37,25 @@ internal sealed class GetPlanQueryHandler(IApplicationDbContext dbContext, IKnow
             return Result.Failure<PlanResponse>(DomainErrors.Objective.NotFound);
         }
 
+        // Plan ya persistido al generarse (D7): se sirve el mesociclo activo sin regenerar.
+        var active = await dbContext.Mesocycles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                candidate => candidate.UserId == SingleUser.Id
+                    && candidate.Status == MesocycleStatus.Active,
+                cancellationToken);
+
+        if (active is not null)
+        {
+            return PlanMappings.ToResponse(active.Snapshot.ToPlan(), catalog);
+        }
+
         var progress = await dbContext.AthleteSkillProgresses
             .FirstOrDefaultAsync(
                 candidate => candidate.UserId == SingleUser.Id && candidate.SkillId == objective.SkillId,
                 cancellationToken);
 
-        // Sin progreso guardado, el motor practica la primera etapa de la escalera.
+        // Sin mesociclo persistido ni progreso guardado, el motor practica la primera etapa.
         var generation = PlanGenerator.Generate(profile, objective, progress?.StageOrder, catalog);
 
         return generation.IsFailure

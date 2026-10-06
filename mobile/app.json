@@ -9,6 +9,7 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.barrapp.app",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
@@ -16,6 +17,7 @@
       }
     },
     "android": {
+      "package": "com.barrapp.app",
       "adaptiveIcon": {
         "backgroundColor": "#111214",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
