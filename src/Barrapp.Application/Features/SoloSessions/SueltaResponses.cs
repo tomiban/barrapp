@@ -1,6 +1,6 @@
+using Barrapp.Application.Abstractions;
 using Barrapp.Application.Features.Catalog;
 using Barrapp.Application.Features.Plans;
-using Barrapp.Application.Abstractions;
 using Barrapp.Domain.Knowledge;
 using Barrapp.Domain.Planning;
 using Barrapp.Domain.Sessions;
