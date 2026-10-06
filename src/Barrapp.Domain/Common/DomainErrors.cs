@@ -102,6 +102,25 @@ public static class DomainErrors
             $"El ejercicio obligatorio '{exerciseId}' no existe en el catálogo.");
     }
 
+    /// <summary>Errores del mesociclo persistido (#27, D7).</summary>
+    public static class Mesocycle
+    {
+        /// <summary>El plan que se quiere guardar no es un mesociclo íntegro.</summary>
+        public static readonly Error InvalidSnapshot = Error.Validation(
+            "mesocycle.invalid_snapshot",
+            "El plan del mesociclo no es un mesociclo íntegro.");
+
+        /// <summary>El mesociclo ya estaba cerrado y no se puede cerrar dos veces.</summary>
+        public static readonly Error AlreadyClosed = Error.Conflict(
+            "mesocycle.already_closed",
+            "Este mesociclo ya estaba cerrado.");
+
+        /// <summary>No hay ningún mesociclo guardado con ese identificador.</summary>
+        public static readonly Error NotFound = Error.NotFound(
+            "mesocycle.not_found",
+            "No hay ningún mesociclo guardado con ese identificador.");
+    }
+
     /// <summary>Errores del registro de sesión (serie a serie).</summary>
     public static class SessionLog
     {
