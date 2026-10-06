@@ -44,8 +44,7 @@ public sealed class SessionLogEndpointTests(BarrappApiFactory factory)
 
         var logs = await client.GetFromJsonAsync<List<SessionLogResponse>>("/session-logs");
         Assert.NotNull(logs);
-        var loaded = Assert.Single(logs!);
-        Assert.Equal(saved.Id, loaded.Id);
+        var loaded = Assert.Single(logs!, log => log.Id == saved.Id);
         Assert.Equal([1, 2], loaded.Sets.Select(set => set.SetNumber));
     }
 
@@ -68,6 +67,50 @@ public sealed class SessionLogEndpointTests(BarrappApiFactory factory)
         Assert.NotNull(saved);
         Assert.Equal("seconds", saved!.Metric);
         Assert.Equal("Cuerpo hueco", saved.ExerciseName);
+    }
+
+    [Fact]
+    public async Task Post_derives_seconds_for_a_skill_exercise()
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PostAsJsonAsync(
+            "/session-logs",
+            new
+            {
+                exerciseId = "handstand-wall-support",
+                sessionDay = 1,
+                sets = new[] { new { setNumber = 1, value = 30 }, new { setNumber = 2, value = 28 } },
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var saved = await response.Content.ReadFromJsonAsync<SessionLogResponse>();
+        Assert.NotNull(saved);
+        Assert.Equal("seconds", saved!.Metric);
+        Assert.Equal("Pino en pared (pies apoyados)", saved.ExerciseName);
+        Assert.Equal([30, 28], saved.Sets.Select(set => set.Value));
+    }
+
+    [Fact]
+    public async Task Post_derives_reps_for_a_reps_metric_skill_exercise()
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.PostAsJsonAsync(
+            "/session-logs",
+            new
+            {
+                exerciseId = "pistol-full",
+                sessionDay = 1,
+                sets = new[] { new { setNumber = 1, value = 5 }, new { setNumber = 2, value = 4 } },
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var saved = await response.Content.ReadFromJsonAsync<SessionLogResponse>();
+        Assert.NotNull(saved);
+        Assert.Equal("reps", saved!.Metric);
+        Assert.Equal("Pistol completa", saved.ExerciseName);
+        Assert.Equal([5, 4], saved.Sets.Select(set => set.Value));
     }
 
     [Fact]

@@ -69,6 +69,21 @@ public sealed class SessionLogTests
     }
 
     [Fact]
+    public void Create_registers_the_seconds_held_per_set_in_a_hold()
+    {
+        var result = SessionLog.Create(
+            UserId,
+            "hollow-body-hold",
+            null,
+            1,
+            Recorded,
+            Sets(new SessionLogSetInput(1, 20), new SessionLogSetInput(2, 25), new SessionLogSetInput(3, 30)));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal([20, 25, 30], result.Value.Sets.Select(set => set.Value));
+    }
+
+    [Fact]
     public void Create_rejects_a_session_without_sets()
     {
         var result = SessionLog.Create(UserId, "push_up", null, 1, Recorded, []);
