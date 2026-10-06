@@ -7,6 +7,10 @@ namespace Barrapp.Domain.Planning;
 /// reutilizará <see cref="Derive"/> variando las repeticiones en reserva por microciclo.
 /// </summary>
 /// <remarks>
+/// En un ejercicio medido en repeticiones, prescribir <c>M − rir</c> reps equivale a un
+/// <c>(M − rir) / M</c> del máximo: el porcentaje queda determinado por el máximo y la reserva
+/// (RIR), que es la unidad de intensidad del mesociclo (<c>GLOSSARY.md</c>), en vez de fijarse como
+/// una constante. Por eso la derivación se parametriza por RIR y no por un porcentaje fijo.
 /// Es pura y determinista. Siempre que el máximo lo permita (≥ 2) la derivación deja al menos una
 /// repetición en reserva y el tope prescrito queda estrictamente por debajo del máximo. Un máximo
 /// de 0 o 1 no admite reserva alguna, así que cae a un marcador neutro y positivo
