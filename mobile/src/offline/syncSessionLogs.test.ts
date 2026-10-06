@@ -148,9 +148,7 @@ describe('syncPendingSessionLogs', () => {
 
     expect(calls).toHaveLength(1);
     expect(calls[0].clientId).toBe('client-1');
-    expect(register).toHaveBeenCalledWith(
-      expect.objectContaining({ clientId: 'client-1' }),
-    );
+    expect(register).toHaveBeenCalledWith(expect.objectContaining({ clientId: 'client-1' }));
   });
 
   it('se detiene ante el primer fallo y deja lo pendiente para el siguiente intento', async () => {
