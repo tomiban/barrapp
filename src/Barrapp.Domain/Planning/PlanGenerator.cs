@@ -12,16 +12,15 @@ namespace Barrapp.Domain.Planning;
 /// entradas, mismo plan.
 /// </summary>
 /// <remarks>
-/// El reparto semanal depende de la frecuencia (#15): con 3 días cada sesión es full-body (US-11);
-/// con 4 días se alterna tren superior / tren inferior (días 1 y 3 = superior con su bloque de
-/// skill, días 2 y 4 = inferior), como pide US-12. Las frecuencias sin reparto declarado (hoy la
-/// de 5 días, pendiente de #16) devuelven
-/// <see cref="DomainErrors.Plan.UnsupportedFrequency"/>. La carga de fuerza se deriva del máximo
-/// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. El bloque de
-/// skill practica la etapa actual del atleta (#14) y, en los skills apalancados, ajusta ±1 serie
-/// según la <see cref="AthleteLever"/> y añade su nota de ritmo esperado (#68); el criterio de
-/// etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3; la
-/// semana 4 es un <i>deload</i> (#13) con RIR 4 y ~50 % del volumen, bajando las series de
+/// El reparto semanal depende de la frecuencia: con 3 días cada sesión es full-body (US-11); con
+/// 4 días se alterna tren superior / tren inferior (días 1 y 3 = superior con su bloque de skill,
+/// días 2 y 4 = inferior), como pide US-12; con 5 días el reparto es por patrón (#16/US-13), cada
+/// patrón ≈2×/semana y el bloque de skill abre todas las sesiones. La carga de fuerza se deriva
+/// del máximo del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. El
+/// bloque de skill practica la etapa actual del atleta (#14) y, en los skills apalancados, ajusta
+/// ±1 serie según la <see cref="AthleteLever"/> y añade su nota de ritmo esperado (#68); el
+/// criterio de etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3;
+/// la semana 4 es un <i>deload</i> (#13) con RIR 4 y ~50 % del volumen, bajando las series de
 /// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión. Con un máximo de 0
 /// en algún patrón, el hueco de fuerza se cubre con la regresión del ejercicio (#17).
 /// </remarks>
@@ -60,22 +59,42 @@ public static class PlanGenerator
         IncludesSkill: false,
         StrengthPatterns: [ExerciseGroup.Leg]);
 
+    /// <summary>Día de empuje del reparto de 5 días (#16): skill + empuje (2×/semana).</summary>
+    private static readonly SessionTemplate PushDay = new(
+        IncludesSkill: true,
+        StrengthPatterns: [ExerciseGroup.Push]);
+
+    /// <summary>Día de tirón del reparto de 5 días (#16): skill + tirón (2×/semana).</summary>
+    private static readonly SessionTemplate PullDay = new(
+        IncludesSkill: true,
+        StrengthPatterns: [ExerciseGroup.Pull]);
+
+    /// <summary>Día de pierna del reparto de 5 días (#16): skill + pierna (2×/semana).</summary>
+    private static readonly SessionTemplate LegDay = new(
+        IncludesSkill: true,
+        StrengthPatterns: [ExerciseGroup.Leg]);
+
+    /// <summary>Último día del reparto de 5 días (#16): skill + tirón y pierna juntos.</summary>
+    private static readonly SessionTemplate PullLegDay = new(
+        IncludesSkill: true,
+        StrengthPatterns: [ExerciseGroup.Pull, ExerciseGroup.Leg]);
+
     /// <summary>
     /// Patrón semanal declarado por frecuencia. Cada entrada es la plantilla de las sesiones que se
-    /// repiten idénticas en los cuatro microciclos; #16 añadirá el reparto por patrón de 5 días.
+    /// repiten idénticas en los cuatro microciclos: 3 días full-body, 4 días alterno tren superior /
+    /// tren inferior y 5 días por patrón (cada patrón ≈2×/semana y el skill en todas las sesiones).
     /// </summary>
-    private static IReadOnlyList<SessionTemplate>? WeeklySplitFor(int trainingDays) => trainingDays switch
+    private static IReadOnlyList<SessionTemplate> WeeklySplitFor(int trainingDays) => trainingDays switch
     {
         3 => [FullBody, FullBody, FullBody],
         4 => [Upper, Lower, Upper, Lower],
-        _ => null,
+        5 => [PushDay, PullDay, LegDay, PushDay, PullLegDay],
+        _ => throw new ArgumentOutOfRangeException(nameof(trainingDays)),
     };
 
     /// <summary>
     /// Genera el mesociclo para <paramref name="profile"/> y <paramref name="objective"/> contra el
     /// catálogo, practicando en el bloque de skill la etapa actual del atleta. Falla con
-    /// <see cref="DomainErrors.Plan.UnsupportedFrequency"/> si la frecuencia no tiene reparto
-    /// declarado (hoy 3 y 4 días; 5 pendiente de #16), con
     /// <see cref="DomainErrors.Plan.UnknownStage"/> si el skill no tiene esa etapa y con un error de
     /// catálogo si falta un ejercicio o un máximo obligatorios.
     /// </summary>
@@ -90,10 +109,6 @@ public static class PlanGenerator
         IGenerationCatalog catalog)
     {
         var weeklySplit = WeeklySplitFor(profile.TrainingDays);
-        if (weeklySplit is null)
-        {
-            return Result.Failure<Plan>(DomainErrors.Plan.UnsupportedFrequency);
-        }
 
         var skill = catalog.FindSkill(objective.SkillId);
         if (skill is null)
