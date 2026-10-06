@@ -1,48 +1,44 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { getApiBaseUrl } from '@/api/client';
-import { fetchPing, type PingResponse } from '@/api/ping';
+import { messageOf } from '@/api/messageOf';
+import { fetchPlan, type Plan } from '@/api/plan';
+import { fetchSessionLogs, registerSessionLog, type SessionLog } from '@/api/sessionLogs';
 import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
-import { Box, Stack } from '@/design-system/layout';
+import { Stack } from '@/design-system/layout';
 import { Header, Screen } from '@/design-system/Navigation';
-import { StatusBadge } from '@/design-system/StatusBadge';
-import { Text } from '@/design-system/Text';
+import {
+  SessionLoggingView,
+  type ExerciseSetsPayload,
+  type SaveFeedback,
+} from '@/features/sessionLog/SessionLoggingView';
 
-type PingState =
+type LoadState =
   | { status: 'loading' }
-  | { status: 'success'; data: PingResponse }
+  | { status: 'ready'; plan: Plan; logs: SessionLog[] }
   | { status: 'error'; message: string };
 
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : 'Error desconocido';
-}
-
 /**
- * Pantalla de inicio del esqueleto caminante: comprueba la conexión con el API
- * (`GET /ping`) usando los componentes del design system (`Screen`/`Header`,
- * `Loading`, `StatusBadge`, `Banner`, `Button` y `Text`), sin estilos ad hoc.
+ * Pantalla Entrenar: lee `GET /plan` (el motor lo genera a partir del perfil y el objetivo) y
+ * `GET /session-logs`, y delega el registro set a set en `SessionLoggingView`. Al guardar envía
+ * un `POST /session-logs` por ejercicio y relee los registros del servidor, sin fiarse del
+ * estado local (spec 0001, US-34).
  */
-export default function HomeScreen() {
-  const [state, setState] = useState<PingState>({ status: 'loading' });
+export default function TrainScreen() {
+  const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<SaveFeedback | null>(null);
 
-  const showSuccess = useCallback((data: PingResponse) => {
-    setState({ status: 'success', data });
+  const load = useCallback((signal?: AbortSignal) => {
+    Promise.all([fetchPlan(signal), fetchSessionLogs(signal)])
+      .then(([plan, logs]) => setState({ status: 'ready', plan, logs }))
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+        setState({ status: 'error', message: messageOf(error) });
+      });
   }, []);
-
-  const showError = useCallback((error: unknown) => {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return;
-    }
-    setState({ status: 'error', message: messageOf(error) });
-  }, []);
-
-  const load = useCallback(
-    (signal?: AbortSignal) => {
-      fetchPing(signal).then(showSuccess).catch(showError);
-    },
-    [showSuccess, showError],
-  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -52,45 +48,56 @@ export default function HomeScreen() {
 
   const retry = useCallback(() => {
     setState({ status: 'loading' });
+    setFeedback(null);
     load();
   }, [load]);
 
+  const handleSave = useCallback(async (day: number, exercises: ExerciseSetsPayload[]) => {
+    setSaving(true);
+    setFeedback(null);
+    try {
+      for (const exercise of exercises) {
+        await registerSessionLog({
+          exerciseId: exercise.exerciseId,
+          sessionDay: day,
+          sets: exercise.sets,
+        });
+      }
+
+      const logs = await fetchSessionLogs();
+      setState((current) => (current.status === 'ready' ? { ...current, logs } : current));
+      setFeedback({ role: 'confirmed', message: 'Registro de la sesión guardado.' });
+    } catch (error) {
+      setFeedback({ role: 'error', message: messageOf(error) });
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
   return (
-    <Screen header={<Header title="Conexión con el API" />} testID="home-screen">
-      <Stack gap="md">
-        <Text variant="labelTechnical" className="text-text-muted">
-          BARRAPP · ESQUELETO CAMINANTE
-        </Text>
+    <Screen header={<Header title="Entrenar" />} testID="train-screen">
+      {state.status === 'loading' ? (
+        <Loading label="Preparando la sesión…" testID="train-loading" />
+      ) : null}
 
-        {state.status === 'loading' ? (
-          <Loading label={`Consultando ${getApiBaseUrl()}/ping…`} testID="home-loading" />
-        ) : null}
+      {state.status === 'error' ? (
+        <Stack gap="sm">
+          <Banner role="error" message={state.message} testID="train-error" />
+          <Button onPress={retry} testID="train-retry">
+            Reintentar
+          </Button>
+        </Stack>
+      ) : null}
 
-        {state.status === 'success' ? (
-          <Box className="gap-sm rounded-md border border-border bg-surface p-md">
-            <StatusBadge role="confirmed" label="Conectado" testID="home-status" />
-            <Text variant="headlineMd">{state.data.message}</Text>
-            <Text variant="bodySm" className="text-text-muted">
-              Servidor: {state.data.serverTimeUtc}
-            </Text>
-          </Box>
-        ) : null}
-
-        {state.status === 'error' ? (
-          <Stack gap="sm">
-            <StatusBadge role="error" label="Sin conexión" testID="home-status" />
-            <Banner role="error" message={state.message} testID="home-error" />
-          </Stack>
-        ) : null}
-
-        <Text variant="bodySm" className="text-text-muted">
-          API: {getApiBaseUrl()}
-        </Text>
-
-        <Button onPress={retry} testID="home-retry">
-          Reintentar
-        </Button>
-      </Stack>
+      {state.status === 'ready' ? (
+        <SessionLoggingView
+          plan={state.plan}
+          logs={state.logs}
+          saving={saving}
+          feedback={feedback}
+          onSave={handleSave}
+        />
+      ) : null}
     </Screen>
   );
 }
