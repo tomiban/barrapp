@@ -8,9 +8,10 @@ namespace Barrapp.Domain.UnitTests;
 
 /// <summary>
 /// Reglas del motor de generación (#10): da un mesociclo de cuatro semanas con reparto full-body
-/// de 3 días o alterno tren superior / tren inferior de 4 días (#15), cada patrón recibe trabajo
-/// al menos dos veces por semana, cada sesión empieza por el bloque de skill en la etapa actual del
-/// atleta (#14) y el resultado es determinista. La carga de fuerza se deriva del máximo del atleta
+/// de 3 días, alterno tren superior / tren inferior de 4 días (#15) o por patrón de 5 días (#16),
+/// cada patrón recibe trabajo al menos dos veces por semana, cada sesión empieza por el bloque de
+/// skill en la etapa actual del atleta (#14) y el resultado es determinista. La carga de fuerza se
+/// deriva del máximo del atleta
 /// y nunca llega al fallo (#11); el bloque de skill se ajusta por la palanca del atleta en los
 /// skills apalancados (#68). El RIR baja de 3 a 1 en las tres primeras semanas, lo que sube las
 /// reps y el volumen (#12); la semana 4 es un deload con RIR 4 y ~50 % del volumen de la semana 3
@@ -137,6 +138,94 @@ public sealed class PlanGeneratorTests
         Assert.Equal(7, StrengthItem(plan, 0, day: 1, "push_up").RepsMax); // RIR 3 (base)
         Assert.Equal(8, StrengthItem(plan, 1, day: 1, "push_up").RepsMax); // RIR 2
         Assert.Equal(9, StrengthItem(plan, 2, day: 1, "push_up").RepsMax); // RIR 1
+    }
+
+    [Fact]
+    public void Generate_for_five_days_builds_the_pattern_split_with_five_sessions_per_week()
+    {
+        var plan = PlanGenerator.Generate(BuildProfile(5), BuildObjective(), FirstStageOrder, Catalog()).Value;
+
+        Assert.Equal(5, plan.TrainingDays);
+        Assert.All(plan.Microcycles, microcycle => Assert.Equal(5, microcycle.Sessions.Count));
+        Assert.All(
+            plan.Microcycles,
+            microcycle => Assert.Equal(new[] { 1, 2, 3, 4, 5 }, microcycle.Sessions.Select(session => session.Day)));
+
+        // D1 (#16): D1 empuje+skill, D2 tirón, D3 pierna, D4 empuje+skill y D5 tirón+pierna.
+        foreach (var microcycle in plan.Microcycles)
+        {
+            var strengthByDay = microcycle.Sessions.ToDictionary(
+                session => session.Day,
+                session => session.Items
+                    .Where(item => item.Role == SessionItemRole.Strength)
+                    .Select(item => item.ExerciseId)
+                    .ToArray());
+
+            Assert.Equal(new[] { "push_up" }, strengthByDay[1]);
+            Assert.Equal(new[] { "pull_up" }, strengthByDay[2]);
+            Assert.Equal(new[] { "squat" }, strengthByDay[3]);
+            Assert.Equal(new[] { "push_up" }, strengthByDay[4]);
+            Assert.Equal(new[] { "pull_up", "squat" }, strengthByDay[5]);
+        }
+    }
+
+    [Fact]
+    public void Generate_for_five_days_practises_the_skill_in_every_session()
+    {
+        var plan = PlanGenerator.Generate(BuildProfile(5), BuildObjective(), FirstStageOrder, Catalog()).Value;
+
+        // En 5 días el reparto es por patrón y el bloque de skill abre todas las sesiones (D1);
+        // el core sigue cerrando la anatomía de la sesión.
+        Assert.All(
+            plan.Microcycles.SelectMany(microcycle => microcycle.Sessions),
+            session =>
+            {
+                Assert.Equal(SessionItemRole.Skill, session.Items[0].Role);
+                Assert.Equal(SessionItemRole.Core, session.Items[^1].Role);
+            });
+    }
+
+    [Fact]
+    public void Generate_for_five_days_gives_every_strength_pattern_work_twice_per_week()
+    {
+        var plan = PlanGenerator.Generate(BuildProfile(5), BuildObjective(), FirstStageOrder, Catalog()).Value;
+
+        foreach (var microcycle in plan.Microcycles)
+        {
+            var workByPattern = microcycle.Sessions
+                .SelectMany(session => session.Items)
+                .Where(item => item.Role == SessionItemRole.Strength)
+                .GroupBy(item => item.Pattern!.Value)
+                .ToDictionary(group => group.Key, group => group.Count());
+
+            // Reparto por patrón (US-13): empuje y tirón 2×/semana en sus dos días y pierna 2×/semana
+            // (días 3 y 5). El invariante de cobertura se mantiene en el reparto de 5 días.
+            Assert.Equal(2, workByPattern[ExerciseGroup.Push]);
+            Assert.Equal(2, workByPattern[ExerciseGroup.Pull]);
+            Assert.Equal(2, workByPattern[ExerciseGroup.Leg]);
+        }
+    }
+
+    [Fact]
+    public void Generate_for_five_days_applies_the_rir_wave_and_the_deload_to_the_pattern_split()
+    {
+        // La onda de RIR (#12) atraviesa el reparto por patrón: con un máximo de 10, el tope de
+        // empuje del día 1 sube 7 → 8 → 9 en las tres primeras semanas; la semana 4 es deload
+        // (#13) y baja a RIR 4 (tope 6) con las series de fuerza 3 → 2. La anatomía no cambia.
+        const int maximum = 10;
+        var plan = PlanGenerator
+            .Generate(BuildProfile(5, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Value;
+
+        Assert.Equal(7, StrengthItem(plan, 0, day: 1, "push_up").RepsMax); // RIR 3 (base)
+        Assert.Equal(8, StrengthItem(plan, 1, day: 1, "push_up").RepsMax); // RIR 2
+        Assert.Equal(9, StrengthItem(plan, 2, day: 1, "push_up").RepsMax); // RIR 1
+        Assert.Equal(6, StrengthItem(plan, 3, day: 1, "push_up").RepsMax); // RIR 4 (deload)
+        Assert.Equal(3, StrengthItem(plan, 2, day: 1, "push_up").Sets);
+        Assert.Equal(2, StrengthItem(plan, 3, day: 1, "push_up").Sets);
+
+        // El deload (#13) no toca el bloque de skill de las sesiones de 5 días.
+        Assert.Equal(3, plan.Microcycles[3].Sessions[0].Items[0].Sets);
     }
 
     [Fact]
@@ -615,23 +704,13 @@ public sealed class PlanGeneratorTests
     [Theory]
     [InlineData(3)]
     [InlineData(4)]
+    [InlineData(5)]
     public void Generate_is_deterministic_for_the_supported_frequencies(int trainingDays)
     {
         var first = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog()).Value;
         var second = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog()).Value;
 
         Assert.Equal(Snapshot(first), Snapshot(second));
-    }
-
-    [Theory]
-    [InlineData(5)]
-    public void Generate_fails_for_a_frequency_without_a_declared_weekly_split(int trainingDays)
-    {
-        var result = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog());
-
-        Assert.True(result.IsFailure);
-        Assert.Equal(DomainErrors.Plan.UnsupportedFrequency, result.Error);
-        Assert.Contains("solo se puede generar un plan de 3 o 4 días", result.Error.Description);
     }
 
     private static string Snapshot(Plan plan) =>
