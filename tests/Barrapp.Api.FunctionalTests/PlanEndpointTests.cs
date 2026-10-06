@@ -81,6 +81,30 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
     }
 
     [Fact]
+    public async Task Get_plan_reports_the_current_stage_and_its_criterion()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+        await client.PutAsJsonAsync("/catalog/progress/planche", new { stageOrder = 2 });
+
+        using var response = await client.GetAsync("/plan");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+
+        // La etapa actual (etapa 2 de planche, «Planche agrupada») viaja en el plan con su criterio.
+        Assert.Equal(2, plan!.SkillStage.Order);
+        Assert.Equal("Planche agrupada", plan.SkillStage.Name);
+        Assert.Equal("planche-tuck", plan.SkillStage.ExerciseId);
+        Assert.Equal("seconds", plan.SkillStage.Criterion.Metric);
+        Assert.Equal(10, plan.SkillStage.Criterion.Target);
+        Assert.Equal(3, plan.SkillStage.Criterion.Sets);
+        Assert.False(string.IsNullOrWhiteSpace(plan.SkillStage.Notes));
+    }
+
+    [Fact]
     public async Task Get_plan_adjusts_the_skill_block_and_its_note_by_the_athlete_lever()
     {
         using var client = factory.CreateClient();
@@ -238,6 +262,29 @@ public sealed class PlanWithoutObjectiveEndpointTests(BarrappApiFactory factory)
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         Assert.NotNull(problem);
         Assert.Contains("No hay ningún objetivo guardado para este atleta.", problem!.Detail);
+    }
+}
+
+/// <summary>Clase aparte: perfil y objetivo, pero sin progresión guardada en el skill.</summary>
+public sealed class PlanWithoutProgressEndpointTests(BarrappApiFactory factory)
+    : IClassFixture<BarrappApiFactory>
+{
+    [Fact]
+    public async Task Get_plan_without_saved_progress_reports_the_first_stage_of_the_ladder()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.GetAsync("/plan");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+
+        // Sin progreso guardado el atleta parte de la etapa 1 de la escalera.
+        Assert.Equal(1, plan!.SkillStage.Order);
+        Assert.Equal("planche-lean", plan.SkillStage.ExerciseId);
     }
 }
 

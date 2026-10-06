@@ -1,3 +1,5 @@
+using Barrapp.Application.Features.Catalog;
+
 namespace Barrapp.Application.Features.Plans;
 
 /// <summary>Fila de una sesión tal y como la consume la app.</summary>
@@ -36,8 +38,10 @@ public sealed record MicrocycleResponse(int Number, IReadOnlyList<SessionRespons
 /// <summary>Plan mensual tal y como lo consume la app: el mesociclo semana a semana.</summary>
 /// <param name="SkillId">Slug del skill objetivo.</param>
 /// <param name="TrainingDays">Días de entrenamiento por semana.</param>
+/// <param name="SkillStage">Etapa actual del skill objetivo, con su criterio de avance.</param>
 /// <param name="Microcycles">Semanas del mesociclo.</param>
 public sealed record PlanResponse(
     string SkillId,
     int TrainingDays,
+    SkillStageResponse SkillStage,
     IReadOnlyList<MicrocycleResponse> Microcycles);
