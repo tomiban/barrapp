@@ -63,17 +63,22 @@ internal sealed class GenerateSoloSessionCommandHandler(
             return Result.Failure<SoloSessionResponse>(generation.Error);
         }
 
-        // El foco resuelto (sobre todo para «sorpréndeme») va en la respuesta: el motor ya lo ha
-        // validado, así que el segundo pase es puro y nunca vuelve a fallar.
-        var composition = SoloSessionGenerator.ResolveFocus(parameters, objective).Value;
+        // El foco resuelto (sobre todo para «sorpréndeme») va en la respuesta. El motor ya lo ha
+        // validado dentro de Generate, así que este segundo pase es puro y no debería fallar; se
+        // guarda igualmente el resultado por si el dominio cambia la regla (FIX-6).
+        var composition = SoloSessionGenerator.ResolveFocus(parameters, objective);
+        if (composition.IsFailure)
+        {
+            return Result.Failure<SoloSessionResponse>(composition.Error);
+        }
 
         var history = SessionSuelta.Create(
             SingleUser.Id,
             request.TimeMinutes,
-            ToEnergy(request.Energy),
-            ToFocus(request.Focus),
-            composition.Pattern,
-            composition.SkillId,
+            SueltaCodes.FromEnergy(request.Energy),
+            SueltaCodes.FromFocus(request.Focus),
+            composition.Value.Pattern,
+            composition.Value.SkillId,
             DateTimeOffset.UtcNow,
             generation.Value.Items.Select(item => new SessionSueltaItemInput(
                 item.ExerciseId,
@@ -93,7 +98,7 @@ internal sealed class GenerateSoloSessionCommandHandler(
         repository.Add(history.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(ToResponse(request, composition, generation.Value));
+        return Result.Success(ToResponse(request, composition.Value, generation.Value));
     }
 
     private static SoloSessionParameters ToParameters(GenerateSoloSessionCommand command) =>
@@ -106,20 +111,8 @@ internal sealed class GenerateSoloSessionCommandHandler(
                 60 => SoloSessionTime.Minutes60,
                 _ => throw new ArgumentOutOfRangeException(nameof(command), "Tiempo fuera del vocabulario."),
             },
-            command.Energy switch
-            {
-                "baja" => SoloSessionEnergy.Low,
-                "media" => SoloSessionEnergy.Medium,
-                "alta" => SoloSessionEnergy.High,
-                _ => throw new ArgumentOutOfRangeException(nameof(command), "Energía fuera del vocabulario."),
-            },
-            command.Focus switch
-            {
-                "patron" => SoloSessionFocus.Pattern,
-                "skill" => SoloSessionFocus.Skill,
-                "sorprendeme" => SoloSessionFocus.Surprise,
-                _ => throw new ArgumentOutOfRangeException(nameof(command), "Foco fuera del vocabulario."),
-            },
+            SueltaCodes.FromEnergy(command.Energy),
+            SueltaCodes.FromFocus(command.Focus),
             command.Pattern switch
             {
                 "push" => ExerciseGroup.Push,
@@ -127,22 +120,6 @@ internal sealed class GenerateSoloSessionCommandHandler(
                 "leg" => ExerciseGroup.Leg,
                 _ => null,
             });
-
-    private static SoloSessionEnergy ToEnergy(string energy) => energy switch
-    {
-        "baja" => SoloSessionEnergy.Low,
-        "media" => SoloSessionEnergy.Medium,
-        "alta" => SoloSessionEnergy.High,
-        _ => throw new ArgumentOutOfRangeException(nameof(energy), "Energía fuera del vocabulario."),
-    };
-
-    private static SoloSessionFocus ToFocus(string focus) => focus switch
-    {
-        "patron" => SoloSessionFocus.Pattern,
-        "skill" => SoloSessionFocus.Skill,
-        "sorprendeme" => SoloSessionFocus.Surprise,
-        _ => throw new ArgumentOutOfRangeException(nameof(focus), "Foco fuera del vocabulario."),
-    };
 
     private SoloSessionResponse ToResponse(
         GenerateSoloSessionCommand request,
@@ -162,7 +139,7 @@ internal sealed class GenerateSoloSessionCommandHandler(
     private static SessionItemResponse ToItem(SessionItem item, IKnowledgeBase catalog) => new(
         item.ExerciseId,
         catalog.FindExercise(item.ExerciseId)?.Name ?? item.ExerciseId,
-        ToCode(item.Role),
+        CatalogMappings.ToCode(item.Role),
         item.Pattern is null ? null : CatalogMappings.ToCode(item.Pattern.Value),
         item.Sets,
         item.RepsMin,
@@ -170,12 +147,4 @@ internal sealed class GenerateSoloSessionCommandHandler(
         item.HoldSecondsMin,
         item.HoldSecondsMax,
         item.Note);
-
-    private static string ToCode(SessionItemRole role) => role switch
-    {
-        SessionItemRole.Skill => "skill",
-        SessionItemRole.Strength => "strength",
-        SessionItemRole.Core => "core",
-        _ => throw new ArgumentOutOfRangeException(nameof(role)),
-    };
 }

@@ -7,7 +7,12 @@ using Barrapp.Domain.Sessions;
 
 namespace Barrapp.Application.Features.SoloSessions;
 
-/// <summary>Traducción del vocabulario de la sesión suelta a los códigos del API.</summary>
+/// <summary>
+/// Traducción del vocabulario de la sesión suelta a los códigos del API (y viceversa). Es la única
+/// casa de los códigos de cable <c>baja/media/alta</c> (energía) y <c>patron/skill/sorprendeme</c>
+/// (foco): tanto la generación (código → dominio) como la respuesta y el historial (dominio →
+/// código) pasan por aquí, sin switches duplicados.
+/// </summary>
 internal static class SueltaCodes
 {
     public static string ToEnergy(SoloSessionEnergy energy) => energy switch
@@ -31,6 +36,22 @@ internal static class SueltaCodes
         SessionSueltaStatus.Generated => "generada",
         SessionSueltaStatus.Recorded => "registrada",
         _ => throw new ArgumentOutOfRangeException(nameof(status)),
+    };
+
+    public static SoloSessionEnergy FromEnergy(string energy) => energy switch
+    {
+        "baja" => SoloSessionEnergy.Low,
+        "media" => SoloSessionEnergy.Medium,
+        "alta" => SoloSessionEnergy.High,
+        _ => throw new ArgumentOutOfRangeException(nameof(energy), "Energía fuera del vocabulario."),
+    };
+
+    public static SoloSessionFocus FromFocus(string focus) => focus switch
+    {
+        "patron" => SoloSessionFocus.Pattern,
+        "skill" => SoloSessionFocus.Skill,
+        "sorprendeme" => SoloSessionFocus.Surprise,
+        _ => throw new ArgumentOutOfRangeException(nameof(focus), "Foco fuera del vocabulario."),
     };
 }
 
@@ -59,7 +80,7 @@ internal static class SueltaResponses
     private static SessionItemResponse ToItem(SessionSueltaItem item, IKnowledgeBase catalog) => new(
         item.ExerciseId,
         catalog.FindExercise(item.ExerciseId)?.Name ?? item.ExerciseId,
-        ToCode(item.Role),
+        CatalogMappings.ToCode(item.Role),
         item.Pattern is null ? null : CatalogMappings.ToCode(item.Pattern.Value),
         item.Sets,
         item.RepsMin,
@@ -67,12 +88,4 @@ internal static class SueltaResponses
         item.HoldSecondsMin,
         item.HoldSecondsMax,
         item.Note);
-
-    private static string ToCode(SessionItemRole role) => role switch
-    {
-        SessionItemRole.Skill => "skill",
-        SessionItemRole.Strength => "strength",
-        SessionItemRole.Core => "core",
-        _ => throw new ArgumentOutOfRangeException(nameof(role)),
-    };
 }
