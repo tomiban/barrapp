@@ -1,16 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { Plan, PlanItemRole, PlanSessionItem } from '@/api/plan';
 import type { SessionLog } from '@/api/sessionLogs';
-import { EmptyState } from '@/design-system/Feedback';
+import { Banner, EmptyState } from '@/design-system/Feedback';
+import { Button } from '@/design-system/Button';
+import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
 import { Stack } from '@/design-system/layout';
 import { ListRow, SectionHeader } from '@/design-system/ListRow';
 import { StatusBadge } from '@/design-system/StatusBadge';
 import { Text } from '@/design-system/Text';
 import { TextField } from '@/design-system/TextField';
-import { Button } from '@/design-system/Button';
-import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
-import { Banner } from '@/design-system/Feedback';
 
 /** Papeles de la sesión que se registran serie a serie (hoy solo fuerza). */
 const LOGGED_ROLES: readonly PlanItemRole[] = ['strength'];
