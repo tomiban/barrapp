@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { messageOf } from '@/api/messageOf';
 import { advanceSkillStage } from '@/api/catalog/progress';
-import { fetchPlan, type Plan } from '@/api/plan';
+import { closeMesocycle, fetchPlan, type Plan } from '@/api/plan';
 import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { CloudOff } from '@/design-system/Icon';
@@ -10,6 +10,10 @@ import { Stack } from '@/design-system/layout';
 import { SectionHeader } from '@/design-system/ListRow';
 import { Header, Screen } from '@/design-system/Navigation';
 import { StageAdvanceAction, type StageAdvanceState } from '@/features/plan/StageAdvanceAction';
+import {
+  CloseMesocycleAction,
+  type CloseMesocycleState,
+} from '@/features/plan/CloseMesocycleAction';
 import { MesocycleHistory } from '@/features/history/MesocycleHistory';
 import { PlanView } from '@/features/plan/PlanView';
 import { openPlanStore } from '@/offline/planStore';
@@ -36,6 +40,7 @@ function toLoadState(result: PlanReadResult): LoadState {
 export default function PlanScreen() {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [advanceState, setAdvanceState] = useState<StageAdvanceState>({ status: 'idle' });
+  const [closeState, setCloseState] = useState<CloseMesocycleState>({ status: 'idle' });
 
   const load = useCallback((signal?: AbortSignal) => {
     void (async () => {
@@ -87,6 +92,26 @@ export default function PlanScreen() {
     }
   }, [state, load]);
 
+  const close = useCallback(async () => {
+    if (state.status !== 'ready' || state.offline) {
+      return;
+    }
+
+    setCloseState({ status: 'running' });
+    try {
+      await closeMesocycle();
+      setCloseState({ status: 'success' });
+
+      // Sin mesociclo activo, el próximo GET /plan regenera con los máximos ajustados.
+      load();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      setCloseState({ status: 'error', message: messageOf(error) });
+    }
+  }, [state, load]);
+
   return (
     <Screen testID="plan-screen" header={<Header title="Plan" />}>
       {state.status === 'loading' ? (
@@ -117,6 +142,10 @@ export default function PlanScreen() {
 
           {!state.offline ? (
             <StageAdvanceAction state={advanceState} onAdvance={advance} testID="plan-advance" />
+          ) : null}
+
+          {!state.offline ? (
+            <CloseMesocycleAction state={closeState} onClose={close} testID="plan-close" />
           ) : null}
 
           <SectionHeader label="Historial de mesociclos" testID="plan-history-header" />

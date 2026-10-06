@@ -191,6 +191,45 @@ public sealed class AthleteProfile
         return Result.Success();
     }
 
+    /// <summary>
+    /// Sustituye los máximos de los ejercicios indicados (p. ej. el ajuste del cierre del mesociclo,
+    /// ticket #24). A diferencia de <see cref="Update"/>, no exige la cobertura completa: solo toca
+    /// los códigos dados. Valida cada entrada —código conocido y repeticiones no negativas— y es
+    /// atómico: si algo falla, el perfil no cambia.
+    /// </summary>
+    public Result UpdateMaximums(IReadOnlyCollection<MaximumInput> maximums)
+    {
+        if (maximums is null || maximums.Count == 0)
+        {
+            return Result.Success();
+        }
+
+        var built = new List<Maximum>(maximums.Count);
+        foreach (var input in maximums)
+        {
+            var creation = Maximum.Create(input.ExerciseCode, input.Repetitions);
+            if (creation.IsFailure)
+            {
+                return Result.Failure(creation.Error);
+            }
+
+            built.Add(creation.Value);
+        }
+
+        var codes = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var maximum in built)
+        {
+            if (!codes.Add(maximum.ExerciseCode))
+            {
+                return Result.Failure(DomainErrors.AthleteProfile.DuplicateExerciseMaximum);
+            }
+        }
+
+        ApplyMaximums(built);
+
+        return Result.Success();
+    }
+
     private static Result ValidateProfile(
         double weightKilograms,
         double heightCentimeters,
