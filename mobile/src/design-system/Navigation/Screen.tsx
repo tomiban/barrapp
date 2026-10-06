@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { View, type ViewProps } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import type { Edge } from 'react-native-safe-area-context';
 
 import { cn } from '../utils/cn';
+import { SafeAreaView } from './SafeAreaView';
 
 /**
  * Props de `Screen`: las de un `View` más el encabezado y el área de contenido.

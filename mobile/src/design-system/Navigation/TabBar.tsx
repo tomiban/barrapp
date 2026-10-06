@@ -1,10 +1,10 @@
 import type { Href } from 'expo-router';
 import { TabList, TabSlot, Tabs, TabTrigger } from 'expo-router/ui';
 import { Pressable, type PressableProps } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '../Text';
 import { cn } from '../utils/cn';
+import { SafeAreaView } from './SafeAreaView';
 
 /**
  * Definición de una pestaña: nombre lógico, ruta de Expo Router y etiqueta.
