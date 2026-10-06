@@ -1,7 +1,12 @@
 import * as SQLite from 'expo-sqlite';
 
 import type { SessionLog } from '@/api/sessionLogs';
-import { createSessionLogOutbox, mergeSessionLogs, openSessionLogOutbox, pendingToSessionLog } from './sessionLogOutbox';
+import {
+  createSessionLogOutbox,
+  mergeSessionLogs,
+  openSessionLogOutbox,
+  pendingToSessionLog,
+} from './sessionLogOutbox';
 import type { EnqueueSessionLogInput } from './sessionLogOutbox';
 
 jest.mock('expo-sqlite', () => ({
@@ -32,17 +37,25 @@ function createInMemoryOutboxTable() {
     execAsync: jest.fn(async (_source: string): Promise<void> => undefined),
     async runAsync(source: string, ...params: unknown[]): Promise<unknown> {
       if (source.includes('INSERT INTO session_log_outbox')) {
-        const [client_id, exercise_id, exercise_name, metric, mesocycle_id, session_day, sets, updated_at] =
-          params as [
-            string,
-            string,
-            string,
-            string | null,
-            string | null,
-            number,
-            string,
-            string,
-          ];
+        const [
+          client_id,
+          exercise_id,
+          exercise_name,
+          metric,
+          mesocycle_id,
+          session_day,
+          sets,
+          updated_at,
+        ] = params as [
+          string,
+          string,
+          string,
+          string | null,
+          string | null,
+          number,
+          string,
+          string,
+        ];
         rows.set(`${exercise_id}:${session_day}`, {
           client_id,
           exercise_id,
@@ -257,21 +270,24 @@ describe('sessionLogOutbox', () => {
         sets: [{ setNumber: 1, value: 8, effort: null }],
       };
 
-      const merged = mergeSessionLogs([serverLog], [
-        {
-          clientId: 'client-1',
-          exerciseId: 'push_up',
-          exerciseName: 'Flexiones',
-          metric: 'reps',
-          mesocycleId: null,
-          sessionDay: 2,
-          sets: [
-            { setNumber: 1, value: 10, effort: null },
-            { setNumber: 2, value: 11, effort: null },
-          ],
-          updatedAt: '2026-10-05T10:00:00.000Z',
-        },
-      ]);
+      const merged = mergeSessionLogs(
+        [serverLog],
+        [
+          {
+            clientId: 'client-1',
+            exerciseId: 'push_up',
+            exerciseName: 'Flexiones',
+            metric: 'reps',
+            mesocycleId: null,
+            sessionDay: 2,
+            sets: [
+              { setNumber: 1, value: 10, effort: null },
+              { setNumber: 2, value: 11, effort: null },
+            ],
+            updatedAt: '2026-10-05T10:00:00.000Z',
+          },
+        ],
+      );
 
       expect(merged).toHaveLength(1);
       expect(merged[0]).toMatchObject({ id: 'client-1', sets: PUSH_UP_INPUT.sets });

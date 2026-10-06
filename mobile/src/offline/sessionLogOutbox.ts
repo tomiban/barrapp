@@ -102,9 +102,9 @@ const FIND_BY_BUSINESS_KEY_SQL = `
 
 /** Identificador idempotente generado en el cliente (uuid v4), con respaldo para entornos sin `crypto.randomUUID`. */
 function newClientId(): string {
-  const globalCrypto = globalThis.crypto as Crypto | undefined;
-  if (globalCrypto?.randomUUID) {
-    return globalCrypto.randomUUID();
+  const randomUUID = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto?.randomUUID;
+  if (typeof randomUUID === 'function') {
+    return randomUUID();
   }
   const randomHex = () => Math.floor(Math.random() * 16).toString(16);
   const hex = (count: number) => Array.from({ length: count }, randomHex).join('');
@@ -207,7 +207,10 @@ export function pendingToSessionLog(pending: PendingSessionLog): SessionLog {
  * un ejercicio y día pendiente de sincronizar gana a su copia del servidor (last-write-wins, es la
  * escritura más reciente) y solo aparece una vez.
  */
-export function mergeSessionLogs(serverLogs: SessionLog[], pending: PendingSessionLog[]): SessionLog[] {
+export function mergeSessionLogs(
+  serverLogs: SessionLog[],
+  pending: PendingSessionLog[],
+): SessionLog[] {
   const pendingKeys = new Set(pending.map((entry) => `${entry.exerciseId}:${entry.sessionDay}`));
   const fromServer = serverLogs.filter(
     (log) => !pendingKeys.has(`${log.exerciseId}:${log.sessionDay}`),
