@@ -9,18 +9,23 @@ namespace Barrapp.Domain.UnitTests;
 /// <summary>
 /// Reglas del motor de generación (#10): da un mesociclo de cuatro semanas con reparto full-body
 /// de 3 días, cada patrón recibe trabajo al menos dos veces por semana, cada sesión empieza por el
-/// bloque de skill y el resultado es determinista. La carga de fuerza se deriva del máximo del
-/// atleta y nunca llega al fallo (#11). Solo se prueba por su interfaz pública.
+/// bloque de skill en la etapa actual del atleta (#14) y el resultado es determinista. La carga de
+/// fuerza se deriva del máximo del atleta y nunca llega al fallo (#11). Solo se prueba por su
+/// interfaz pública.
 /// </summary>
 public sealed class PlanGeneratorTests
 {
     private static readonly Guid UserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private const string SkillId = "planche";
+    private const string PistolSkillId = "pistol-squat";
+
+    /// <summary>Etapa 1 de la escalera, explícita en los tests que fijan esa etapa.</summary>
+    private const int FirstStageOrder = 1;
 
     [Fact]
     public void Generate_returns_a_four_week_plan_with_three_sessions_per_week()
     {
-        var result = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), Catalog());
+        var result = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog());
 
         Assert.True(result.IsSuccess);
         Assert.Equal(SkillId, result.Value.SkillId);
@@ -32,7 +37,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_gives_every_strength_pattern_work_at_least_twice_per_week()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog()).Value;
 
         foreach (var microcycle in plan.Microcycles)
         {
@@ -55,7 +60,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_builds_each_session_as_skill_then_strength_by_pattern_then_core()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog()).Value;
 
         foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
         {
@@ -86,7 +91,7 @@ public sealed class PlanGeneratorTests
         var catalog = Catalog();
         var firstStage = catalog.FindSkill(SkillId)!.Stages.Single(stage => stage.Order == 1);
 
-        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), catalog).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, catalog).Value;
 
         foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
         {
@@ -100,6 +105,76 @@ public sealed class PlanGeneratorTests
     }
 
     [Fact]
+    public void Generate_practises_the_current_stage_in_the_skill_block()
+    {
+        var catalog = Catalog();
+        var currentStage = catalog.FindSkill(SkillId)!.Stages.Single(stage => stage.Order == 3);
+
+        var plan = PlanGenerator.Generate(
+            BuildProfile(3),
+            BuildObjective(),
+            currentStage.Order,
+            catalog).Value;
+
+        foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
+        {
+            var firstItem = session.Items[0];
+
+            Assert.Equal(SessionItemRole.Skill, firstItem.Role);
+            Assert.Equal(currentStage.ExerciseId, firstItem.ExerciseId);
+            Assert.Equal(currentStage.Criterion.Sets, firstItem.Sets);
+            Assert.Equal(currentStage.Criterion.Target, firstItem.HoldSecondsMax);
+            Assert.Null(firstItem.RepsMax);
+        }
+    }
+
+    [Fact]
+    public void Generate_builds_a_reps_skill_block_for_a_reps_stage()
+    {
+        var catalog = Catalog();
+        var currentStage = catalog.FindSkill(PistolSkillId)!.Stages.Single(stage => stage.Order == 2);
+
+        var plan = PlanGenerator.Generate(
+            BuildProfile(3),
+            BuildObjective(PistolSkillId),
+            currentStage.Order,
+            catalog).Value;
+
+        var firstItem = plan.Microcycles[0].Sessions[0].Items[0];
+
+        Assert.Equal(SessionItemRole.Skill, firstItem.Role);
+        Assert.Equal(currentStage.ExerciseId, firstItem.ExerciseId);
+        Assert.Equal(currentStage.Criterion.Sets, firstItem.Sets);
+        Assert.Equal(currentStage.Criterion.Target, firstItem.RepsMin);
+        Assert.Equal(currentStage.Criterion.Target, firstItem.RepsMax);
+        Assert.Null(firstItem.HoldSecondsMax);
+    }
+
+    [Fact]
+    public void Generate_defaults_to_the_first_stage_when_there_is_no_progress()
+    {
+        var catalog = Catalog();
+        var firstStage = catalog.FindSkill(SkillId)!.Stages.Single(stage => stage.Order == 1);
+
+        var plan = PlanGenerator
+            .Generate(BuildProfile(3), BuildObjective(), stageOrder: null, catalog)
+            .Value;
+
+        Assert.All(
+            plan.Microcycles.SelectMany(microcycle => microcycle.Sessions),
+            session => Assert.Equal(firstStage.ExerciseId, session.Items[0].ExerciseId));
+    }
+
+    [Fact]
+    public void Generate_fails_when_the_current_stage_is_not_in_the_ladder()
+    {
+        var result = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), stageOrder: 99, Catalog());
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(DomainErrors.Plan.UnknownStage, result.Error);
+    }
+
+    [Fact]
     public void Generate_characterises_the_base_week_strength_reps_for_each_maximum()
     {
         // Semana base (RIR 3): el tope es máximo - 3 y el rango baja dos repeticiones.
@@ -107,6 +182,7 @@ public sealed class PlanGeneratorTests
             .Generate(
                 BuildProfile(3, pushUpMaximum: 8, pullUpMaximum: 4, squatMaximum: 20),
                 BuildObjective(),
+                FirstStageOrder,
                 Catalog())
             .Value;
 
@@ -122,10 +198,10 @@ public sealed class PlanGeneratorTests
     public void Generate_scales_strength_reps_with_the_maximum()
     {
         var lowMaximums = PlanGenerator
-            .Generate(BuildProfile(3, pushUpMaximum: 6, pullUpMaximum: 6, squatMaximum: 6), BuildObjective(), Catalog())
+            .Generate(BuildProfile(3, pushUpMaximum: 6, pullUpMaximum: 6, squatMaximum: 6), BuildObjective(), FirstStageOrder, Catalog())
             .Value;
         var highMaximums = PlanGenerator
-            .Generate(BuildProfile(3, pushUpMaximum: 15, pullUpMaximum: 15, squatMaximum: 15), BuildObjective(), Catalog())
+            .Generate(BuildProfile(3, pushUpMaximum: 15, pullUpMaximum: 15, squatMaximum: 15), BuildObjective(), FirstStageOrder, Catalog())
             .Value;
 
         foreach (var exerciseId in new[] { "push_up", "pull_up", "squat" })
@@ -148,7 +224,7 @@ public sealed class PlanGeneratorTests
     {
         var profile = BuildProfile(3, pushUpMaximum, pullUpMaximum, squatMaximum);
 
-        var plan = PlanGenerator.Generate(profile, BuildObjective(), Catalog()).Value;
+        var plan = PlanGenerator.Generate(profile, BuildObjective(), FirstStageOrder, Catalog()).Value;
 
         foreach (var item in StrengthItems(plan))
         {
@@ -175,7 +251,7 @@ public sealed class PlanGeneratorTests
     public void Generate_keeps_a_neutral_strength_placeholder_for_a_degenerate_maximum(int maximum)
     {
         var result = PlanGenerator
-            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), Catalog());
+            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog());
 
         Assert.True(result.IsSuccess);
 
@@ -191,8 +267,8 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_is_deterministic()
     {
-        var first = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), Catalog()).Value;
-        var second = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), Catalog()).Value;
+        var first = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var second = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog()).Value;
 
         Assert.Equal(Snapshot(first), Snapshot(second));
     }
@@ -202,7 +278,7 @@ public sealed class PlanGeneratorTests
     [InlineData(5)]
     public void Generate_fails_for_a_frequency_other_than_three_days(int trainingDays)
     {
-        var result = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), Catalog());
+        var result = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog());
 
         Assert.True(result.IsFailure);
         Assert.Equal(DomainErrors.Plan.UnsupportedFrequency, result.Error);
@@ -242,8 +318,8 @@ public sealed class PlanGeneratorTests
                 new MaximumInput("squat", squatMaximum),
             ]).Value;
 
-    private static Objective BuildObjective() =>
-        Objective.Create(UserId, SkillId, Catalog()).Value;
+    private static Objective BuildObjective(string skillId = SkillId) =>
+        Objective.Create(UserId, skillId, Catalog()).Value;
 
     private static KnowledgeBase Catalog()
     {
@@ -257,9 +333,13 @@ public sealed class PlanGeneratorTests
             SkillMovement("planche-tuck"),
             SkillMovement("planche-advanced-tuck"),
             SkillMovement("planche-full"),
+            SkillMovement("pistol-box", PistolSkillId, Metric.Reps),
+            SkillMovement("pistol-assisted", PistolSkillId, Metric.Reps),
+            SkillMovement("pistol-negative", PistolSkillId, Metric.Reps),
+            SkillMovement("pistol-full", PistolSkillId, Metric.Reps),
         };
 
-        var skill = new Skill
+        var planche = new Skill
         {
             Id = SkillId,
             Name = "Planche",
@@ -294,7 +374,42 @@ public sealed class PlanGeneratorTests
             ],
         };
 
-        var result = KnowledgeBase.Create(exercises, [skill], []);
+        var pistol = new Skill
+        {
+            Id = PistolSkillId,
+            Name = "Pistol squat",
+            Group = ExerciseGroup.Leg,
+            Lever = false,
+            Stages =
+            [
+                Stage(1, "pistol-box", Metric.Reps, target: 5, sets: 3),
+                Stage(2, "pistol-assisted", Metric.Reps, target: 5, sets: 3),
+                Stage(3, "pistol-negative", Metric.Reps, target: 4, sets: 3),
+                Stage(4, "pistol-full", Metric.Reps, target: 3, sets: 3),
+            ],
+            PatternRoutines =
+            [
+                new PatternRoutine
+                {
+                    Id = "r1",
+                    Name = "Modelo R1",
+                    Intensity = 2,
+                    Items =
+                    [
+                        new RoutineItem
+                        {
+                            ExerciseId = "squat",
+                            Sets = 3,
+                            RepsMin = 6,
+                            RepsMax = 8,
+                            RestSeconds = 90,
+                        },
+                    ],
+                },
+            ],
+        };
+
+        var result = KnowledgeBase.Create(exercises, [planche, pistol], []);
         Assert.True(result.IsSuccess);
         return result.Value;
     }
@@ -312,15 +427,15 @@ public sealed class PlanGeneratorTests
             Metric = metric,
         };
 
-    private static Exercise SkillMovement(string id) =>
+    private static Exercise SkillMovement(string id, string skillId = SkillId, Metric metric = Metric.Seconds) =>
         new()
         {
             Id = id,
             Name = id,
             Kind = ExerciseKind.Skill,
             Group = null,
-            Metric = Metric.Seconds,
-            SkillId = SkillId,
+            Metric = metric,
+            SkillId = skillId,
         };
 
     private static SkillStage Stage(int order, string exerciseId, Metric metric, int target, int sets) =>

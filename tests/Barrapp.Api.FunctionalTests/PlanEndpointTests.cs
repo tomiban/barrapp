@@ -60,6 +60,26 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
     }
 
     [Fact]
+    public async Task Get_plan_practises_the_current_stage_of_the_objective_skill()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+        await client.PutAsJsonAsync("/catalog/progress/planche", new { stageOrder = 2 });
+
+        using var response = await client.GetAsync("/plan");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+
+        // La etapa 2 de planche es «Planche agrupada» (planche-tuck): cada sesión la practica primero.
+        Assert.All(
+            plan!.Microcycles.SelectMany(microcycle => microcycle.Sessions),
+            session => Assert.Equal("planche-tuck", session.Items[0].ExerciseId));
+    }
+
+    [Fact]
     public async Task Get_plan_for_an_unsupported_frequency_returns_400_with_a_spanish_detail()
     {
         using var client = factory.CreateClient();

@@ -2,6 +2,7 @@ using Barrapp.Domain.Athlete;
 using Barrapp.Domain.Common;
 using Barrapp.Domain.Knowledge;
 using Barrapp.Domain.Objectives;
+using Barrapp.Domain.SkillProgress;
 
 namespace Barrapp.Domain.Planning;
 
@@ -12,8 +13,9 @@ namespace Barrapp.Domain.Planning;
 /// </summary>
 /// <remarks>
 /// Ticket #10 implementa el reparto de 3 días/semana; las frecuencias 4 y 5 devuelven
-/// <see cref="DomainErrors.Plan.UnsupportedFrequency"/>. La carga de fuerza se deriva del máximo
-/// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. La onda
+/// <see cref="DomainErrors.Plan.UnsupportedFrequency"/>. El bloque de skill de cada sesión usa la
+/// etapa actual del atleta (#14), que llega como <c>stageOrder</c>. La carga de fuerza se deriva del
+/// máximo del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. La onda
 /// semanal de RIR (#12) y el deload (#13) se apoyarán en este mismo punto de entrada.
 /// </remarks>
 public static class PlanGenerator
@@ -34,12 +36,19 @@ public static class PlanGenerator
 
     /// <summary>
     /// Genera el mesociclo para <paramref name="profile"/> y <paramref name="objective"/> contra el
-    /// catálogo. Falla con <see cref="DomainErrors.Plan.UnsupportedFrequency"/> si la frecuencia no
-    /// es 3 días y con un error de catálogo si falta un ejercicio o una etapa obligatorios.
+    /// catálogo, practicando en el bloque de skill la etapa actual del atleta. Falla con
+    /// <see cref="DomainErrors.Plan.UnsupportedFrequency"/> si la frecuencia no es 3 días, con
+    /// <see cref="DomainErrors.Plan.UnknownStage"/> si el skill no tiene esa etapa y con un error de
+    /// catálogo si falta un ejercicio o un máximo obligatorios.
     /// </summary>
+    /// <param name="stageOrder">
+    /// Etapa actual del atleta en el skill objetivo; <c>null</c> si aún no tiene progresión guardada,
+    /// en cuyo caso practica la primera etapa.
+    /// </param>
     public static Result<Plan> Generate(
         AthleteProfile profile,
         Objective objective,
+        int? stageOrder,
         IGenerationCatalog catalog)
     {
         if (profile.TrainingDays != SupportedTrainingDays)
@@ -53,10 +62,11 @@ public static class PlanGenerator
             return Result.Failure<Plan>(DomainErrors.Objective.UnknownSkill);
         }
 
-        var firstStage = skill.Stages.FirstOrDefault(stage => stage.Order == 1);
-        if (firstStage is null)
+        var currentStage = skill.Stages.FirstOrDefault(
+            stage => stage.Order == (stageOrder ?? AthleteSkillProgress.InitialStageOrder));
+        if (currentStage is null)
         {
-            return Result.Failure<Plan>(DomainErrors.Plan.MissingSkillStage);
+            return Result.Failure<Plan>(DomainErrors.Plan.UnknownStage);
         }
 
         var strength = ResolveStrengthSlots(catalog, profile);
@@ -76,7 +86,7 @@ public static class PlanGenerator
             var sessions = new List<Session>(profile.TrainingDays);
             for (var day = 1; day <= profile.TrainingDays; day++)
             {
-                sessions.Add(new Session(day, BuildItems(firstStage, strength.Value)));
+                sessions.Add(new Session(day, BuildItems(currentStage, strength.Value)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
