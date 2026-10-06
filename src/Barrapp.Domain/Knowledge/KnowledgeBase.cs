@@ -165,6 +165,11 @@ public sealed class KnowledgeBase : ISkillCatalog
                 }
             }
 
+            if (exercise.TracksMaximum && exercise.RegressionId is null)
+            {
+                return Result.Failure(DomainErrors.Knowledge.BasicExerciseRequiresRegression(exercise.Id));
+            }
+
             if (exercise.RegressionId is not null && !exerciseById.ContainsKey(exercise.RegressionId))
             {
                 return Result.Failure(DomainErrors.Knowledge.UnknownExerciseReference(exercise.RegressionId));

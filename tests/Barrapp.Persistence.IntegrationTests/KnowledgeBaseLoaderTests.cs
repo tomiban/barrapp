@@ -16,7 +16,7 @@ public sealed class KnowledgeBaseLoaderTests
         {
           "schemaVersion": 1,
           "exercises": [
-            { "id": "push-up", "name": "Flexiones", "kind": "conditioning", "group": "push", "metric": "reps", "tracksMaximum": false, "regressionId": null, "skillId": null },
+            { "id": "push_up", "name": "Flexiones", "kind": "conditioning", "group": "push", "metric": "reps", "tracksMaximum": false, "regressionId": null, "skillId": null },
             { "id": "planche-lean", "name": "Planche inclinada", "kind": "conditioning", "group": "push", "metric": "seconds", "tracksMaximum": false, "regressionId": null, "skillId": "planche" }
           ]
         }
@@ -44,7 +44,7 @@ public sealed class KnowledgeBaseLoaderTests
                   "intensity": 2,
                   "equipment": "Sin equipamiento",
                   "items": [
-                    { "exerciseId": "push-up", "sets": 3, "repsMin": 5, "repsMax": 8, "restSeconds": 60 }
+                    { "exerciseId": "push_up", "sets": 3, "repsMin": 5, "repsMax": 8, "restSeconds": 60 }
                   ]
                 }
               ]
@@ -75,7 +75,7 @@ public sealed class KnowledgeBaseLoaderTests
                       "restSeconds": 0,
                       "notes": null,
                       "items": [
-                        { "exerciseId": "push-up", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 }
+                        { "exerciseId": "push_up", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 }
                       ]
                     }
                   ]
@@ -105,9 +105,9 @@ public sealed class KnowledgeBaseLoaderTests
                       "rounds": 1,
                       "restSeconds": 0,
                       "items": [
-                        { "exerciseId": "push-up", "sets": 1, "repsMin": 5, "repsMax": 5, "restSeconds": 0, "supersetGroup": 1 },
-                        { "exerciseId": "push-up", "sets": 1, "repsMin": 5, "repsMax": 5, "restSeconds": 0, "supersetGroup": 2 },
-                        { "exerciseId": "push-up", "sets": 1, "repsMin": 5, "repsMax": 5, "restSeconds": 0, "supersetGroup": 1 }
+                        { "exerciseId": "push_up", "sets": 1, "repsMin": 5, "repsMax": 5, "restSeconds": 0, "supersetGroup": 1 },
+                        { "exerciseId": "push_up", "sets": 1, "repsMin": 5, "repsMax": 5, "restSeconds": 0, "supersetGroup": 2 },
+                        { "exerciseId": "push_up", "sets": 1, "repsMin": 5, "repsMax": 5, "restSeconds": 0, "supersetGroup": 1 }
                       ]
                     }
                   ]
@@ -124,7 +124,7 @@ public sealed class KnowledgeBaseLoaderTests
         var catalog = CreateLoader().Load(ExercisesJson, SkillsJson, RoutinesJson);
 
         Assert.Equal(2, catalog.Exercises.Count);
-        Assert.Equal("Flexiones", catalog.FindExercise("push-up")!.Name);
+        Assert.Equal("Flexiones", catalog.FindExercise("push_up")!.Name);
         Assert.Single(catalog.Skills);
         Assert.True(catalog.FindSkill("planche")!.Lever);
         Assert.Single(catalog.Programs);
@@ -151,8 +151,14 @@ public sealed class KnowledgeBaseLoaderTests
             catalog.Exercises.Where(exercise => exercise.RegressionId is not null),
             exercise => Assert.NotNull(catalog.FindExercise(exercise.RegressionId!)));
 
-        // Los básicos declaran que se registra su máximo.
-        Assert.Contains(catalog.Exercises, exercise => exercise.TracksMaximum);
+        // Todo básico que registra su máximo declara una regresión que resuelve.
+        var maximumExercises = catalog.Exercises.Where(exercise => exercise.TracksMaximum).ToList();
+        Assert.NotEmpty(maximumExercises);
+        Assert.All(maximumExercises, exercise =>
+        {
+            Assert.NotNull(exercise.RegressionId);
+            Assert.NotNull(catalog.FindExercise(exercise.RegressionId!));
+        });
     }
 
     [Fact]
@@ -325,7 +331,7 @@ public sealed class KnowledgeBaseLoaderTests
         var data = new TheoryData<string, string, string, string>
         {
             {
-                ExercisesJson.Replace("\"id\": \"planche-lean\"", "\"id\": \"push-up\"", StringComparison.Ordinal),
+                ExercisesJson.Replace("\"id\": \"planche-lean\"", "\"id\": \"push_up\"", StringComparison.Ordinal),
                 SkillsJson,
                 RoutinesJson,
                 "knowledge.duplicate_exercise_id"

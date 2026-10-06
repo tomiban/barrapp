@@ -42,7 +42,7 @@ public sealed class CatalogEndpointTests(BarrappApiFactory factory)
 
         var pushUp = catalog.Groups
             .Single(group => group.Group == "push")
-            .Exercises.Single(exercise => exercise.Id == "push-up");
+            .Exercises.Single(exercise => exercise.Id == "push_up");
         Assert.Equal("Flexiones", pushUp.Name);
         Assert.Equal("reps", pushUp.Metric);
         Assert.True(pushUp.TracksMaximum);

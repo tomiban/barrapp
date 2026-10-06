@@ -119,7 +119,7 @@
               "restSeconds": 40,
               "notes": "Con descanso.",
               "items": [
-                { "exerciseId": "push-up", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
+                { "exerciseId": "push_up", "sets": 1, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 0 },
                 { "exerciseId": "spiderman-static", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 },
                 { "exerciseId": "plank-to-push-up", "sets": 1, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 0 }
               ]
@@ -235,10 +235,10 @@
               "items": [
                 { "exerciseId": "pull-up-to-hip", "sets": 4, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "notes": "Explosivas con banda." },
                 { "exerciseId": "partial-wall-handstand-push-up", "sets": 4, "repsMin": 6, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1 },
-                { "exerciseId": "push-up", "sets": 4, "repsMin": 10, "repsMax": 15, "restSeconds": 120, "supersetGroup": 1, "notes": "Codos ligeramente pegados al cuerpo." },
+                { "exerciseId": "push_up", "sets": 4, "repsMin": 10, "repsMax": 15, "restSeconds": 120, "supersetGroup": 1, "notes": "Codos ligeramente pegados al cuerpo." },
                 { "exerciseId": "biceps-curl-supine", "sets": 2, "repsMin": 3, "repsMax": 5, "restSeconds": 120, "supersetGroup": 2, "notes": "Isometría arriba 1–2 s." },
                 { "exerciseId": "biceps-curl-prone", "sets": 2, "repsMin": 3, "repsMax": 5, "restSeconds": 120, "supersetGroup": 2, "notes": "Isometría arriba 1–2 s." },
-                { "exerciseId": "pull-up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 2 },
+                { "exerciseId": "pull_up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 2 },
                 { "exerciseId": "hanging-leg-raise", "sets": 3, "repsMin": 6, "repsMax": 10, "restSeconds": 90, "supersetGroup": 3, "notes": "Isometría arriba 2 s." },
                 { "exerciseId": "supine-lean-hold", "sets": 3, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 90, "supersetGroup": 3 }
               ]
@@ -255,13 +255,13 @@
               "rounds": 1,
               "restSeconds": 0,
               "items": [
-                { "exerciseId": "pull-up", "sets": 5, "repsMin": 10, "repsMax": 15, "restSeconds": 120 },
+                { "exerciseId": "pull_up", "sets": 5, "repsMin": 10, "repsMax": 15, "restSeconds": 120 },
                 { "exerciseId": "pike-push-up", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "supersetGroup": 1 },
                 { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 120, "supersetGroup": 1 },
                 { "exerciseId": "one-arm-leg-raise", "sets": 2, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 120, "supersetGroup": 2, "notes": "A 1 mano, segundos por brazo." },
                 { "exerciseId": "hanging-leg-raise", "sets": 2, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 120, "supersetGroup": 2 },
                 { "exerciseId": "diamond-push-up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 3 },
-                { "exerciseId": "push-up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 3, "notes": "Manos a la altura de los hombros." },
+                { "exerciseId": "push_up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 3, "notes": "Manos a la altura de los hombros." },
                 { "exerciseId": "wide-push-up", "sets": 2, "repsMin": 8, "repsMax": 10, "restSeconds": 120, "supersetGroup": 3 }
               ]
             }
@@ -281,7 +281,7 @@
                 { "exerciseId": "pike-to-lean-push-up", "sets": 3, "repsMin": 4, "repsMax": 6, "restSeconds": 120, "notes": "Buscando inclinación." },
                 { "exerciseId": "supine-push-up", "sets": 2, "repsMin": 8, "repsMax": 12, "restSeconds": 120, "notes": "Explosivas, isometría abajo." },
                 { "exerciseId": "reverse-planche-lean", "sets": 2, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 60, "supersetGroup": 1 },
-                { "exerciseId": "push-up", "sets": 2, "repsMin": 10, "repsMax": 10, "restSeconds": 60, "supersetGroup": 1 }
+                { "exerciseId": "push_up", "sets": 2, "repsMin": 10, "repsMax": 10, "restSeconds": 60, "supersetGroup": 1 }
               ]
             }
           ]
@@ -340,7 +340,7 @@
                 { "exerciseId": "archer-pull-up", "sets": 3, "repsMin": 2, "repsMax": 4, "restSeconds": 120, "notes": "Reps por brazo." },
                 { "exerciseId": "biceps-curl-supine", "sets": 2, "repsMin": 4, "repsMax": 6, "restSeconds": 120, "supersetGroup": 1 },
                 { "exerciseId": "close-pull-up", "sets": 2, "repsMin": 5, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1 },
-                { "exerciseId": "pull-up", "sets": 2, "repsMin": 5, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1 },
+                { "exerciseId": "pull_up", "sets": 2, "repsMin": 5, "repsMax": 10, "restSeconds": 120, "supersetGroup": 1 },
                 { "exerciseId": "hefesto", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 90, "supersetGroup": 2, "notes": "Pies en suelo." },
                 { "exerciseId": "supine-lean-hold", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 90, "supersetGroup": 2 }
               ]
@@ -362,7 +362,7 @@
                 { "exerciseId": "elevated-pike-push-up", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "supersetGroup": 2, "notes": "Pies elevados." },
                 { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 120, "supersetGroup": 2, "notes": "Pies elevados." },
                 { "exerciseId": "explosive-push-up", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 90, "supersetGroup": 3, "notes": "Isometría abajo." },
-                { "exerciseId": "push-up", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 90, "supersetGroup": 3, "notes": "Codos ligeramente pegados al cuerpo." },
+                { "exerciseId": "push_up", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 90, "supersetGroup": 3, "notes": "Codos ligeramente pegados al cuerpo." },
                 { "exerciseId": "knee-to-leg-raise", "sets": 2, "repsMin": 4, "repsMax": 6, "restSeconds": 120, "supersetGroup": 4, "notes": "Subir al máximo posible." },
                 { "exerciseId": "plank", "sets": 2, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 120, "supersetGroup": 4 }
               ]
@@ -380,7 +380,7 @@
               "restSeconds": 0,
               "items": [
                 { "exerciseId": "archer-pull-up", "sets": 4, "repsMin": 2, "repsMax": 3, "restSeconds": 120, "supersetGroup": 1, "notes": "Reps por brazo." },
-                { "exerciseId": "pull-up", "sets": 4, "repsMin": 4, "repsMax": 6, "restSeconds": 120, "supersetGroup": 1, "notes": "Explosivas pasando barbilla." },
+                { "exerciseId": "pull_up", "sets": 4, "repsMin": 4, "repsMax": 6, "restSeconds": 120, "supersetGroup": 1, "notes": "Explosivas pasando barbilla." },
                 { "exerciseId": "one-arm-leg-raise", "sets": 3, "repsMin": 3, "repsMax": 5, "restSeconds": 120, "supersetGroup": 2, "notes": "A 1 mano, reps por brazo." },
                 { "exerciseId": "hanging-leg-raise", "sets": 3, "repsMin": 4, "repsMax": 8, "restSeconds": 120, "supersetGroup": 2 },
                 { "exerciseId": "supine-bar-dip", "sets": 3, "repsMin": 6, "repsMax": 10, "restSeconds": 120, "supersetGroup": 3, "notes": "Parada abajo 2 s." },
@@ -484,7 +484,7 @@
                 { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 120, "supersetGroup": 3 },
                 { "exerciseId": "handstand-push-up", "sets": 4, "repsMin": 4, "repsMax": 8, "restSeconds": 180, "notes": "En pared, pies en suelo." },
                 { "exerciseId": "diamond-push-up", "sets": 3, "repsMin": 20, "repsMax": 20, "restSeconds": 120, "supersetGroup": 4 },
-                { "exerciseId": "push-up", "sets": 3, "repsMin": 20, "repsMax": 20, "restSeconds": 120, "supersetGroup": 4 }
+                { "exerciseId": "push_up", "sets": 3, "repsMin": 20, "repsMax": 20, "restSeconds": 120, "supersetGroup": 4 }
               ]
             }
           ]

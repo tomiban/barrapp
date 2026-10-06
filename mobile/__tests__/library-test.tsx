@@ -19,7 +19,7 @@ const CATALOG = {
       group: 'push',
       exercises: [
         {
-          id: 'push-up',
+          id: 'push_up',
           name: 'Flexiones',
           metric: 'reps',
           tracksMaximum: true,
@@ -174,7 +174,7 @@ const ROUTINES = [
             notes: 'Sin descanso.',
             items: [
               {
-                exerciseId: 'push-up',
+                exerciseId: 'push_up',
                 sets: 1,
                 repsMin: null,
                 repsMax: null,

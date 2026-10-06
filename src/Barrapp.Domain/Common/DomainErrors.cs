@@ -171,6 +171,11 @@ public static class DomainErrors
             "knowledge.conditioning_requires_group",
             $"El ejercicio de acondicionamiento '{id}' necesita un grupo.");
 
+        /// <summary>Un ejercicio que registra su máximo no declara regresión.</summary>
+        public static Error BasicExerciseRequiresRegression(string id) => Error.Validation(
+            "knowledge.basic_exercise_requires_regression",
+            $"El ejercicio básico '{id}' registra su máximo y necesita declarar una regresión.");
+
         /// <summary>Un movimiento de skill no declara su skill.</summary>
         public static Error SkillExerciseRequiresSkillId(string id) => Error.Validation(
             "knowledge.skill_exercise_requires_skill_id",

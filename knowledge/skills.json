@@ -108,7 +108,7 @@
             { "exerciseId": "front-lever-tuck-pull-up", "sets": 4, "repsMin": 3, "repsMax": 5, "restSeconds": 240, "supersetGroup": 1 },
             { "exerciseId": "tuck-adv-to-full-press", "sets": 3, "repsMin": 2, "repsMax": 3, "restSeconds": 210, "notes": "Press de tuck advanced a full + negativa en máxima progresión + hold 1 s." },
             { "exerciseId": "pull-up-below-chest", "sets": 4, "repsMin": 5, "repsMax": 8, "restSeconds": 120, "notes": "Dominadas pronas explosivas hasta debajo del pecho." },
-            { "exerciseId": "pull-up", "sets": 3, "repsMin": 12, "repsMax": 12, "restSeconds": 90, "notes": "Dominadas estándar." }
+            { "exerciseId": "pull_up", "sets": 3, "repsMin": 12, "repsMax": 12, "restSeconds": 90, "notes": "Dominadas estándar." }
           ]
         }
       ]

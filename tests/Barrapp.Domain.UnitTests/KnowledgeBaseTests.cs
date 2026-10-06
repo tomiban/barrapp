@@ -72,6 +72,27 @@ public sealed class KnowledgeBaseTests
     }
 
     [Fact]
+    public void Create_rejects_a_maximum_exercise_without_a_regression()
+    {
+        var result = Create(exercises: [Conditioning(tracksMaximum: true)]);
+
+        AssertRejected(result, "knowledge.basic_exercise_requires_regression");
+    }
+
+    [Fact]
+    public void Create_accepts_a_maximum_exercise_with_a_resolvable_regression()
+    {
+        var result = Create(
+            exercises:
+            [
+                Conditioning(tracksMaximum: true, regressionId: "incline-push-up"),
+                Conditioning(id: "incline-push-up"),
+            ]);
+
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
     public void Create_rejects_a_dangling_skill_reference_on_a_conditioning_exercise()
     {
         var result = Create(exercises: [Conditioning(skillId: "does-not-exist")]);
@@ -306,10 +327,11 @@ public sealed class KnowledgeBaseTests
             programs ?? [ValidProgram()]);
 
     private static Exercise Conditioning(
-        string id = "push-up",
+        string id = "push_up",
         ExerciseGroup? group = ExerciseGroup.Push,
         string? regressionId = null,
-        string? skillId = null) =>
+        string? skillId = null,
+        bool tracksMaximum = false) =>
         new()
         {
             Id = id,
@@ -317,7 +339,7 @@ public sealed class KnowledgeBaseTests
             Kind = ExerciseKind.Conditioning,
             Group = group,
             Metric = Metric.Reps,
-            TracksMaximum = false,
+            TracksMaximum = tracksMaximum,
             RegressionId = regressionId,
             SkillId = skillId,
         };
@@ -340,7 +362,7 @@ public sealed class KnowledgeBaseTests
 
     private static SkillStage Stage(
         int order,
-        string exerciseId = "push-up",
+        string exerciseId = "push_up",
         int target = 10,
         int sets = 3) =>
         new()
@@ -353,7 +375,7 @@ public sealed class KnowledgeBaseTests
         };
 
     private static RoutineItem Item(
-        string exerciseId = "push-up",
+        string exerciseId = "push_up",
         int sets = 3,
         int? repsMin = 5,
         int? repsMax = 8,
