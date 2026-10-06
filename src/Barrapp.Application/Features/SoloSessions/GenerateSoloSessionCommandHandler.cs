@@ -5,6 +5,7 @@ using Barrapp.Application.Features.Plans;
 using Barrapp.Domain.Common;
 using Barrapp.Domain.Knowledge;
 using Barrapp.Domain.Planning;
+using Barrapp.Domain.Sessions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Barrapp.Application.Features.SoloSessions;
@@ -18,10 +19,15 @@ namespace Barrapp.Application.Features.SoloSessions;
 /// como entrada.
 /// </summary>
 /// <remarks>
-/// La sesión suelta no se persiste en este ticket (#28): el historial y el aislamiento del
-/// mesociclo llegan con #29.
+/// Desde #29 la suelta generada queda guardada en el historial (<see cref="SessionSuelta"/>) en su
+/// propia tabla, etiquetada como tal y aislada de los flujos de <see cref="SessionLog"/>: no altera
+/// el mesociclo ni los máximos. La respuesta sigue siendo la sesión compuesta, como en #28.
 /// </remarks>
-internal sealed class GenerateSoloSessionCommandHandler(IApplicationDbContext dbContext, IKnowledgeBase catalog)
+internal sealed class GenerateSoloSessionCommandHandler(
+    IApplicationDbContext dbContext,
+    IKnowledgeBase catalog,
+    ISessionSueltaRepository repository,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<GenerateSoloSessionCommand, SoloSessionResponse>
 {
     public async Task<Result<SoloSessionResponse>> Handle(
@@ -61,6 +67,32 @@ internal sealed class GenerateSoloSessionCommandHandler(IApplicationDbContext db
         // validado, así que el segundo pase es puro y nunca vuelve a fallar.
         var composition = SoloSessionGenerator.ResolveFocus(parameters, objective).Value;
 
+        var history = SessionSuelta.Create(
+            SingleUser.Id,
+            request.TimeMinutes,
+            ToEnergy(request.Energy),
+            ToFocus(request.Focus),
+            composition.Pattern,
+            composition.SkillId,
+            DateTimeOffset.UtcNow,
+            generation.Value.Items.Select(item => new SessionSueltaItemInput(
+                item.ExerciseId,
+                item.Role,
+                item.Pattern,
+                item.Sets,
+                item.RepsMin,
+                item.RepsMax,
+                item.HoldSecondsMin,
+                item.HoldSecondsMax,
+                item.Note)).ToList());
+        if (history.IsFailure)
+        {
+            return Result.Failure<SoloSessionResponse>(history.Error);
+        }
+
+        repository.Add(history.Value);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
         return Result.Success(ToResponse(request, composition, generation.Value));
     }
 
@@ -95,6 +127,22 @@ internal sealed class GenerateSoloSessionCommandHandler(IApplicationDbContext db
                 "leg" => ExerciseGroup.Leg,
                 _ => null,
             });
+
+    private static SoloSessionEnergy ToEnergy(string energy) => energy switch
+    {
+        "baja" => SoloSessionEnergy.Low,
+        "media" => SoloSessionEnergy.Medium,
+        "alta" => SoloSessionEnergy.High,
+        _ => throw new ArgumentOutOfRangeException(nameof(energy), "Energía fuera del vocabulario."),
+    };
+
+    private static SoloSessionFocus ToFocus(string focus) => focus switch
+    {
+        "patron" => SoloSessionFocus.Pattern,
+        "skill" => SoloSessionFocus.Skill,
+        "sorprendeme" => SoloSessionFocus.Surprise,
+        _ => throw new ArgumentOutOfRangeException(nameof(focus), "Foco fuera del vocabulario."),
+    };
 
     private SoloSessionResponse ToResponse(
         GenerateSoloSessionCommand request,
