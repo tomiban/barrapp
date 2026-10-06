@@ -11,7 +11,8 @@ namespace Barrapp.Domain.UnitTests;
 /// de 3 días, cada patrón recibe trabajo al menos dos veces por semana, cada sesión empieza por el
 /// bloque de skill y el resultado es determinista. La carga de fuerza se deriva del máximo del
 /// atleta y nunca llega al fallo (#11); el bloque de skill se ajusta por la palanca del atleta en
-/// los skills apalancados (#68). Solo se prueba por su interfaz pública.
+/// los skills apalancados (#68). El RIR baja de 3 a 1 en las tres primeras semanas, lo que sube
+/// las reps y el volumen (#12). Solo se prueba por su interfaz pública.
 /// </summary>
 public sealed class PlanGeneratorTests
 {

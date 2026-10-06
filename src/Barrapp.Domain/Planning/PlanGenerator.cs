@@ -16,7 +16,8 @@ namespace Barrapp.Domain.Planning;
 /// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. Para los
 /// skills apalancados, el bloque de skill ajusta ±1 serie según la <see cref="AthleteLever"/> y
 /// añade su nota de ritmo esperado (#68); el criterio de etapa no cambia. La onda semanal de RIR
-/// (#12) y el deload (#13) se apoyarán en este mismo punto de entrada.
+/// (#12) sube el volumen en las semanas 2 y 3; el deload de la semana 4 (#13) se apoyará en este
+/// mismo punto de entrada.
 /// </remarks>
 public static class PlanGenerator
 {
@@ -83,7 +84,7 @@ public static class PlanGenerator
             var sessions = new List<Session>(profile.TrainingDays);
             for (var day = 1; day <= profile.TrainingDays; day++)
             {
-                sessions.Add(new Session(day, BuildItems(firstStage, strength.Value, lever)));
+                sessions.Add(new Session(day, BuildItems(firstStage, strength.Value, lever, repsInReserve)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
@@ -122,7 +123,8 @@ public static class PlanGenerator
     private static IReadOnlyList<SessionItem> BuildItems(
         SkillStage stage,
         IReadOnlyList<StrengthSlot> strength,
-        AthleteLever? lever)
+        AthleteLever? lever,
+        int repsInReserve)
     {
         var items = new List<SessionItem>(strength.Count + 2)
         {
