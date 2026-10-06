@@ -12,7 +12,10 @@ namespace Barrapp.Api.FunctionalTests;
 /// Cierre del mesociclo (spec 0001, US-24; ticket #24, D7): <c>POST /plan/close</c> cierra el
 /// mesociclo activo, ajusta los máximos del perfil con las sesiones registradas del mesociclo
 /// (para cada ejercicio básico, <c>max(máximo actual, mejor repetición lograda)</c>, nunca baja)
-/// y lo publica en el historial. Devuelve 409 si no hay mesociclo en curso y 404 si no hay perfil.
+/// y lo publica en el historial. Sin mesociclo activo, el cierre <b>sintetiza</b> el mesociclo que
+/// se cierra desde el perfil + objetivo (FIX-1): así la secuencia real de la app —que solo llama a
+/// <c>GET /plan</c>, sin persistir— cierra y ajusta de extremo a extremo. Devuelve 404 si no hay
+/// perfil y 404 también si, al sintetizar, no hay objetivo guardado.
 /// El siguiente <c>GET /plan</c> (sin activo) genera con los máximos ajustados.
 /// </summary>
 /// <remarks>Cada test usa su propia <see cref="BarrappApiFactory"/> (base efímera).</remarks>
@@ -33,19 +36,57 @@ public sealed class CloseMesocycleEndpointTests
     }
 
     [Fact]
-    public async Task Post_plan_close_without_an_active_mesocycle_returns_409_with_a_spanish_detail()
+    public async Task Post_plan_close_without_an_active_mesocycle_synthesizes_and_closes_from_get_plan_alone()
     {
         using var factory = new BarrappApiFactory();
         using var client = factory.CreateClient();
-        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3));
+        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3)); // push_up 10
         await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
 
-        using var response = await client.PostAsync("/plan/close", content: null);
+        // La app nunca llama a POST /plan: genera on-read con GET /plan, que no persiste. El
+        // cierre sintetiza el mesociclo que se cierra desde el perfil + objetivo (FIX-1), así que
+        // la secuencia real de la app funciona de extremo a extremo.
+        var plan = await (await client.GetAsync("/plan")).Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+        Assert.Equal("planche", plan!.SkillId);
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.NotNull(problem);
-        Assert.Contains("No hay ningún mesociclo en curso para cerrar.", problem!.Detail);
+        // El atleta logra 14 flexiones en el mesociclo sintetizado (marca mejor que su máximo de 10).
+        var registered = await client.PostAsJsonAsync(
+            "/session-logs",
+            new
+            {
+                exerciseId = "push_up",
+                mesocycleId = (Guid?)null,
+                sessionDay = 1,
+                sets = new[]
+                {
+                    new { setNumber = 1, value = 14, effort = (int?)null },
+                    new { setNumber = 2, value = 14, effort = (int?)null },
+                },
+            });
+        Assert.Equal(HttpStatusCode.OK, registered.StatusCode);
+
+        using var closeResponse = await client.PostAsync("/plan/close", content: null);
+        Assert.Equal(HttpStatusCode.OK, closeResponse.StatusCode);
+        var closed = await closeResponse.Content.ReadFromJsonAsync<CloseMesocycleResponse>();
+
+        Assert.NotNull(closed);
+        Assert.NotEqual(Guid.Empty, closed!.MesocycleId);
+        Assert.Equal("planche", closed.SkillId);
+        Assert.Contains(
+            closed.Maximums,
+            maximum => maximum.ExerciseCode == "push_up" && maximum.Repetitions == 14);
+
+        // El mesociclo sintetizado queda publicado en el historial con su detalle.
+        var history = await (await client.GetAsync("/plan/history"))
+            .Content.ReadFromJsonAsync<IReadOnlyList<MesocycleSummaryResponse>>();
+        var entry = Assert.Single(history!);
+        Assert.Equal(closed.MesocycleId, entry.Id);
+        Assert.Equal("planche", entry.SkillId);
+
+        var detail = await (await client.GetAsync($"/plan/history/{closed.MesocycleId}"))
+            .Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.Equal("planche", detail!.SkillId);
     }
 
     [Fact]
@@ -151,20 +192,28 @@ public sealed class CloseMesocycleEndpointTests
     }
 
     [Fact]
-    public async Task Post_plan_close_twice_returns_409_with_a_spanish_detail()
+    public async Task Post_plan_close_twice_synthesizes_a_fresh_closed_mesocycle_each_time()
     {
         using var factory = new BarrappApiFactory();
         using var client = factory.CreateClient();
         await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3));
         await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
-        await client.PostAsync("/plan", content: null);
-        await client.PostAsync("/plan/close", content: null);
 
-        using var second = await client.PostAsync("/plan/close", content: null);
+        // Sin mesociclo activo, cada cierre sintetiza el mesociclo que se cierra (FIX-1): los dos
+        // cierres entran en el historial, cada uno con su propio mesociclo.
+        var first = await (await client.PostAsync("/plan/close", content: null))
+            .Content.ReadFromJsonAsync<CloseMesocycleResponse>();
+        var second = await (await client.PostAsync("/plan/close", content: null))
+            .Content.ReadFromJsonAsync<CloseMesocycleResponse>();
 
-        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
-        var problem = await second.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.Contains("No hay ningún mesociclo en curso para cerrar.", problem!.Detail);
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+        Assert.NotEqual(first!.MesocycleId, second!.MesocycleId);
+
+        var history = await (await client.GetAsync("/plan/history"))
+            .Content.ReadFromJsonAsync<IReadOnlyList<MesocycleSummaryResponse>>();
+        Assert.NotNull(history);
+        Assert.Equal(2, history!.Count);
     }
 
     [Fact]
