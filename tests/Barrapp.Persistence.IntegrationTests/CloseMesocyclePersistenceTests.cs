@@ -3,6 +3,7 @@ using Barrapp.Application.Abstractions;
 using Barrapp.Application.Common;
 using Barrapp.Application.Features.Plans;
 using Barrapp.Domain.Athlete;
+using Barrapp.Domain.Common;
 using Barrapp.Domain.Objectives;
 using Barrapp.Domain.Planning;
 using Barrapp.Domain.Sessions;
@@ -127,6 +128,77 @@ public sealed class CloseMesocyclePersistenceTests : IDisposable
         Assert.True(saved.ClosedAtUtc!.Value >= startedAt);
     }
 
+    [Fact]
+    public async Task Closing_without_an_active_mesocycle_synthesizes_a_mesocycle_and_closes_it()
+    {
+        SeedProfile(pushUp: 10);
+        SeedObjective("planche");
+
+        // Registro de hace dos semanas: cae dentro de la ventana del mesociclo sintetizado
+        // (empieza un mes atrás, FIX-1) y sube el máximo.
+        _dbContext.SessionLogs.Add(Log(
+            "push_up",
+            mesocycleId: null,
+            DateTimeOffset.UtcNow.AddDays(-14),
+            (1, 14), (2, 14)));
+        await _dbContext.SaveChangesAsync();
+
+        Guid closedId;
+        using (var services = CreateServices(_dbContext))
+        {
+            var closing = await services.GetRequiredService<ISender>()
+                .Send(new CloseMesocycleCommand());
+
+            Assert.True(closing.IsSuccess);
+            closedId = closing.Value.MesocycleId;
+            Assert.Equal("planche", closing.Value.SkillId);
+            Assert.Equal(
+                14,
+                closing.Value.Maximums.Single(maximum => maximum.ExerciseCode == "push_up").Repetitions);
+        }
+
+        // Contexto nuevo: el mesociclo sintetizado quedó cerrado y los máximos ajustados.
+        await using var readContext = CreateContext();
+        var saved = await readContext.Mesocycles.SingleAsync(mesocycle => mesocycle.Id == closedId);
+        Assert.Equal(MesocycleStatus.Closed, saved.Status);
+        Assert.NotNull(saved.ClosedAtUtc);
+        Assert.True(saved.StartedAtUtc <= DateTimeOffset.UtcNow.AddDays(-27));
+
+        var profile = await readContext.AthleteProfiles
+            .Include(candidate => candidate.Maximums)
+            .SingleAsync(candidate => candidate.UserId == SingleUser.Id);
+        Assert.Equal(14, profile.MaximumFor("push_up"));
+    }
+
+    [Fact]
+    public async Task Closing_without_an_active_mesocycle_nor_objective_fails_with_not_found()
+    {
+        _dbContext.AthleteProfiles.Add(AthleteProfile.Create(
+            SingleUser.Id,
+            78,
+            180,
+            180,
+            85,
+            3,
+            [
+                new MaximumInput("push_up", 10),
+                new MaximumInput("pull_up", 5),
+                new MaximumInput("squat", 20),
+            ]).Value);
+        await _dbContext.SaveChangesAsync();
+
+        using var services = CreateServices(_dbContext);
+        var closing = await services.GetRequiredService<ISender>()
+            .Send(new CloseMesocycleCommand());
+
+        Assert.True(closing.IsFailure);
+        Assert.Equal(DomainErrors.Objective.NotFound, closing.Error);
+
+        // Nada se persistió: no hay mesociclos en la base.
+        var saved = await CreateContext().Mesocycles.ToListAsync();
+        Assert.Empty(saved);
+    }
+
     private void SeedProfile(int pushUp) =>
         _dbContext.AthleteProfiles.Add(AthleteProfile.Create(
             SingleUser.Id,
@@ -140,6 +212,13 @@ public sealed class CloseMesocyclePersistenceTests : IDisposable
                 new MaximumInput("pull_up", 5),
                 new MaximumInput("squat", 20),
             ]).Value);
+
+    private void SeedObjective(string skillId)
+    {
+        var catalog = new KnowledgeBaseCatalog(
+            new KnowledgeBaseLoader(NullLogger<KnowledgeBaseLoader>.Instance).LoadEmbeddedResources());
+        _dbContext.Objectives.Add(Objective.Create(SingleUser.Id, skillId, catalog).Value);
+    }
 
     private Mesocycle SeedActiveMesocycle(DateTimeOffset startedAtUtc)
     {

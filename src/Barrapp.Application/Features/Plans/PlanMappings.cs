@@ -39,7 +39,7 @@ internal static class PlanMappings
     private static SessionItemResponse ToItem(SessionItem item, IKnowledgeBase catalog) => new(
         item.ExerciseId,
         catalog.FindExercise(item.ExerciseId)?.Name ?? item.ExerciseId,
-        ToCode(item.Role),
+        CatalogMappings.ToCode(item.Role),
         item.Pattern is null ? null : CatalogMappings.ToCode(item.Pattern.Value),
         item.Sets,
         item.RepsMin,
@@ -47,12 +47,4 @@ internal static class PlanMappings
         item.HoldSecondsMin,
         item.HoldSecondsMax,
         item.Note);
-
-    private static string ToCode(SessionItemRole role) => role switch
-    {
-        SessionItemRole.Skill => "skill",
-        SessionItemRole.Strength => "strength",
-        SessionItemRole.Core => "core",
-        _ => throw new ArgumentOutOfRangeException(nameof(role)),
-    };
 }

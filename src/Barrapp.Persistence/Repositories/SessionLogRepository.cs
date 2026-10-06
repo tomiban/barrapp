@@ -17,5 +17,13 @@ internal sealed class SessionLogRepository(ApplicationDbContext dbContext)
     public Task<SessionLog?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.SessionLogs.FirstOrDefaultAsync(log => log.Id == id, cancellationToken);
 
+    public Task<SessionLog?> GetByClientIdAsync(
+        Guid userId,
+        Guid clientId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.SessionLogs.FirstOrDefaultAsync(
+            log => log.UserId == userId && log.ClientId == clientId,
+            cancellationToken);
+
     public void Remove(SessionLog sessionLog) => dbContext.SessionLogs.Remove(sessionLog);
 }

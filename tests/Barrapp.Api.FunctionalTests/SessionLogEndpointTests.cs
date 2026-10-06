@@ -329,6 +329,83 @@ public sealed class SessionLogEndpointTests(BarrappApiFactory factory)
     }
 
     [Fact]
+    public async Task Post_twice_with_the_same_client_id_updates_the_existing_log_without_duplicating()
+    {
+        using var client = factory.CreateClient();
+        var clientId = Guid.NewGuid();
+
+        // Primer envío: se crea el registro.
+        using var first = await client.PostAsJsonAsync(
+            "/session-logs",
+            new
+            {
+                exerciseId = "push_up",
+                mesocycleId = (Guid?)null,
+                sessionDay = 5,
+                clientId,
+                sets = new[]
+                {
+                    new { setNumber = 1, value = 10, effort = (int?)null },
+                    new { setNumber = 2, value = 11, effort = (int?)null },
+                },
+            });
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var firstSaved = await first.Content.ReadFromJsonAsync<SessionLogResponse>();
+
+        // El cliente reenvía el mismo log tras perder la respuesta (mismo clientId): la reescritura
+        // gana last-write-wins, actualiza las series en su sitio y no duplica la fila.
+        using var second = await client.PostAsJsonAsync(
+            "/session-logs",
+            new
+            {
+                exerciseId = "push_up",
+                mesocycleId = (Guid?)null,
+                sessionDay = 5,
+                clientId,
+                sets = new[]
+                {
+                    new { setNumber = 1, value = 14, effort = (int?)null },
+                    new { setNumber = 2, value = 14, effort = (int?)null },
+                },
+            });
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        var secondSaved = await second.Content.ReadFromJsonAsync<SessionLogResponse>();
+
+        Assert.Equal(firstSaved!.Id, secondSaved!.Id);
+        Assert.Equal([14, 14], secondSaved.Sets.Select(set => set.Value));
+
+        // En la base solo queda un registro para ese ejercicio y día.
+        var logs = await client.GetFromJsonAsync<List<SessionLogResponse>>("/session-logs");
+        Assert.NotNull(logs);
+        var matches = logs!.Where(log => log.ExerciseId == "push_up" && log.SessionDay == 5).ToList();
+        var single = Assert.Single(matches);
+        Assert.Equal(firstSaved.Id, single.Id);
+        Assert.Equal([14, 14], single.Sets.Select(set => set.Value));
+    }
+
+    [Fact]
+    public async Task Post_without_a_client_id_keeps_creating_separate_logs()
+    {
+        using var client = factory.CreateClient();
+        var body = new
+        {
+            exerciseId = "push_up",
+            mesocycleId = (Guid?)null,
+            sessionDay = 6,
+            sets = new[] { new { setNumber = 1, value = 10 } },
+        };
+
+        await client.PostAsJsonAsync("/session-logs", body);
+        await client.PostAsJsonAsync("/session-logs", body);
+
+        var logs = await client.GetFromJsonAsync<List<SessionLogResponse>>("/session-logs");
+        Assert.NotNull(logs);
+        Assert.Equal(
+            2,
+            logs!.Count(log => log.ExerciseId == "push_up" && log.SessionDay == 6));
+    }
+
+    [Fact]
     public async Task Delete_removes_the_log_and_returns_no_content()
     {
         using var client = factory.CreateClient();

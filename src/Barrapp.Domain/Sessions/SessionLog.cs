@@ -10,7 +10,10 @@ namespace Barrapp.Domain.Sessions;
 /// <remarks>
 /// Pertenece a un usuario (<see cref="UserId"/>); en el MVP mono-usuario, todos al usuario fijo.
 /// La sesión se identifica por su día dentro del mesociclo (<see cref="SessionDay"/>) y, cuando
-/// el mesociclo se persista (ticket #27), por <see cref="MesocycleId"/>. Las series son objetos
+/// el mesociclo se persista (ticket #27), por <see cref="MesocycleId"/>. <see cref="ClientId"/> es
+/// el id idempotente que genera el cliente de la app (la outbox offline, #26): el servidor lo usa
+/// para no duplicar filas cuando un envío se repite tras perder la respuesta, y es opcional, de
+/// modo que el alta directa del API sin idempotencia sigue existiendo. Las series son objetos
 /// valor <see cref="SessionLogSet"/> y toda escritura pasa por <see cref="Create"/>.
 /// </remarks>
 public sealed class SessionLog
@@ -23,7 +26,8 @@ public sealed class SessionLog
         string exerciseId,
         Guid? mesocycleId,
         int sessionDay,
-        DateTimeOffset recordedAtUtc)
+        DateTimeOffset recordedAtUtc,
+        Guid? clientId)
     {
         Id = id;
         UserId = userId;
@@ -31,6 +35,7 @@ public sealed class SessionLog
         MesocycleId = mesocycleId;
         SessionDay = sessionDay;
         RecordedAtUtc = recordedAtUtc;
+        ClientId = clientId;
     }
 
     // Requerido por EF Core para materializar la entidad; nunca se usa desde el dominio.
@@ -59,6 +64,13 @@ public sealed class SessionLog
     /// <summary>Momento en el que se registró la sesión (UTC).</summary>
     public DateTimeOffset RecordedAtUtc { get; private set; }
 
+    /// <summary>
+    /// Id idempotente que genera el cliente (la outbox offline, #26) para identificar este registro
+    /// entre reintentos; <c>null</c> si el alta vino del API sin idempotencia. El servidor lo
+    /// garantiza único por atleta (índice filtrado en la base).
+    /// </summary>
+    public Guid? ClientId { get; private set; }
+
     /// <summary>Series del ejercicio, en orden, con el valor real ejecutado en cada una.</summary>
     public IReadOnlyCollection<SessionLogSet> Sets => _sets;
 
@@ -73,7 +85,8 @@ public sealed class SessionLog
         Guid? mesocycleId,
         int sessionDay,
         DateTimeOffset recordedAtUtc,
-        IReadOnlyCollection<SessionLogSetInput> sets)
+        IReadOnlyCollection<SessionLogSetInput> sets,
+        Guid? clientId = null)
     {
         if (sessionDay < 1)
         {
@@ -92,7 +105,8 @@ public sealed class SessionLog
             exerciseId,
             mesocycleId,
             sessionDay,
-            recordedAtUtc);
+            recordedAtUtc,
+            clientId);
         log._sets.AddRange(built.Value);
 
         return log;

@@ -6,10 +6,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Barrapp.Application.Features.SoloSessions;
 
 /// <summary>
-/// Lista las sueltas proyectando directo a DTO (lado de lectura) y resolviendo nombres contra el
-/// catálogo, igual que los registros de sesión. El snapshot viaja con el agregado, así que no hace
-/// falta un include.
+/// Lista las sueltas y resuelve nombres contra el catálogo, igual que los registros de sesión.
 /// </summary>
+/// <remarks>
+/// Excepción pragmática documentada a «las queries proyectan directo a DTO»: los ítems de la suelta
+/// son una colección owned del agregado y el nombre de cada ejercicio se resuelve contra el
+/// catálogo en memoria, así que se carga el árbol entero y se mapea con <see cref="SueltaResponses"/>,
+/// el mismo patrón que ya usan el plan y el historial (ADR-0012 y ADR-0013).
+/// </remarks>
 internal sealed class GetSueltaHistoryQueryHandler(IApplicationDbContext dbContext, IKnowledgeBase catalog)
     : IQueryHandler<GetSueltaHistoryQuery, IReadOnlyList<SessionSueltaResponse>>
 {

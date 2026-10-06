@@ -35,11 +35,17 @@ export type RegisterSessionLogInput = {
   mesocycleId?: string | null;
   sessionDay: number;
   sets: { setNumber: number; value: number; effort?: number | null }[];
+  /**
+   * Id idempotente de la outbox offline (#26): si un envío pierde la respuesta y se reintenta con
+   * el mismo id, el servidor actualiza el registro original en lugar de duplicar la fila.
+   */
+  clientId?: string;
 };
 
 /**
  * Registra lo ejecutado, serie a serie, en un ejercicio de una sesión (`POST /session-logs`).
  * Devuelve el registro tal y como quedó guardado (el servidor deriva la unidad del ejercicio).
+ * Con `clientId` el alta es idempotente: un reintento con el mismo id actualiza, nunca duplica.
  */
 export async function registerSessionLog(input: RegisterSessionLogInput): Promise<SessionLog> {
   const response = await fetch(`${getApiBaseUrl()}/session-logs`, {

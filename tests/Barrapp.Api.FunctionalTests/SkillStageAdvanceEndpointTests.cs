@@ -119,6 +119,49 @@ public sealed class SkillStageAdvanceUnknownSkillEndpointTests(BarrappApiFactory
 }
 
 /// <summary>
+/// Clase aparte con su propia base: el avance solo cuenta los registros del mesociclo en curso
+/// (FIX-3). Tras cerrar el mesociclo, sus sesiones —que cumplirían el criterio— no disparan el
+/// avance; solo lo hacen las sesiones registradas después del cierre.
+/// </summary>
+public sealed class SkillStageAdvanceClosedMesocycleEndpointTests(BarrappApiFactory factory)
+    : IClassFixture<BarrappApiFactory>
+{
+    [Fact]
+    public async Task Post_advance_ignores_the_sessions_of_a_closed_mesocycle()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        // Materializa y cierra un mesociclo para fijar la frontera temporal: las sesiones del
+        // mesociclo anterior quedan antes del cierre.
+        await client.PostAsync("/plan", content: null);
+        await client.RegisterSkill("handstand-wall-support", sessionDay: 1, 30, 30, 30);
+        await client.RegisterSkill("handstand-wall-support", sessionDay: 2, 30, 30, 30);
+        using var close = await client.PostAsync("/plan/close", content: null);
+        Assert.Equal(HttpStatusCode.OK, close.StatusCode);
+
+        // Las dos sesiones del mesociclo cerrado cumplirían el criterio, pero ya no cuentan.
+        using var advance = await client.PostAsync("/catalog/progress/handstand/advance", null);
+        Assert.Equal(HttpStatusCode.OK, advance.StatusCode);
+        var kept = await advance.Content.ReadFromJsonAsync<SkillStageAdvanceResponse>();
+        Assert.NotNull(kept);
+        Assert.False(kept!.Advanced);
+        Assert.Equal(1, kept.StageOrder);
+
+        // Dos sesiones nuevas (posteriores al cierre) sí hacen avanzar.
+        await client.RegisterSkill("handstand-wall-support", sessionDay: 3, 30, 30, 30);
+        await client.RegisterSkill("handstand-wall-support", sessionDay: 4, 30, 30, 30);
+
+        using var secondAdvance = await client.PostAsync("/catalog/progress/handstand/advance", null);
+        var advanced = await secondAdvance.Content.ReadFromJsonAsync<SkillStageAdvanceResponse>();
+        Assert.NotNull(advanced);
+        Assert.True(advanced!.Advanced);
+        Assert.Equal(2, advanced.StageOrder);
+    }
+}
+
+/// <summary>
 /// Ayudante: registra la sesión del ejercicio de la etapa, serie a serie, con los valores dados.
 /// </summary>
 internal static class SkillStageAdvanceTestData

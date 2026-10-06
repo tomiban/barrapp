@@ -120,6 +120,95 @@ public sealed class SessionLogPersistenceTests : IDisposable
     }
 
     [Fact]
+    public async Task Two_logs_with_the_same_client_id_violate_the_unique_filtered_index()
+    {
+        var clientId = Guid.NewGuid();
+
+        _dbContext.SessionLogs.Add(SessionLog.Create(
+            SingleUser.Id,
+            "push_up",
+            null,
+            1,
+            new DateTimeOffset(2026, 10, 5, 18, 30, 0, TimeSpan.Zero),
+            [new SessionLogSetInput(1, 10)],
+            clientId).Value);
+        _dbContext.SessionLogs.Add(SessionLog.Create(
+            SingleUser.Id,
+            "push_up",
+            null,
+            1,
+            new DateTimeOffset(2026, 10, 5, 19, 0, 0, TimeSpan.Zero),
+            [new SessionLogSetInput(1, 12)],
+            clientId).Value);
+
+        // El índice único filtrado (UserId, ClientId) WHERE ClientId IS NOT NULL lo rechaza.
+        await Assert.ThrowsAsync<DbUpdateException>(() => _dbContext.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task Two_logs_with_different_client_ids_are_both_saved()
+    {
+        _dbContext.SessionLogs.Add(SessionLog.Create(
+            SingleUser.Id,
+            "push_up",
+            null,
+            1,
+            new DateTimeOffset(2026, 10, 5, 18, 30, 0, TimeSpan.Zero),
+            [new SessionLogSetInput(1, 10)],
+            Guid.NewGuid()).Value);
+        _dbContext.SessionLogs.Add(SessionLog.Create(
+            SingleUser.Id,
+            "push_up",
+            null,
+            1,
+            new DateTimeOffset(2026, 10, 5, 19, 0, 0, TimeSpan.Zero),
+            [new SessionLogSetInput(1, 12)],
+            Guid.NewGuid()).Value);
+
+        await _dbContext.SaveChangesAsync();
+
+        var logs = await ReadLogsAsync();
+        Assert.Equal(2, logs.Count);
+    }
+
+    [Fact]
+    public async Task Registering_twice_with_the_same_client_id_updates_in_place_without_duplicating()
+    {
+        var clientId = Guid.NewGuid();
+        Guid firstId;
+        using (var services = CreateServices(_dbContext))
+        {
+            var isender = services.GetRequiredService<ISender>();
+            var first = await isender.Send(new RegisterSessionLogCommand(
+                "push_up",
+                MesocycleId: null,
+                SessionDay: 1,
+                [new SessionLogSetInput(1, 10), new SessionLogSetInput(2, 11)],
+                ClientId: clientId));
+            Assert.True(first.IsSuccess);
+            firstId = first.Value.Id;
+
+            // El cliente reenvía el mismo log (mismo clientId) con las series corregidas.
+            var second = await isender.Send(new RegisterSessionLogCommand(
+                "push_up",
+                MesocycleId: null,
+                SessionDay: 1,
+                [new SessionLogSetInput(1, 14), new SessionLogSetInput(2, 14)],
+                ClientId: clientId));
+            Assert.True(second.IsSuccess);
+            Assert.Equal(firstId, second.Value.Id);
+            Assert.Equal([14, 14], second.Value.Sets.Select(set => set.Value));
+        }
+
+        // Contexto nuevo: sigue habiendo una sola fila y conserva el id original.
+        using var readContext = CreateContext();
+        var logs = await readContext.SessionLogs.AsNoTracking().ToListAsync();
+        var single = Assert.Single(logs);
+        Assert.Equal(firstId, single.Id);
+        Assert.Equal([14, 14], single.Sets.Select(set => set.Value));
+    }
+
+    [Fact]
     public async Task An_updated_log_is_written_and_read_back_with_its_new_sets()
     {
         var log = SessionLog.Create(

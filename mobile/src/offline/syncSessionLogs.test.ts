@@ -76,12 +76,14 @@ describe('syncPendingSessionLogs', () => {
 
     expect(calls).toEqual([
       {
+        clientId: 'client-2',
         exerciseId: 'pull_up',
         mesocycleId: null,
         sessionDay: 2,
         sets: [{ setNumber: 1, value: 5, effort: null }],
       },
       {
+        clientId: 'client-1',
         exerciseId: 'push_up',
         mesocycleId: null,
         sessionDay: 2,
@@ -111,6 +113,7 @@ describe('syncPendingSessionLogs', () => {
 
     expect(calls).toEqual([
       {
+        clientId: 'client-1',
         exerciseId: 'push_up',
         mesocycleId: null,
         sessionDay: 2,
@@ -135,6 +138,17 @@ describe('syncPendingSessionLogs', () => {
     await syncPendingSessionLogs(outbox, register);
 
     expect(register).toHaveBeenCalledTimes(1);
+  });
+
+  it('cada alta lleva el clientId idempotente de la outbox (ticket #26)', async () => {
+    const outbox = createOutboxStub([PENDING_PUSH_UP]);
+    const { register, calls } = createRegisterStub();
+
+    await syncPendingSessionLogs(outbox, register);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].clientId).toBe('client-1');
+    expect(register).toHaveBeenCalledWith(expect.objectContaining({ clientId: 'client-1' }));
   });
 
   it('se detiene ante el primer fallo y deja lo pendiente para el siguiente intento', async () => {

@@ -54,10 +54,10 @@ internal static class PlanEndpoints
                 })
             .WithName("CloseMesocycle")
             .WithTags("Plan")
-            .WithSummary("Cierra el mesociclo activo, ajusta los máximos con las sesiones registradas y lo publica en el historial.")
+            .WithSummary("Cierra el mesociclo activo (o lo sintetiza desde perfil + objetivo), ajusta los máximos y lo publica en el historial.")
             .Produces<CloseMesocycleResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .ProducesProblem(StatusCodes.Status400BadRequest);
 
         app.MapGet(
                 "/plan/history",
