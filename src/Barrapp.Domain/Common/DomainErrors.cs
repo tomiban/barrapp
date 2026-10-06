@@ -107,7 +107,7 @@ public static class DomainErrors
             $"El ejercicio obligatorio '{exerciseId}' no existe en el catálogo.");
     }
 
-/// <summary>Errores del registro de sesión (serie a serie).</summary>
+    /// <summary>Errores del registro de sesión (serie a serie).</summary>
     public static class SessionLog
     {
         /// <summary>No se puede registrar una sesión sin ninguna serie.</summary>
