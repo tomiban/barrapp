@@ -220,16 +220,16 @@ describe('SessionLoggingView', () => {
       {
         exerciseId: 'push_up',
         sets: [
-          { setNumber: 1, value: 10 },
-          { setNumber: 2, value: 11 },
-          { setNumber: 3, value: 12 },
+          { setNumber: 1, value: 10, effort: null },
+          { setNumber: 2, value: 11, effort: null },
+          { setNumber: 3, value: 12, effort: null },
         ],
       },
       {
         exerciseId: 'pull_up',
         sets: [
-          { setNumber: 1, value: 5 },
-          { setNumber: 2, value: 6 },
+          { setNumber: 1, value: 5, effort: null },
+          { setNumber: 2, value: 6, effort: null },
         ],
       },
     ]);
@@ -322,15 +322,15 @@ describe('SessionLoggingView', () => {
       {
         exerciseId: 'handstand-wall-support',
         sets: [
-          { setNumber: 1, value: 25 },
-          { setNumber: 2, value: 30 },
+          { setNumber: 1, value: 25, effort: null },
+          { setNumber: 2, value: 30, effort: null },
         ],
       },
       {
         exerciseId: 'hollow-body-hold',
         sets: [
-          { setNumber: 1, value: 20 },
-          { setNumber: 2, value: 22 },
+          { setNumber: 1, value: 20, effort: null },
+          { setNumber: 2, value: 22, effort: null },
         ],
       },
     ]);
@@ -384,8 +384,8 @@ describe('SessionLoggingView', () => {
       {
         exerciseId: 'pistol-box',
         sets: [
-          { setNumber: 1, value: 6 },
-          { setNumber: 2, value: 5 },
+          { setNumber: 1, value: 6, effort: null },
+          { setNumber: 2, value: 5, effort: null },
         ],
       },
     ]);
@@ -417,8 +417,8 @@ describe('SessionLoggingView', () => {
       {
         exerciseId: 'pull_up',
         sets: [
-          { setNumber: 1, value: 5 },
-          { setNumber: 2, value: 6 },
+          { setNumber: 1, value: 5, effort: null },
+          { setNumber: 2, value: 6, effort: null },
         ],
       },
     ]);
@@ -451,6 +451,108 @@ describe('SessionLoggingView', () => {
 
     expect(screen.getByTestId('session-log-saved-hollow-body-hold')).toBeOnTheScreen();
     expect(screen.getByText('25 · 30 · 28 s')).toBeOnTheScreen();
+  });
+
+  it('ofrece un campo opcional de RIR/RPE por serie, vacío por defecto', async () => {
+    await renderView();
+
+    expect(screen.getByTestId('session-log-effort-push_up-1')).toBeOnTheScreen();
+    expect(screen.getByTestId('session-log-effort-push_up-1')).toHaveProp('value', '');
+    expect(screen.getByTestId('session-log-effort-push_up-3')).toBeOnTheScreen();
+    expect(screen.getByTestId('session-log-effort-hollow-body-hold-1')).toBeOnTheScreen();
+    expect(screen.getAllByText('RIR/RPE').length).toBeGreaterThan(0);
+  });
+
+  it('guarda el RIR/RPE anotado por serie junto al valor real', async () => {
+    const onSave = jest.fn();
+    await render(
+      <SessionLoggingView
+        plan={strengthPlan}
+        logs={[]}
+        saving={false}
+        feedback={null}
+        onSave={onSave}
+      />,
+    );
+
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-1'), '10');
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-2'), '11');
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-3'), '12');
+    await fireEvent.changeText(screen.getByTestId('session-log-effort-push_up-1'), '2');
+    await fireEvent.changeText(screen.getByTestId('session-log-effort-push_up-3'), '3');
+    await fireEvent.changeText(screen.getByTestId('session-log-set-pull_up-1'), '5');
+    await fireEvent.changeText(screen.getByTestId('session-log-set-pull_up-2'), '6');
+    await fireEvent.press(screen.getByTestId('session-log-save'));
+
+    expect(onSave).toHaveBeenCalledWith(1, [
+      {
+        exerciseId: 'push_up',
+        sets: [
+          { setNumber: 1, value: 10, effort: 2 },
+          { setNumber: 2, value: 11, effort: null },
+          { setNumber: 3, value: 12, effort: 3 },
+        ],
+      },
+      {
+        exerciseId: 'pull_up',
+        sets: [
+          { setNumber: 1, value: 5, effort: null },
+          { setNumber: 2, value: 6, effort: null },
+        ],
+      },
+    ]);
+  });
+
+  it('avisa cuando el RIR/RPE escapa del rango 0 a 10', async () => {
+    const onSave = jest.fn();
+    await render(
+      <SessionLoggingView
+        plan={strengthPlan}
+        logs={[]}
+        saving={false}
+        feedback={null}
+        onSave={onSave}
+      />,
+    );
+
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-1'), '10');
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-2'), '11');
+    await fireEvent.changeText(screen.getByTestId('session-log-set-push_up-3'), '12');
+    await fireEvent.changeText(screen.getByTestId('session-log-effort-push_up-1'), '11');
+    await fireEvent.press(screen.getByTestId('session-log-save'));
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText('El RIR/RPE debe ser un número entre 0 y 10.')).toBeOnTheScreen();
+  });
+
+  it('no ofrece el campo de RIR/RPE en las series ya registradas', async () => {
+    await render(
+      <SessionLoggingView
+        plan={strengthPlan}
+        logs={[savedLog]}
+        saving={false}
+        feedback={null}
+        onSave={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId('session-log-effort-push_up-1')).toBeNull();
+    expect(screen.getByTestId('session-log-effort-pull_up-1')).toBeOnTheScreen();
+  });
+
+  it('muestra el RIR/RPE real junto a los valores en el registro guardado', async () => {
+    const logWithEffort: SessionLog = {
+      ...savedLog,
+      sets: [
+        { setNumber: 1, value: 10, effort: 2 },
+        { setNumber: 2, value: 11, effort: 2 },
+        { setNumber: 3, value: 12, effort: null },
+      ],
+    };
+    await renderView({ logs: [logWithEffort] });
+
+    expect(screen.getByTestId('session-log-saved-push_up')).toBeOnTheScreen();
+    expect(screen.getByText('10 · 11 · 12 reps · RIR 2')).toBeOnTheScreen();
   });
 
   it('muestra el aviso del servidor tras guardar', async () => {

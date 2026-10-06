@@ -156,6 +156,23 @@ public sealed class SessionLogTests
         Assert.Equal(DomainErrors.SessionLog.EffortOutOfRange, result.Error);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    public void Create_accepts_an_effort_at_the_boundaries(int effort)
+    {
+        var result = SessionLog.Create(
+            UserId,
+            "push_up",
+            null,
+            1,
+            Recorded,
+            Sets(new SessionLogSetInput(1, 8, effort)));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(effort, result.Value.Sets.Single().Effort);
+    }
+
     [Fact]
     public void Create_rejects_a_session_day_below_one()
     {

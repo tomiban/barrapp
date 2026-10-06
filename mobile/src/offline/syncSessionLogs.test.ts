@@ -96,6 +96,34 @@ describe('syncPendingSessionLogs', () => {
     expect(result).toEqual({ synced: 2, remaining: 0 });
   });
 
+  it('sube el esfuerzo (RIR/RPE) real anotado en cada serie', async () => {
+    const pendingWithEffort: PendingSessionLog = {
+      ...PENDING_PUSH_UP,
+      sets: [
+        { setNumber: 1, value: 10, effort: 2 },
+        { setNumber: 2, value: 11, effort: 2 },
+      ],
+    };
+    const outbox = createOutboxStub([pendingWithEffort]);
+    const { register, calls } = createRegisterStub();
+
+    const result = await syncPendingSessionLogs(outbox, register);
+
+    expect(calls).toEqual([
+      {
+        exerciseId: 'push_up',
+        mesocycleId: null,
+        sessionDay: 2,
+        sets: [
+          { setNumber: 1, value: 10, effort: 2 },
+          { setNumber: 2, value: 11, effort: 2 },
+        ],
+      },
+    ]);
+    expect(outbox.remove).toHaveBeenCalledWith('client-1');
+    expect(result).toEqual({ synced: 1, remaining: 0 });
+  });
+
   it('no vuelve a subir lo ya sincronizado en un segundo intento (sin duplicados)', async () => {
     const outbox = createOutboxStub([PENDING_PUSH_UP]);
     const { register } = createRegisterStub();

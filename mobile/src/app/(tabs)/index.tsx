@@ -173,7 +173,7 @@ export default function TrainScreen() {
               sets: exercise.sets.map((set) => ({
                 setNumber: set.setNumber,
                 value: set.value,
-                effort: null,
+                effort: set.effort ?? null,
               })),
             });
           }
