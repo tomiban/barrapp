@@ -36,7 +36,8 @@ internal static class SessionLogEndpoints
                             body.SessionDay,
                             body.Sets
                                 .Select(set => new SessionLogSetInput(set.SetNumber, set.Value, set.Effort))
-                                .ToList()),
+                                .ToList(),
+                            body.ClientId),
                         cancellationToken);
 
                     return result.IsSuccess
@@ -94,11 +95,13 @@ internal static class SessionLogEndpoints
 /// <param name="MesocycleId">Mesociclo de la sesión, si el plan ya está persistido (ticket #27).</param>
 /// <param name="SessionDay">Día de la sesión dentro del mesociclo, desde 1.</param>
 /// <param name="Sets">Series ejecutadas, numeradas desde 1 y en orden.</param>
+/// <param name="ClientId">Id idempotente de la outbox offline del cliente (ticket #26); opcional.</param>
 internal sealed record RegisterSessionLogBody(
     string ExerciseId,
     Guid? MesocycleId,
     int SessionDay,
-    IReadOnlyList<RegisterSessionLogSetBody> Sets);
+    IReadOnlyList<RegisterSessionLogSetBody> Sets,
+    Guid? ClientId = null);
 
 /// <summary>Una serie del cuerpo de registro.</summary>
 /// <param name="SetNumber">Número de orden de la serie, desde 1.</param>
