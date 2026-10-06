@@ -1,5 +1,6 @@
 using Barrapp.Domain.Athlete;
 using Barrapp.Domain.Objectives;
+using Barrapp.Domain.Planning;
 using Barrapp.Domain.Sessions;
 using Barrapp.Domain.SkillProgress;
 using Microsoft.EntityFrameworkCore;
@@ -28,4 +29,7 @@ public interface IApplicationDbContext
 
     /// <summary>Historial de sesiones sueltas (aislado de los registros de sesión).</summary>
     DbSet<SessionSuelta> SessionSuelta { get; }
+
+    /// <summary>Mesociclos persistidos: el plan guardado al generarse (D7).</summary>
+    DbSet<Mesocycle> Mesocycles { get; }
 }

@@ -1,0 +1,13 @@
+# El mesociclo se persiste al generarse (snapshot del plan en columna JSON)
+
+Desde #27/#24 (decisión D7 del backlog M3–M7), el plan **se persiste cuando se genera**: `POST /plan` corre el motor (`PlanGenerator.Generate`) y guarda el resultado como un agregado `Mesocycle` en la tabla `Mesocycles` (Id, UserId, SkillId, TrainingDays, Status `Active|Closed`, StartedAtUtc, ClosedAtUtc?, y el **snapshot del plan completo en una única columna JSON**). `GET /plan` sirve el mesociclo **activo** persistido si existe; si no, conserva el comportamiento anterior de generación on-read. `GET /plan/history` lista los mesociclos **cerrados** (los pasados) y `GET /plan/history/{id}` abre su detalle, reconstruyendo el `Plan` desde el snapshot y proyectándolo con el mismo contrato que `GET /plan`.
+
+El snapshot es un **objeto valor puro del dominio** (`MesocycleSnapshot`): copia del `Plan` del motor (skill, frecuencia, etapa actual y las cuatro semanas con sesiones y filas) con `FromPlan(plan)` → `ToPlan()` sin pérdida. La serialización a columna JSON la hace la capa de persistencia con System.Text.Json (`JsonStringEnumConverter` para enums legibles); el round-trip queda probado en tests de persistencia.
+
+Complementa a `docs/adr/0012-generacion-de-plan-en-lado-lectura.md` (la excepción «las queries proyectan directo a DTO» sigue intacta: el motor sigue siendo la costura de la generación) y a `docs/adr/0008-efcore-en-application.md`. El **cierre** del mesociclo activo y el ajuste de máximos con los `SessionLog` es el ticket #24; aquí solo se persiste la generación y se prepara la transición de estado.
+
+## Considered Options
+
+- **Tablas owned por nivel** (`MesocycleMicrocycles` → `…Sessions` → `…Items`): espejo fiel del agregado en el esquema, pero son tres tablas para un árbol que **solo se consulta entero** (el historial nunca filtra por semana, sesión o ítem por separado); más configuración y migración sin beneficio de lectura. Descartado.
+- **Snapshot en una columna JSON** (elegido): una sola columna `TEXT` con el árbol serializado; se escribe y lee completo, la migración es mínima y el round-trip se verifica con tests (dato fuera de la caché de EF). La elección concreta que deja abierta D7 para la tabla `Mesocycles` + «columnas del snapshot serializadas».
+- **Persistir solo al cerrar** (sin `POST /plan`): retrasa el historial, obliga a guardar el activo antes de poder cerrarlo y complica el reemplazo al regenerar; el `POST /plan` con contrato idéntico a la lectura es el punto natural para persistir. Descartado.

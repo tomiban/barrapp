@@ -7,8 +7,10 @@ import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { CloudOff } from '@/design-system/Icon';
 import { Stack } from '@/design-system/layout';
+import { SectionHeader } from '@/design-system/ListRow';
 import { Header, Screen } from '@/design-system/Navigation';
 import { StageAdvanceAction, type StageAdvanceState } from '@/features/plan/StageAdvanceAction';
+import { MesocycleHistory } from '@/features/history/MesocycleHistory';
 import { PlanView } from '@/features/plan/PlanView';
 import { openPlanStore } from '@/offline/planStore';
 import { readPlan, type PlanReadResult } from '@/offline/readPlan';
@@ -113,9 +115,12 @@ export default function PlanScreen() {
 
           <PlanView plan={state.plan} />
 
-          {!state.offline ? (
+{!state.offline ? (
             <StageAdvanceAction state={advanceState} onAdvance={advance} testID="plan-advance" />
           ) : null}
+
+          <SectionHeader label="Historial de mesociclos" testID="plan-history-header" />
+          <MesocycleHistory />
         </Stack>
       ) : null}
     </Screen>

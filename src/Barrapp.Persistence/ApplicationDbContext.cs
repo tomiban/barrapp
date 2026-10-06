@@ -1,6 +1,7 @@
 using Barrapp.Application.Abstractions;
 using Barrapp.Domain.Athlete;
 using Barrapp.Domain.Objectives;
+using Barrapp.Domain.Planning;
 using Barrapp.Domain.Sessions;
 using Barrapp.Domain.SkillProgress;
 using Barrapp.Domain.Users;
@@ -33,6 +34,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     /// <summary>Historial de sesiones sueltas, aislado de los registros de sesión (D8).</summary>
     public DbSet<SessionSuelta> SessionSuelta => Set<SessionSuelta>();
+
+    /// <summary>Mesociclos persistidos: el plan guardado al generarse (D7).</summary>
+    public DbSet<Mesocycle> Mesocycles => Set<Mesocycle>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
