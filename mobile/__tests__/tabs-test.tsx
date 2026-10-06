@@ -30,8 +30,8 @@ function renderApp(initialUrl: string) {
   );
 }
 
-describe('pestañas de la app', () => {
-  it('muestra Entrenar, Plan, Biblioteca y Perfil, y ninguna pestaña Showcase', async () => {
+describe('app tabs', () => {
+  it('shows Entrenar, Plan, Biblioteca and Perfil with no Showcase tab', async () => {
     await renderApp('/');
 
     expect(screen.getByRole('tab', { name: 'Entrenar', selected: true })).toBeOnTheScreen();
@@ -42,7 +42,7 @@ describe('pestañas de la app', () => {
     expect(screen.queryByRole('tab', { name: 'Showcase' })).toBeNull();
   });
 
-  it('mantiene Showcase accesible como ruta de desarrollo', async () => {
+  it('keeps Showcase reachable as a development route', async () => {
     await renderApp('/showcase');
 
     expect(screen.getByTestId('showcase-screen')).toBeOnTheScreen();
