@@ -48,6 +48,28 @@ internal static class SessionLogEndpoints
             .Produces<SessionLogResponse>()
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
+        group.MapPut(
+                "/{id:guid}",
+                async (Guid id, UpdateSessionLogBody body, ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(
+                        new UpdateSessionLogCommand(
+                            id,
+                            body.Sets
+                                .Select(set => new SessionLogSetInput(set.SetNumber, set.Value, set.Effort))
+                                .ToList()),
+                        cancellationToken);
+
+                    return result.IsSuccess
+                        ? Results.Ok(result.Value)
+                        : result.Error.ToProblemDetails();
+                })
+            .WithName("UpdateSessionLog")
+            .WithSummary("Edita un registro de sesión: sustituye los valores de sus series.")
+            .Produces<SessionLogResponse>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return app;
     }
 }
@@ -68,3 +90,7 @@ internal sealed record RegisterSessionLogBody(
 /// <param name="Value">Valor real ejecutado: reps o segundos según el ejercicio.</param>
 /// <param name="Effort">Esfuerzo real (RIR/RPE), entre 0 y 10; opcional.</param>
 internal sealed record RegisterSessionLogSetBody(int SetNumber, int Value, int? Effort);
+
+/// <summary>Cuerpo del <c>PUT</c>: solo las series nuevas; la identidad de la sesión no cambia.</summary>
+/// <param name="Sets">Series ejecutadas, numeradas desde 1 y en orden.</param>
+internal sealed record UpdateSessionLogBody(IReadOnlyList<RegisterSessionLogSetBody> Sets);
