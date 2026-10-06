@@ -9,4 +9,7 @@ public interface IGenerationCatalog : ISkillCatalog
 {
     /// <summary>Busca un ejercicio por su id; <c>null</c> si no existe.</summary>
     Exercise? FindExercise(string exerciseId);
+
+    /// <summary>Ejercicios del grupo indicado (empuje, tirón, pierna, core o cardio).</summary>
+    IReadOnlyList<Exercise> ExercisesByGroup(ExerciseGroup group);
 }
