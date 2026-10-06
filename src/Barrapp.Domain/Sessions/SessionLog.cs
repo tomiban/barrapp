@@ -3,39 +3,50 @@ using Barrapp.Domain.Common;
 namespace Barrapp.Domain.Sessions;
 
 /// <summary>
-/// Registro de lo realmente ejecutado en un ejercicio de una sesión del plan, serie a serie
-/// (spec 0001, US-34). Guarda reps en ejercicios de fuerza y segundos en holds/skill: el valor
-/// es un número y la unidad la deriva el tipo de ejercicio, nunca el cliente.
+/// <b>Registro</b> de una sesión: lo realmente ejecutado, anotado serie a serie (spec 0001, US-34;
+/// ver <c>GLOSSARY.md</c>). Es el agregado que se ancla al plan <b>en lectura</b> por una clave de
+/// sesión determinista (ADR-0014) y la <b>foto por ítem</b> que lo hace legible aunque la base de
+/// conocimiento cambie.
 /// </summary>
 /// <remarks>
-/// Pertenece a un usuario (<see cref="UserId"/>); en el MVP mono-usuario, todos al usuario fijo.
-/// La sesión se identifica por su día dentro del mesociclo (<see cref="SessionDay"/>) y, cuando
-/// el mesociclo se persista (ticket #27), por <see cref="MesocycleId"/>. <see cref="ClientId"/> es
-/// el id idempotente que genera el cliente de la app (la outbox offline, #26): el servidor lo usa
-/// para no duplicar filas cuando un envío se repite tras perder la respuesta, y es opcional, de
-/// modo que el alta directa del API sin idempotencia sigue existiendo. Las series son objetos
-/// valor <see cref="SessionLogSet"/> y toda escritura pasa por <see cref="Create"/>.
+/// <para>
+/// La cabecera guarda <see cref="SessionDate"/> (fecha), <see cref="Kind"/>,
+/// <see cref="MesocycleId"/>, <see cref="MicrocycleNumber"/>, <see cref="SessionDay"/>,
+/// <see cref="RecordedAtUtc"/> y la marca de <see cref="CompletedAtUtc"/>. El plan no se persiste
+/// ni se referencia con claves foráneas: mesociclo, microciclo y día son valores.
+/// </para>
+/// <para>
+/// Los <see cref="SessionLogItem"/> son la foto por ítem —ejercicio, papel y objetivo de
+/// series/reps/segundos— con las series ejecutadas. El <see cref="RecordedAtUtc"/> lo fija el
+/// servidor; el <see cref="ClientId"/> de cada ítem es el id idempotente de la outbox offline
+/// (ADR-0003), de modo que un reintento actualiza el ítem en lugar de duplicarlo.
+/// </para>
+/// <para>
+/// Toda escritura pasa por la fábrica o por sus métodos: ningún campo es mutable desde fuera.
+/// </para>
 /// </remarks>
 public sealed class SessionLog
 {
-    private readonly List<SessionLogSet> _sets = [];
+    private readonly List<SessionLogItem> _items = [];
 
     private SessionLog(
         Guid id,
         Guid userId,
-        string exerciseId,
+        SessionLogKind kind,
+        DateOnly sessionDate,
         Guid? mesocycleId,
-        int sessionDay,
-        DateTimeOffset recordedAtUtc,
-        Guid? clientId)
+        int? microcycleNumber,
+        int? sessionDay,
+        DateTimeOffset recordedAtUtc)
     {
         Id = id;
         UserId = userId;
-        ExerciseId = exerciseId;
+        Kind = kind;
+        SessionDate = sessionDate;
         MesocycleId = mesocycleId;
+        MicrocycleNumber = microcycleNumber;
         SessionDay = sessionDay;
         RecordedAtUtc = recordedAtUtc;
-        ClientId = clientId;
     }
 
     // Requerido por EF Core para materializar la entidad; nunca se usa desde el dominio.
@@ -43,129 +54,195 @@ public sealed class SessionLog
     {
     }
 
-    /// <summary>Identificador del registro.</summary>
+    /// <summary>Identificador del registro de sesión.</summary>
     public Guid Id { get; private set; }
 
     /// <summary>Identificador del atleta al que pertenece el registro.</summary>
     public Guid UserId { get; private set; }
 
-    /// <summary>Identificador del ejercicio registrado en el catálogo.</summary>
-    public string ExerciseId { get; private set; } = string.Empty;
+    /// <summary>Origen de la sesión: del mesociclo o suelta (ADR-0014).</summary>
+    public SessionLogKind Kind { get; private set; }
+
+    /// <summary>Fecha de la sesión (día natural, sin zona horaria).</summary>
+    public DateOnly SessionDate { get; private set; }
 
     /// <summary>
-    /// Identificador del mesociclo al que pertenece la sesión, si el plan ya está persistido
-    /// (ticket #27). <c>null</c> mientras el mesociclo se genera al vuelo.
+    /// Identificador del mesociclo al que pertenece la sesión. <c>null</c> en una sesión suelta.
+    /// Es un valor, no una clave foránea: el plan no se persiste (ADR-0012, ADR-0014).
     /// </summary>
     public Guid? MesocycleId { get; private set; }
 
-    /// <summary>Día de la sesión dentro del mesociclo (1 en adelante).</summary>
-    public int SessionDay { get; private set; }
+    /// <summary>Microciclo (semana) de la sesión dentro del mesociclo, de 1 a 4.</summary>
+    public int? MicrocycleNumber { get; private set; }
 
-    /// <summary>Momento en el que se registró la sesión (UTC).</summary>
+    /// <summary>Día de la sesión dentro del microciclo (desde 1).</summary>
+    public int? SessionDay { get; private set; }
+
+    /// <summary>Momento en el que se registró la sesión (UTC); lo fija el servidor.</summary>
     public DateTimeOffset RecordedAtUtc { get; private set; }
 
     /// <summary>
-    /// Id idempotente que genera el cliente (la outbox offline, #26) para identificar este registro
-    /// entre reintentos; <c>null</c> si el alta vino del API sin idempotencia. El servidor lo
-    /// garantiza único por atleta (índice filtrado en la base).
+    /// Momento en el que la sesión se dio por completada (UTC); <c>null</c> mientras sigue
+    /// pendiente. Es la marca de US23: una sesión completada cuenta para la <i>adherencia</i>.
     /// </summary>
-    public Guid? ClientId { get; private set; }
+    public DateTimeOffset? CompletedAtUtc { get; private set; }
 
-    /// <summary>Series del ejercicio, en orden, con el valor real ejecutado en cada una.</summary>
-    public IReadOnlyCollection<SessionLogSet> Sets => _sets;
+    /// <summary>Indica si la sesión está marcada como completada.</summary>
+    public bool IsCompleted => CompletedAtUtc is not null;
+
+    /// <summary>Ítems registrados de la sesión, en orden de ejecución.</summary>
+    public IReadOnlyCollection<SessionLogItem> Items => _items;
 
     /// <summary>
-    /// Crea un registro de sesión. Falla si el día de la sesión es menor que 1, si no hay series,
-    /// si alguna serie tiene un valor o esfuerzo inválidos, o si los números de serie no son
-    /// consecutivos desde 1.
+    /// Crea el registro de una sesión. Una sesión de <see cref="SessionLogKind.Mesocycle"/> exige
+    /// su clave completa —mesociclo, microciclo de 1 a 4 y día desde 1—; una
+    /// <see cref="SessionLogKind.Suelta"/> no admite ninguno de los tres. Falla con
+    /// <see cref="DomainErrors.SessionLog.MesocycleKeyRequired"/>,
+    /// <see cref="DomainErrors.SessionLog.SueltaKeyNotAllowed"/>,
+    /// <see cref="DomainErrors.SessionLog.MicrocycleOutOfRange"/> o
+    /// <see cref="DomainErrors.SessionLog.SessionDayOutOfRange"/>. Nace sin ítems y sin completar.
     /// </summary>
     public static Result<SessionLog> Create(
         Guid userId,
-        string exerciseId,
+        SessionLogKind kind,
+        DateOnly sessionDate,
         Guid? mesocycleId,
-        int sessionDay,
-        DateTimeOffset recordedAtUtc,
-        IReadOnlyCollection<SessionLogSetInput> sets,
-        Guid? clientId = null)
+        int? microcycleNumber,
+        int? sessionDay,
+        DateTimeOffset recordedAtUtc)
     {
-        if (sessionDay < 1)
+        if (kind == SessionLogKind.Mesocycle)
         {
-            return Result.Failure<SessionLog>(DomainErrors.SessionLog.SessionDayOutOfRange);
+            if (mesocycleId is null)
+            {
+                return Result.Failure<SessionLog>(DomainErrors.SessionLog.MesocycleKeyRequired);
+            }
+
+            if (microcycleNumber is null or < 1 or > 4)
+            {
+                return Result.Failure<SessionLog>(DomainErrors.SessionLog.MicrocycleOutOfRange);
+            }
+
+            if (sessionDay is null or < 1)
+            {
+                return Result.Failure<SessionLog>(DomainErrors.SessionLog.SessionDayOutOfRange);
+            }
+        }
+        else if (mesocycleId is not null || microcycleNumber is not null || sessionDay is not null)
+        {
+            return Result.Failure<SessionLog>(DomainErrors.SessionLog.SueltaKeyNotAllowed);
         }
 
-        var built = TryBuildSets(sets);
-        if (built.IsFailure)
-        {
-            return Result.Failure<SessionLog>(built.Error);
-        }
-
-        var log = new SessionLog(
+        return new SessionLog(
             Guid.NewGuid(),
             userId,
-            exerciseId,
+            kind,
+            sessionDate,
             mesocycleId,
+            microcycleNumber,
             sessionDay,
-            recordedAtUtc,
-            clientId);
-        log._sets.AddRange(built.Value);
-
-        return log;
+            recordedAtUtc);
     }
 
     /// <summary>
-    /// Sustituye las series del registro por las indicadas (spec 0001, US-36; decisión D5:
-    /// editar reemplaza los valores de la serie). Aplica los mismos invariantes que
-    /// <see cref="Create"/> —al menos una serie, valores no negativos, esfuerzo 0–10 y números
-    /// consecutivos desde 1— y falla sin tocar el registro si alguno no se cumple (atómico).
-    /// La identidad de la sesión (ejercicio, día, mesociclo, momento) no cambia.
+    /// Registra un ítem de la sesión con su foto y sus series. Si el ejercicio ya estaba
+    /// registrado, lo sustituye en su sitio —misma posición y mismo identificador— con la última
+    /// escritura (last-write-wins, coherente con la sincronización offline, ADR-0003). Falla, sin
+    /// tocar la sesión, si el ítem no cumple los invariantes de <see cref="SessionLogItem.Create"/>.
     /// </summary>
-    public Result Update(IReadOnlyCollection<SessionLogSetInput> sets)
+    public Result<SessionLogItem> UpsertItem(SessionLogItemInput input)
     {
-        var built = TryBuildSets(sets);
-        if (built.IsFailure)
+        var existing = FindItemByExercise(input.ExerciseId);
+        if (existing is not null)
         {
-            return Result.Failure(built.Error);
+            var applied = existing.Apply(input);
+            return applied.IsFailure
+                ? Result.Failure<SessionLogItem>(applied.Error)
+                : existing;
         }
 
-        _sets.Clear();
-        _sets.AddRange(built.Value);
+        var creation = SessionLogItem.Create(_items.Count + 1, input);
+        if (creation.IsFailure)
+        {
+            return creation;
+        }
+
+        _items.Add(creation.Value);
+
+        return creation;
+    }
+
+    /// <summary>
+    /// Sustituye las series de un ítem ya registrado (spec 0001, US-36; decisión D5: editar
+    /// reemplaza los valores de la serie). Falla con
+    /// <see cref="DomainErrors.SessionLog.ItemNotFound"/> si el ítem no pertenece a la sesión y, si
+    /// las series no son válidas, conserva las suyas (atómico). La foto del ítem no cambia.
+    /// </summary>
+    public Result<SessionLogItem> UpdateItemSets(
+        Guid itemId,
+        IReadOnlyCollection<SessionLogSetInput> sets)
+    {
+        var item = FindItem(itemId);
+        if (item is null)
+        {
+            return Result.Failure<SessionLogItem>(DomainErrors.SessionLog.ItemNotFound);
+        }
+
+        var update = item.UpdateSets(sets);
+        if (update.IsFailure)
+        {
+            return Result.Failure<SessionLogItem>(update.Error);
+        }
+
+        return item;
+    }
+
+    /// <summary>
+    /// Borra un ítem del registro (spec 0001, US-36). Des-completa la sesión: lo que dependía de
+    /// ella —la <i>adherencia</i>— se recalcula sobre lo que queda. Falla con
+    /// <see cref="DomainErrors.SessionLog.ItemNotFound"/> si el ítem no pertenece a la sesión.
+    /// </summary>
+    public Result RemoveItem(Guid itemId)
+    {
+        var item = FindItem(itemId);
+        if (item is null)
+        {
+            return Result.Failure(DomainErrors.SessionLog.ItemNotFound);
+        }
+
+        _items.Remove(item);
+        CompletedAtUtc = null;
 
         return Result.Success();
     }
 
     /// <summary>
-    /// Valida y construye las series de la entrada, aplicando los invariantes compartidos por
-    /// <see cref="Create"/> y <see cref="Update"/>. Nunca muta el registro.
+    /// Marca la sesión como completada con su marca temporal (spec 0001, US-23): cuenta para la
+    /// <i>adherencia</i>. Es idempotente: si ya estaba completada conserva la primera marca, de modo
+    /// que un reintento offline no la pise.
     /// </summary>
-    private static Result<IReadOnlyList<SessionLogSet>> TryBuildSets(
-        IReadOnlyCollection<SessionLogSetInput> sets)
+    public Result Complete(DateTimeOffset completedAtUtc)
     {
-        if (sets is null || sets.Count == 0)
-        {
-            return Result.Failure<IReadOnlyList<SessionLogSet>>(DomainErrors.SessionLog.SetsRequired);
-        }
+        CompletedAtUtc ??= completedAtUtc;
 
-        var built = new List<SessionLogSet>(sets.Count);
-        foreach (var input in sets)
-        {
-            var creation = SessionLogSet.Create(input.SetNumber, input.Value, input.Effort);
-            if (creation.IsFailure)
-            {
-                return Result.Failure<IReadOnlyList<SessionLogSet>>(creation.Error);
-            }
-
-            built.Add(creation.Value);
-        }
-
-        for (var index = 0; index < built.Count; index++)
-        {
-            if (built[index].SetNumber != index + 1)
-            {
-                return Result.Failure<IReadOnlyList<SessionLogSet>>(
-                    DomainErrors.SessionLog.SetNumbersNotConsecutive);
-            }
-        }
-
-        return built;
+        return Result.Success();
     }
+
+    /// <summary>
+    /// Des-completa la sesión: deja de contar para la <i>adherencia</i> sin perder los ítems
+    /// registrados. Es idempotente.
+    /// </summary>
+    public Result Uncomplete()
+    {
+        CompletedAtUtc = null;
+
+        return Result.Success();
+    }
+
+    private SessionLogItem? FindItem(Guid itemId) => _items.FirstOrDefault(candidate => candidate.Id == itemId);
+
+    /// <summary>El ítem de la sesión que registra ese ejercicio, o <c>null</c> si no está.</summary>
+    private SessionLogItem? FindItemByExercise(string? exerciseId) =>
+        _items.FirstOrDefault(candidate =>
+            string.Equals(candidate.ExerciseId, exerciseId, StringComparison.Ordinal));
 }

@@ -162,15 +162,55 @@ public static class DomainErrors
             "session_log.value_must_be_non_negative",
             "El valor real de una serie no puede ser negativo.");
 
-        /// <summary>El esfuerzo real (RIR/RPE) escapa del rango admitido (0–10).</summary>
-        public static readonly Error EffortOutOfRange = Error.Validation(
-            "session_log.effort_out_of_range",
-            "El esfuerzo (RIR/RPE) debe estar entre 0 y 10.");
+        /// <summary>El RIR real escapa del rango admitido (0–10).</summary>
+        public static readonly Error ActualRirOutOfRange = Error.Validation(
+            "session_log.actual_rir_out_of_range",
+            "El RIR real debe estar entre 0 y 10.");
+
+        /// <summary>El lastre de una serie no puede ser negativo.</summary>
+        public static readonly Error LoadMustBeNonNegative = Error.Validation(
+            "session_log.load_must_be_non_negative",
+            "El lastre no puede ser negativo.");
 
         /// <summary>El día de la sesión no puede ser menor que 1.</summary>
         public static readonly Error SessionDayOutOfRange = Error.Validation(
             "session_log.session_day_out_of_range",
             "El día de la sesión debe ser mayor o igual que 1.");
+
+        /// <summary>El microciclo de la sesión está fuera del rango 1–4.</summary>
+        public static readonly Error MicrocycleOutOfRange = Error.Validation(
+            "session_log.microcycle_out_of_range",
+            "El microciclo debe estar entre 1 y 4.");
+
+        /// <summary>Una sesión del mesociclo necesita su mesociclo, su microciclo y su día.</summary>
+        public static readonly Error MesocycleKeyRequired = Error.Validation(
+            "session_log.mesocycle_key_required",
+            "Una sesión del mesociclo necesita su mesociclo, su microciclo y su día.");
+
+        /// <summary>Una sesión suelta no lleva mesociclo, microciclo ni día.</summary>
+        public static readonly Error SueltaKeyNotAllowed = Error.Validation(
+            "session_log.suelta_key_not_allowed",
+            "Una sesión suelta no lleva mesociclo, microciclo ni día.");
+
+        /// <summary>El ítem registrado no trae ejercicio ni nombre.</summary>
+        public static readonly Error ExerciseRequired = Error.Validation(
+            "session_log.exercise_required",
+            "Debes indicar el ejercicio registrado.");
+
+        /// <summary>El objetivo del ítem registrado no declara sus series.</summary>
+        public static readonly Error PrescribedSetsOutOfRange = Error.Validation(
+            "session_log.prescribed_sets_out_of_range",
+            "El objetivo del ejercicio debe declarar al menos una serie.");
+
+        /// <summary>Un rango de la prescripción queda declarado a medias (solo mínimo o solo máximo).</summary>
+        public static readonly Error PrescriptionRangeIncomplete = Error.Validation(
+            "session_log.prescription_range_incomplete",
+            "El objetivo del ejercicio debe declarar el mínimo y el máximo del rango.");
+
+        /// <summary>El mínimo de un rango de la prescripción es mayor que su máximo.</summary>
+        public static readonly Error PrescriptionRangeInverted = Error.Validation(
+            "session_log.prescription_range_inverted",
+            "El mínimo del rango del objetivo no puede ser mayor que su máximo.");
 
         /// <summary>El ejercicio indicado no existe en el catálogo.</summary>
         public static readonly Error UnknownExercise = Error.Validation(
@@ -181,6 +221,11 @@ public static class DomainErrors
         public static readonly Error NotFound = Error.NotFound(
             "session_log.not_found",
             "El registro de sesión indicado no existe.");
+
+        /// <summary>El ítem indicado no pertenece a esa sesión.</summary>
+        public static readonly Error ItemNotFound = Error.NotFound(
+            "session_log.item_not_found",
+            "El ejercicio indicado no está registrado en esa sesión.");
     }
 
     /// <summary>Errores de la sesión suelta (#28) y su historial (#29).</summary>

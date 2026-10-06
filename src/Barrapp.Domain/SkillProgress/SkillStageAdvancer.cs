@@ -10,29 +10,32 @@ namespace Barrapp.Domain.SkillProgress;
 /// devuelve la próxima etapa de la escalera. Es puro: mismas entradas, misma evaluación.
 /// </summary>
 /// <remarks>
-/// Regla de «dos sesiones consecutivas», decidida para #23:
+/// Regla de «dos sesiones consecutivas», decidida para #23 y afinada por ADR-0014 (el registro es
+/// la <b>sesión</b>):
 /// <list type="bullet">
 /// <item>
-/// Una <b>sesión</b> es un día de sesión (<see cref="SessionLog.SessionDay"/>) en el que se
-/// registró el ejercicio de la etapa actual (<see cref="SkillStage.ExerciseId"/>). Las sesiones de
-/// otros ejercicios no cuentan: en el reparto de 4 días el skill se practica solo en el tren
-/// superior, así que «consecutivas» se refiere a las sesiones en las que se practicó la etapa.
+/// Una <b>sesión</b> es una fila del registro —la sesión del mesociclo o la suelta— en la que se
+/// registró el ejercicio de la etapa actual (<see cref="SkillStage.ExerciseId"/>), buscado entre
+/// los ítems que guardan la foto de lo prescrito. Las sesiones de otros ejercicios no cuentan: en
+/// el reparto de 4 días el skill se practica solo en el tren superior, así que «consecutivas» se
+/// refiere a las sesiones en las que se practicó la etapa.
 /// </item>
 /// <item>
-/// Permanece <c>log.SessionDay</c> como identidad de sesión: el motor no conoce el mesociclo, solo
-/// los registros que recibe. El caso de uso le pasa únicamente los del <b>mesociclo en curso</b>
-/// (#27, FIX-3), así que las sesiones de un mesociclo cerrado ya no llegan aquí. Dos registros del
-/// mismo ejercicio en el mismo día (dentro de esos registros) se funden en una sola sesión,
-/// mandando el más reciente (<c>last-write-wins</c>, coherente con la sincronización offline,
-/// decisión D9).
+/// La identidad de sesión es la clave de sesión determinista —mesociclo, microciclo y día
+/// (ADR-0014)—: dos semanas distintas del mismo día no se funden. El motor no conoce la clave; el
+/// caso de uso le pasa únicamente los registros del <b>mesociclo en curso</b> (#27, FIX-3), así que
+/// las sesiones de un mesociclo cerrado ya no llegan aquí.
 /// </item>
 /// <item>
-/// El tiempo de una sesión es el de su registro más reciente (<see cref="SessionLog.RecordedAtUtc"/>).
+/// El tiempo de una sesión es el de su registro (<see cref="SessionLog.RecordedAtUtc"/>, que fija el
+/// servidor); los ítems más recientes mandan sobre los anteriores (last-write-wins, coherente con la
+/// sincronización offline, decisión D9).
 /// </item>
 /// <item>
-/// Una sesión <b>cumple el criterio</b> cuando las primeras <see cref="StageCriterion.Sets"/>
-/// series alcanzan el <see cref="StageCriterion.Target"/> (según <see cref="StageCriterion.Metric"/>);
-/// si alguna de las series exigidas se queda corta, no cumple.
+/// Una sesión <b>cumple el criterio</b> cuando el ítem del ejercicio de la etapa trae al menos las
+/// series exigidas y las primeras <see cref="StageCriterion.Sets"/> alcanzan el
+/// <see cref="StageCriterion.Target"/> (según <see cref="StageCriterion.Metric"/>); si alguna de las
+/// series exigidas se queda corta, no cumple.
 /// </item>
 /// <item>
 /// Se avanza cuando las <b>dos sesiones de práctica más recientes</b> cumplen el criterio: por
@@ -87,30 +90,31 @@ public static class SkillStageAdvancer
     }
 
     /// <summary>
-    /// Las sesiones de práctica del ejercicio de la etapa, de la más antigua a la más reciente. En
-    /// un mismo día manda el registro más reciente (last-write-wins, ver remarks).
+    /// Las sesiones de práctica del ejercicio de la etapa, de la más antigua a la más reciente,
+    /// deduplicadas por su clave de sesión (ADR-0014): si la misma sesión se registró más de una
+    /// vez, manda la última escritura.
     /// </summary>
     private static IReadOnlyList<SkillSession> SkillSessions(
         SkillStage stage,
         IReadOnlyList<SessionLog> logs) =>
         logs
-            .Where(log => log.ExerciseId == stage.ExerciseId)
-            .GroupBy(log => log.SessionDay)
-            .Select(group => new SkillSession(
-                group.Key,
-                group.Max(log => log.RecordedAtUtc),
-                group.OrderByDescending(log => log.RecordedAtUtc).First()))
-            .OrderBy(session => session.PerformedAtUtc)
-            .ThenBy(session => session.SessionDay)
+            .Where(log => log is not null)
+            .Select(log => new SkillSession(log, log.Items.FirstOrDefault(item => item is not null
+                && string.Equals(item.ExerciseId, stage.ExerciseId, StringComparison.Ordinal))))
+            .Where(session => session.Item is not null)
+            .GroupBy(session => session.Key)
+            .Select(group => group.OrderByDescending(session => session.Log.RecordedAtUtc).First())
+            .OrderBy(session => session.Log.RecordedAtUtc)
+            .ThenBy(session => session.Key)
             .ToList();
 
     /// <summary>
-    /// La sesión cumple el criterio cuando registró al menos las series exigidas y las primeras
-    /// <see cref="StageCriterion.Sets"/> series alcanzan el objetivo.
+    /// La sesión cumple el criterio cuando su ítem registró al menos las series exigidas y las
+    /// primeras <see cref="StageCriterion.Sets"/> series alcanzan el objetivo.
     /// </summary>
     private static bool MeetsCriterion(SkillSession session, StageCriterion criterion) =>
-        session.Log.Sets.Count >= criterion.Sets
-        && session.Log.Sets
+        session.Item!.Sets.Count >= criterion.Sets
+        && session.Item.Sets
             .OrderBy(set => set.SetNumber)
             .Take(criterion.Sets)
             .All(set => set.Value >= criterion.Target);
@@ -118,6 +122,22 @@ public static class SkillStageAdvancer
     private static Result<StageAdvanceEvaluation> NoAdvance(int stageOrder) =>
         Result.Success(new StageAdvanceEvaluation(stageOrder, Advanced: false));
 
-    /// <summary>Una sesión de práctica del ejercicio de la etapa, con su tiempo y su registro.</summary>
-    private sealed record SkillSession(int SessionDay, DateTimeOffset PerformedAtUtc, SessionLog Log);
+    /// <summary>
+    /// Una sesión de práctica del ejercicio de la etapa: el registro, su clave de sesión
+    /// (ADR-0014) y el ítem del ejercicio que se practicó.
+    /// </summary>
+    private sealed record SkillSession(SessionLog Log, SessionLogItem? Item)
+    {
+        /// <summary>
+        /// Clave de sesión determinista: tipo, mesociclo, microciclo, día y fecha. Dos semanas
+        /// distintas del mismo día de sesión no chocan.
+        /// </summary>
+        public string Key => string.Join(
+            ':',
+            Log.Kind,
+            Log.MesocycleId?.ToString() ?? "-",
+            Log.MicrocycleNumber?.ToString() ?? "-",
+            Log.SessionDay?.ToString() ?? "-",
+            Log.SessionDate.ToString("yyyy-MM-dd"));
+    }
 }

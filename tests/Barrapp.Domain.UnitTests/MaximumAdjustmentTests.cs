@@ -17,6 +17,7 @@ namespace Barrapp.Domain.UnitTests;
 public sealed class MaximumAdjustmentTests
 {
     private static readonly Guid UserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid MesocycleId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     private static readonly DateTimeOffset RecordedAt =
         new(2026, 10, 12, 18, 0, 0, TimeSpan.Zero);
@@ -144,14 +145,35 @@ public sealed class MaximumAdjustmentTests
     private static int ForCode(IReadOnlyList<MaximumInput> maximums, string code) =>
         maximums.Single(maximum => maximum.ExerciseCode == code).Repetitions;
 
-    private static SessionLog Log(string exerciseId, params (int Set, int Value)[] sets) =>
-        SessionLog.Create(
+    /// <summary>
+    /// Sesión registrada con un único ítem (foto por ítem, ADR-0014): el ejercicio con sus series.
+    /// </summary>
+    private static SessionLog Log(string exerciseId, params (int Set, int Value)[] sets)
+    {
+        var log = SessionLog.Create(
             UserId,
-            exerciseId,
-            mesocycleId: null,
+            SessionLogKind.Mesocycle,
+            DateOnly.FromDateTime(RecordedAt.UtcDateTime),
+            MesocycleId,
+            microcycleNumber: 1,
             sessionDay: 1,
-            RecordedAt,
-            sets.Select(set => new SessionLogSetInput(set.Set, set.Value, null)).ToList()).Value;
+            RecordedAt).Value;
+        log.UpsertItem(new SessionLogItemInput(
+            exerciseId,
+            exerciseId,
+            SessionItemRole.Strength,
+            ExerciseGroup.Push,
+            Metric.Reps,
+            sets.Length,
+            1,
+            20,
+            null,
+            null,
+            null,
+            sets.Select(set => new SessionLogSetInput(set.Set, set.Value)).ToList()));
+
+        return log;
+    }
 
     /// <summary>Catálogo mínimo con los tres básicos, una regresión y el core.</summary>
     private static StubCatalog Catalog() => new(
