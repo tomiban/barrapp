@@ -32,8 +32,10 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
+      - name: Restore dependencies
+        run: dotnet restore
       - name: Verify formatting
-        run: dotnet format --verify-no-changes
+        run: dotnet format Barrapp.sln --verify-no-changes
       - name: Test
         run: |
           dotnet test tests/Barrapp.Domain.UnitTests/Barrapp.Domain.UnitTests.csproj --no-restore
