@@ -19,7 +19,7 @@ namespace Barrapp.Domain.Planning;
 public static class PlanGenerator
 {
     /// <summary>Semanas de un mesociclo.</summary>
-    public const int MicrocycleCount = 4;
+    private const int MicrocycleCount = 4;
 
     /// <summary>Frecuencia soportada hoy: reparto full-body de 3 días.</summary>
     private const int SupportedTrainingDays = 3;
@@ -155,6 +155,8 @@ public static class PlanGenerator
             isHold ? stage.Criterion.Target : null);
     }
 
+    // Puente entre el patrón anclado a los máximos (Athlete) y el grupo del catálogo. Ojo con el
+    // nombre: `ExercisePattern.Legs` (plural) se corresponde con `ExerciseGroup.Leg` (singular).
     private static ExerciseGroup ToGroup(ExercisePattern pattern) => pattern switch
     {
         ExercisePattern.Push => ExerciseGroup.Push,

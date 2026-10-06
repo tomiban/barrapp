@@ -1,4 +1,5 @@
 using Barrapp.Application.Abstractions;
+using Barrapp.Application.Features.Catalog;
 using Barrapp.Domain.Planning;
 
 namespace Barrapp.Application.Features.Plans;
@@ -27,7 +28,7 @@ internal static class PlanMappings
         item.ExerciseId,
         catalog.FindExercise(item.ExerciseId)?.Name ?? item.ExerciseId,
         ToCode(item.Role),
-        item.Pattern?.ToString().ToLowerInvariant(),
+        item.Pattern is null ? null : CatalogMappings.ToCode(item.Pattern.Value),
         item.Sets,
         item.RepsMin,
         item.RepsMax,

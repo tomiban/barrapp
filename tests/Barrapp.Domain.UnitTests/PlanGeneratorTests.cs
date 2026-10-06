@@ -41,6 +41,10 @@ public sealed class PlanGeneratorTests
                 .GroupBy(item => item.Pattern!.Value)
                 .ToDictionary(group => group.Key, group => group.Count());
 
+            // Invariante compartido por todos los repartos: ningún patrón se queda por debajo de
+            // ~2×/semana. El full-body de 3 días lo supera a propósito (US11: «cubrirlo todo en
+            // cada sesión»): cada patrón aparece una vez por sesión, 3 veces por semana. Lo fija
+            // el test de composición de la sesión; aquí basta el suelo.
             Assert.True(workByPattern.GetValueOrDefault(ExerciseGroup.Push) >= 2);
             Assert.True(workByPattern.GetValueOrDefault(ExerciseGroup.Pull) >= 2);
             Assert.True(workByPattern.GetValueOrDefault(ExerciseGroup.Leg) >= 2);
