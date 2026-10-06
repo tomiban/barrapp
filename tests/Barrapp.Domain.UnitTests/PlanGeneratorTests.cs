@@ -10,8 +10,9 @@ namespace Barrapp.Domain.UnitTests;
 /// Reglas del motor de generación (#10): da un mesociclo de cuatro semanas con reparto full-body
 /// de 3 días, cada patrón recibe trabajo al menos dos veces por semana, cada sesión empieza por el
 /// bloque de skill en la etapa actual del atleta (#14) y el resultado es determinista. La carga de
-/// fuerza se deriva del máximo del atleta y nunca llega al fallo (#11). Solo se prueba por su
-/// interfaz pública.
+/// fuerza se deriva del máximo del atleta y nunca llega al fallo (#11); el bloque de skill se
+/// ajusta por la palanca del atleta en los skills apalancados (#68). Solo se prueba por su interfaz
+/// pública.
 /// </summary>
 public sealed class PlanGeneratorTests
 {
@@ -265,6 +266,78 @@ public sealed class PlanGeneratorTests
     }
 
     [Fact]
+    public void Generate_adds_one_set_and_a_slower_note_to_the_skill_block_for_an_unfavorable_lever()
+    {
+        var catalog = Catalog();
+        var stage = catalog.FindSkill(SkillId)!.Stages.Single(s => s.Order == 1);
+        var plan = PlanGenerator.Generate(UnfavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value;
+
+        foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
+        {
+            var skillBlock = session.Items[0];
+
+            Assert.Equal(stage.Criterion.Sets + 1, skillBlock.Sets);
+            Assert.NotNull(skillBlock.Note);
+            Assert.Contains("lento", skillBlock.Note);
+
+            // Solo el bloque de skill se ajusta; fuerza y core no cambian ni llevan nota.
+            Assert.All(session.Items.Skip(1), item => Assert.Null(item.Note));
+        }
+    }
+
+    [Fact]
+    public void Generate_removes_one_set_and_a_faster_note_from_the_skill_block_for_a_favorable_lever()
+    {
+        var catalog = Catalog();
+        var stage = catalog.FindSkill(SkillId)!.Stages.Single(s => s.Order == 1);
+        var plan = PlanGenerator.Generate(FavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value;
+
+        foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
+        {
+            var skillBlock = session.Items[0];
+
+            Assert.Equal(stage.Criterion.Sets - 1, skillBlock.Sets);
+            Assert.NotNull(skillBlock.Note);
+            Assert.Contains("rápido", skillBlock.Note);
+        }
+    }
+
+    [Fact]
+    public void Generate_keeps_the_stage_criterion_unchanged_by_the_lever()
+    {
+        var catalog = Catalog();
+        var stage = catalog.FindSkill(SkillId)!.Stages.Single(s => s.Order == 1);
+
+        var favorableBlock = PlanGenerator
+            .Generate(FavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value
+            .Microcycles[0].Sessions[0].Items[0];
+        var unfavorableBlock = PlanGenerator
+            .Generate(UnfavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value
+            .Microcycles[0].Sessions[0].Items[0];
+
+        // El criterio (etapa, ejercicio y marca) no depende del cubo: solo cambia el volumen del bloque.
+        Assert.Equal(favorableBlock.ExerciseId, unfavorableBlock.ExerciseId);
+        Assert.Equal(stage.Criterion.Target, favorableBlock.HoldSecondsMax);
+        Assert.Equal(stage.Criterion.Target, unfavorableBlock.HoldSecondsMax);
+        Assert.Equal(stage.Criterion.Sets, favorableBlock.Sets + 1);
+        Assert.Equal(stage.Criterion.Sets, unfavorableBlock.Sets - 1);
+    }
+
+    [Fact]
+    public void Generate_leaves_a_non_levered_skill_unadjusted_and_without_a_note()
+    {
+        var catalog = Catalog(lever: false);
+        var stage = catalog.FindSkill(SkillId)!.Stages.Single(s => s.Order == 1);
+        var plan = PlanGenerator.Generate(UnfavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value;
+
+        foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
+        {
+            Assert.Equal(stage.Criterion.Sets, session.Items[0].Sets);
+            Assert.Null(session.Items[0].Note);
+        }
+    }
+
+    [Fact]
     public void Generate_is_deterministic()
     {
         var first = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog()).Value;
@@ -292,7 +365,7 @@ public sealed class PlanGeneratorTests
                 microcycle.Sessions.SelectMany(session =>
                     session.Items.Select(item =>
                         $"{microcycle.Number}:{session.Day}:{item.ExerciseId}:{item.Role}:{item.Pattern}:"
-                        + $"{item.Sets}:{item.RepsMin}-{item.RepsMax}:{item.HoldSecondsMin}-{item.HoldSecondsMax}"))));
+                        + $"{item.Sets}:{item.RepsMin}-{item.RepsMax}:{item.HoldSecondsMin}-{item.HoldSecondsMax}:{item.Note}"))));
 
     private static SessionItem StrengthItem(Plan plan, string exerciseId) =>
         plan.Microcycles[0].Sessions[0].Items.Single(item => item.ExerciseId == exerciseId);
@@ -304,13 +377,17 @@ public sealed class PlanGeneratorTests
         int trainingDays,
         int pushUpMaximum = 10,
         int pullUpMaximum = 5,
-        int squatMaximum = 20) =>
+        int squatMaximum = 20,
+        double weightKilograms = 78,
+        double heightCentimeters = 180,
+        double armSpanCentimeters = 180,
+        double inseamCentimeters = 85) =>
         AthleteProfile.Create(
             UserId,
-            78,
-            180,
-            180,
-            85,
+            weightKilograms,
+            heightCentimeters,
+            armSpanCentimeters,
+            inseamCentimeters,
             trainingDays,
             [
                 new MaximumInput("push_up", pushUpMaximum),
@@ -321,7 +398,13 @@ public sealed class PlanGeneratorTests
     private static Objective BuildObjective(string skillId = SkillId) =>
         Objective.Create(UserId, skillId, Catalog()).Value;
 
-    private static KnowledgeBase Catalog()
+    private static AthleteProfile FavorableProfile() =>
+        BuildProfile(3, weightKilograms: 55, heightCentimeters: 165, armSpanCentimeters: 165, inseamCentimeters: 82);
+
+    private static AthleteProfile UnfavorableProfile() =>
+        BuildProfile(3, weightKilograms: 100, heightCentimeters: 185, armSpanCentimeters: 190, inseamCentimeters: 80);
+
+    private static KnowledgeBase Catalog(bool lever = true)
     {
         var exercises = new List<Exercise>
         {
@@ -344,7 +427,7 @@ public sealed class PlanGeneratorTests
             Id = SkillId,
             Name = "Planche",
             Group = ExerciseGroup.Push,
-            Lever = true,
+            Lever = lever,
             Stages =
             [
                 Stage(1, "planche-lean", Metric.Seconds, target: 20, sets: 3),

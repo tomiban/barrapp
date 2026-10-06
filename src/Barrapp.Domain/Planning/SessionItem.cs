@@ -23,7 +23,8 @@ public sealed class SessionItem
         int? repsMin,
         int? repsMax,
         int? holdSecondsMin,
-        int? holdSecondsMax)
+        int? holdSecondsMax,
+        string? note = null)
     {
         ExerciseId = exerciseId;
         Role = role;
@@ -33,6 +34,7 @@ public sealed class SessionItem
         RepsMax = repsMax;
         HoldSecondsMin = holdSecondsMin;
         HoldSecondsMax = holdSecondsMax;
+        Note = note;
     }
 
     /// <summary>Slug del ejercicio en el catálogo.</summary>
@@ -58,4 +60,11 @@ public sealed class SessionItem
 
     /// <summary>Segundos mantenidos máximos del rango; <c>null</c> cuando se mide en repeticiones.</summary>
     public int? HoldSecondsMax { get; }
+
+    /// <summary>
+    /// Nota para la UI sobre la fila; <c>null</c> cuando no hay nada que explicar. Hoy solo la lleva
+    /// el bloque de skill de un skill apalancado, con el ritmo de progreso esperado por la palanca
+    /// (ver <see cref="Barrapp.Domain.Athlete.AthleteLever"/>).
+    /// </summary>
+    public string? Note { get; }
 }
