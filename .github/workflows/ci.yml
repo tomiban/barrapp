@@ -16,6 +16,9 @@ jobs:
   backend:
     name: Backend (.NET)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
     steps:
       - uses: actions/checkout@v7
       - name: Setup .NET
@@ -29,10 +32,12 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
+      - name: Restore dependencies
+        run: dotnet restore barrapp.slnx
       - name: Verify formatting
         run: dotnet format barrapp.slnx --verify-no-changes
       - name: Test
-        run: dotnet test barrapp.slnx
+        run: dotnet test barrapp.slnx --no-restore
 
   mobile:
     name: Mobile (Expo)
