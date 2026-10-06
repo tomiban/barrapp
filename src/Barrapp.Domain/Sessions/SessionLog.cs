@@ -80,29 +80,10 @@ public sealed class SessionLog
             return Result.Failure<SessionLog>(DomainErrors.SessionLog.SessionDayOutOfRange);
         }
 
-        if (sets is null || sets.Count == 0)
+        var built = TryBuildSets(sets);
+        if (built.IsFailure)
         {
-            return Result.Failure<SessionLog>(DomainErrors.SessionLog.SetsRequired);
-        }
-
-        var built = new List<SessionLogSet>(sets.Count);
-        foreach (var input in sets)
-        {
-            var creation = SessionLogSet.Create(input.SetNumber, input.Value, input.Effort);
-            if (creation.IsFailure)
-            {
-                return Result.Failure<SessionLog>(creation.Error);
-            }
-
-            built.Add(creation.Value);
-        }
-
-        for (var index = 0; index < built.Count; index++)
-        {
-            if (built[index].SetNumber != index + 1)
-            {
-                return Result.Failure<SessionLog>(DomainErrors.SessionLog.SetNumbersNotConsecutive);
-            }
+            return Result.Failure<SessionLog>(built.Error);
         }
 
         var log = new SessionLog(
@@ -112,8 +93,65 @@ public sealed class SessionLog
             mesocycleId,
             sessionDay,
             recordedAtUtc);
-        log._sets.AddRange(built);
+        log._sets.AddRange(built.Value);
 
         return log;
+    }
+
+    /// <summary>
+    /// Sustituye las series del registro por las indicadas (spec 0001, US-36; decisión D5:
+    /// editar reemplaza los valores de la serie). Aplica los mismos invariantes que
+    /// <see cref="Create"/> —al menos una serie, valores no negativos, esfuerzo 0–10 y números
+    /// consecutivos desde 1— y falla sin tocar el registro si alguno no se cumple (atómico).
+    /// La identidad de la sesión (ejercicio, día, mesociclo, momento) no cambia.
+    /// </summary>
+    public Result Update(IReadOnlyCollection<SessionLogSetInput> sets)
+    {
+        var built = TryBuildSets(sets);
+        if (built.IsFailure)
+        {
+            return Result.Failure(built.Error);
+        }
+
+        _sets.Clear();
+        _sets.AddRange(built.Value);
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Valida y construye las series de la entrada, aplicando los invariantes compartidos por
+    /// <see cref="Create"/> y <see cref="Update"/>. Nunca muta el registro.
+    /// </summary>
+    private static Result<IReadOnlyList<SessionLogSet>> TryBuildSets(
+        IReadOnlyCollection<SessionLogSetInput> sets)
+    {
+        if (sets is null || sets.Count == 0)
+        {
+            return Result.Failure<IReadOnlyList<SessionLogSet>>(DomainErrors.SessionLog.SetsRequired);
+        }
+
+        var built = new List<SessionLogSet>(sets.Count);
+        foreach (var input in sets)
+        {
+            var creation = SessionLogSet.Create(input.SetNumber, input.Value, input.Effort);
+            if (creation.IsFailure)
+            {
+                return Result.Failure<IReadOnlyList<SessionLogSet>>(creation.Error);
+            }
+
+            built.Add(creation.Value);
+        }
+
+        for (var index = 0; index < built.Count; index++)
+        {
+            if (built[index].SetNumber != index + 1)
+            {
+                return Result.Failure<IReadOnlyList<SessionLogSet>>(
+                    DomainErrors.SessionLog.SetNumbersNotConsecutive);
+            }
+        }
+
+        return built;
     }
 }
