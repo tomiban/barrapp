@@ -486,15 +486,15 @@ public sealed class PlanGeneratorTests
         Assert.Equal(ExerciseGroup.Leg, squatItem.Pattern);
 
         // La regresión se prescribe sobre una base de trabajo asumida y modesta con la onda de RIR:
-        // semana base 3–5, semana 2 4–6, semana 3 5–7; la semana 4 conserva la base (deload #13).
+        // semana base 3–5, semana 2 4–6, semana 3 5–7; la semana 4 es deload (#13) y baja a 2–4 (RIR 4).
         Assert.Equal(3, pushItem.RepsMin);
         Assert.Equal(5, pushItem.RepsMax);
         Assert.Equal(4, StrengthItem(plan, 1, "incline-push-up").RepsMin);
         Assert.Equal(6, StrengthItem(plan, 1, "incline-push-up").RepsMax);
         Assert.Equal(5, StrengthItem(plan, 2, "incline-push-up").RepsMin);
         Assert.Equal(7, StrengthItem(plan, 2, "incline-push-up").RepsMax);
-        Assert.Equal(3, StrengthItem(plan, 3, "incline-push-up").RepsMin);
-        Assert.Equal(5, StrengthItem(plan, 3, "incline-push-up").RepsMax);
+        Assert.Equal(2, StrengthItem(plan, 3, "incline-push-up").RepsMin);
+        Assert.Equal(4, StrengthItem(plan, 3, "incline-push-up").RepsMax);
 
         // Los patrones intactos mantienen sus reps derivadas del máximo (RIR 3 en la semana base).
         Assert.Equal(1, pullItem.RepsMin);
