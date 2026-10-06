@@ -3,6 +3,7 @@ using Barrapp.Api.Exceptions;
 using Barrapp.Api.Health;
 using Barrapp.Api.Http;
 using Barrapp.Application;
+using Barrapp.Application.Abstractions;
 using Barrapp.Infrastructure;
 using Barrapp.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,9 @@ builder.Services
 
 var app = builder.Build();
 
+// Fail-fast de la base de conocimiento: si los JSON embebidos son inválidos, no arrancamos.
+_ = app.Services.GetRequiredService<IKnowledgeBase>();
+
 if (Program.ShouldApplyMigrations(builder.Configuration))
 {
     await Program.ApplyMigrationsAsync(app);
@@ -44,6 +48,9 @@ if (app.Environment.IsDevelopment())
 
 app.MapPingEndpoints();
 app.MapAthleteProfileEndpoints();
+app.MapObjectiveEndpoints();
+app.MapCatalogEndpoints();
+app.MapSkillProgressEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();

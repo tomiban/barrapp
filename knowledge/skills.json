@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "skills": [
+    {
+      "id": "handstand",
+      "name": "Pino",
+      "group": "push",
+      "lever": false,
+      "stages": [
+        { "order": 1, "name": "Pino en pared", "exerciseId": "handstand-wall-support", "criterion": { "metric": "seconds", "target": 30, "sets": 3 }, "notes": "Pies apoyados en la pared, cuerpo alineado y hombros activos." },
+        { "order": 2, "name": "Pino de espaldas a la pared", "exerciseId": "handstand-back-to-wall", "criterion": { "metric": "seconds", "target": 30, "sets": 3 }, "notes": "Sin apoyo de pies; los talones rozan la pared." },
+        { "order": 3, "name": "Pino de pecho a la pared", "exerciseId": "handstand-chest-to-wall", "criterion": { "metric": "seconds", "target": 45, "sets": 3 }, "notes": "Pecho a la pared, cuerpo en línea y mirada entre las manos." },
+        { "order": 4, "name": "Pino libre con entrada", "exerciseId": "handstand-kick-up", "criterion": { "metric": "seconds", "target": 5, "sets": 5 }, "notes": "Entrada a pino sin pared; aún con apoyos puntuales." },
+        { "order": 5, "name": "Pino libre", "exerciseId": "handstand-freestanding", "criterion": { "metric": "seconds", "target": 10, "sets": 3 }, "notes": "Mantener sin pared, respirando con calma." }
+      ],
+      "patternRoutines": [
+        {
+          "id": "r1",
+          "name": "Modelo R1",
+          "intensity": 2,
+          "equipment": "Pared",
+          "items": [
+            { "exerciseId": "elevated-pike-push-up", "sets": 3, "repsMin": 5, "repsMax": 8, "restSeconds": 120 },
+            { "exerciseId": "handstand-push-up", "sets": 3, "repsMin": 3, "repsMax": 5, "restSeconds": 150 },
+            { "exerciseId": "handstand-shrug", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 },
+            { "exerciseId": "wall-walk", "sets": 3, "repsMin": 8, "repsMax": 10, "restSeconds": 90, "notes": "Pasos." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "front-lever",
+      "name": "Front lever",
+      "group": "pull",
+      "lever": true,
+      "stages": [
+        { "order": 1, "name": "Front lever agrupado", "exerciseId": "front-lever-tuck", "criterion": { "metric": "seconds", "target": 15, "sets": 3 }, "notes": "Rodillas al pecho, espalda recta y escápulas activas." },
+        { "order": 2, "name": "Front lever agrupado avanzado", "exerciseId": "front-lever-advanced-tuck", "criterion": { "metric": "seconds", "target": 10, "sets": 3 }, "notes": "Cadera abierta y rodillas fuera de la línea del torso." },
+        { "order": 3, "name": "Front lever a una pierna", "exerciseId": "front-lever-one-leg", "criterion": { "metric": "seconds", "target": 8, "sets": 3 }, "notes": "Una pierna extendida y la otra recogida." },
+        { "order": 4, "name": "Front lever con piernas abiertas", "exerciseId": "front-lever-straddle", "criterion": { "metric": "seconds", "target": 5, "sets": 3 }, "notes": "Piernas extendidas y separadas; cadera a la altura de los hombros." },
+        { "order": 5, "name": "Front lever completo", "exerciseId": "front-lever-full", "criterion": { "metric": "seconds", "target": 5, "sets": 3 }, "notes": "Cuerpo horizontal y paralelo al suelo." }
+      ],
+      "patternRoutines": [
+        {
+          "id": "r1",
+          "name": "Modelo R1",
+          "intensity": 2,
+          "equipment": "Barra alta y baja",
+          "items": [
+            { "exerciseId": "front-lever-full", "sets": 2, "holdSecondsMin": 3, "holdSecondsMax": 8, "restSeconds": 180, "notes": "Intentos front lever full con banda elástica fina en cadera y pies." },
+            { "exerciseId": "front-lever-tuck-press", "sets": 4, "repsMin": 2, "repsMax": 6, "restSeconds": 240, "notes": "Presses tuck advanced + negativa en full, banda fina en cadera y pies." },
+            { "exerciseId": "front-lever-tuck-pull-up", "sets": 5, "repsMin": 5, "repsMax": 10, "restSeconds": 210, "notes": "Pull up tuck advanced explosiva, banda solo en cadera." },
+            { "exerciseId": "l-sit-to-tuck-adv", "sets": 3, "repsMin": 4, "repsMax": 4, "restSeconds": 210, "supersetGroup": 1, "notes": "Marcando 1 s en cada posición." },
+            { "exerciseId": "front-lever-advanced-tuck", "sets": 3, "holdSecondsMin": 3, "holdSecondsMax": 8, "restSeconds": 210, "supersetGroup": 1, "notes": "Hold en tuck o advanced." },
+            { "exerciseId": "chin-up", "sets": 3, "repsMin": 10, "repsMax": 10, "restSeconds": 150, "notes": "Dominadas de bíceps." }
+          ]
+        },
+        {
+          "id": "r2",
+          "name": "Modelo R2",
+          "intensity": 2,
+          "equipment": "Barra alta y baja",
+          "items": [
+            { "exerciseId": "front-lever-pike-press", "sets": 3, "repsMin": 3, "repsMax": 5, "restSeconds": 210, "notes": "Presses en full front lever desde pica, negativa y positiva, banda en cadera y pies." },
+            { "exerciseId": "tuck-to-full-front-lever", "sets": 4, "repsMin": 2, "repsMax": 4, "restSeconds": 210, "notes": "Banda solo en pies." },
+            { "exerciseId": "front-lever-tuck-pull-up", "sets": 4, "repsMin": 4, "repsMax": 8, "restSeconds": 210, "notes": "Tuck advanced pull ups explosivas." },
+            { "exerciseId": "l-sit-to-tuck-adv", "sets": 3, "repsMin": 2, "repsMax": 4, "restSeconds": 210, "notes": "De L a tuck advanced + press a pica en full front lever." },
+            { "exerciseId": "pull-up-to-hip", "sets": 4, "repsMin": 5, "repsMax": 8, "restSeconds": 150, "notes": "Dominada explosiva supina hasta la cadera." }
+          ]
+        },
+        {
+          "id": "r3",
+          "name": "Modelo R3",
+          "intensity": 2,
+          "equipment": "Solo barra baja",
+          "items": [
+            { "exerciseId": "front-lever-advanced-tuck", "sets": 2, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 90 },
+            { "exerciseId": "tuck-adv-to-full-press", "sets": 4, "repsMin": 2, "repsMax": 4, "restSeconds": 180, "notes": "Press a semi full + negativa controlada." },
+            { "exerciseId": "front-lever-full", "sets": 4, "holdSecondsMin": 3, "holdSecondsMax": 8, "restSeconds": 180, "notes": "Hold front lever con banda elástica fina en cadera y pies." },
+            { "exerciseId": "front-lever-tuck-pull-up", "sets": 4, "repsMin": 6, "repsMax": 10, "restSeconds": 180, "supersetGroup": 1, "notes": "Explosivas, banda fina en cadera." },
+            { "exerciseId": "front-lever-advanced-tuck", "sets": 4, "holdSecondsMin": 1, "holdSecondsMax": 3, "restSeconds": 180, "supersetGroup": 1 },
+            { "exerciseId": "tuck-adv-to-full-press", "sets": 3, "repsMin": 2, "repsMax": 4, "restSeconds": 180, "notes": "Press de tuck advanced a full + negativa, banda fina en cadera." }
+          ]
+        },
+        {
+          "id": "r4",
+          "name": "Modelo R4",
+          "intensity": 3,
+          "equipment": "Solo barra baja",
+          "items": [
+            { "exerciseId": "front-lever-advanced-tuck", "sets": 2, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 90, "notes": "Intentos tuck advanced." },
+            { "exerciseId": "front-lever-press", "sets": 2, "repsMin": 2, "repsMax": 3, "restSeconds": 240, "notes": "Front lever en full + press, banda fina en cadera y pies." },
+            { "exerciseId": "front-lever-full-pull-up", "sets": 4, "repsMin": 3, "repsMax": 5, "restSeconds": 240, "supersetGroup": 1, "notes": "Banda fina en cadera y pies." },
+            { "exerciseId": "front-lever-full", "sets": 4, "holdSecondsMin": 1, "holdSecondsMax": 3, "restSeconds": 240, "supersetGroup": 1, "notes": "Banda fina en cadera y pies." },
+            { "exerciseId": "tuck-adv-to-full-press", "sets": 3, "repsMin": 2, "repsMax": 3, "restSeconds": 180, "notes": "Press de tuck advanced a full + negativa en máxima progresión + hold 1 s." },
+            { "exerciseId": "front-lever-tuck-pull-up", "sets": 4, "repsMin": 6, "repsMax": 8, "restSeconds": 210, "supersetGroup": 2, "notes": "Explosivas." },
+            { "exerciseId": "front-lever-advanced-tuck", "sets": 4, "holdSecondsMin": 6, "holdSecondsMax": 10, "restSeconds": 210, "supersetGroup": 2 }
+          ]
+        },
+        {
+          "id": "r5",
+          "name": "Modelo R5",
+          "intensity": 3,
+          "equipment": "Barra alta y baja",
+          "items": [
+            { "exerciseId": "front-lever-full", "sets": 4, "holdSecondsMin": 3, "holdSecondsMax": 8, "restSeconds": 210, "notes": "Intentos front lever full, banda fina en cadera y pies." },
+            { "exerciseId": "touch-to-bar", "sets": 4, "holdSecondsMin": 5, "holdSecondsMax": 10, "restSeconds": 240, "supersetGroup": 1 },
+            { "exerciseId": "front-lever-tuck-pull-up", "sets": 4, "repsMin": 3, "repsMax": 5, "restSeconds": 240, "supersetGroup": 1 },
+            { "exerciseId": "tuck-adv-to-full-press", "sets": 3, "repsMin": 2, "repsMax": 3, "restSeconds": 210, "notes": "Press de tuck advanced a full + negativa en máxima progresión + hold 1 s." },
+            { "exerciseId": "pull-up-below-chest", "sets": 4, "repsMin": 5, "repsMax": 8, "restSeconds": 120, "notes": "Dominadas pronas explosivas hasta debajo del pecho." },
+            { "exerciseId": "pull_up", "sets": 3, "repsMin": 12, "repsMax": 12, "restSeconds": 90, "notes": "Dominadas estándar." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "planche",
+      "name": "Planche",
+      "group": "push",
+      "lever": true,
+      "stages": [
+        { "order": 1, "name": "Planche inclinada", "exerciseId": "planche-lean", "criterion": { "metric": "seconds", "target": 20, "sets": 3 }, "notes": "Inclinación con los hombros por delante de las manos." },
+        { "order": 2, "name": "Planche agrupada", "exerciseId": "planche-tuck", "criterion": { "metric": "seconds", "target": 10, "sets": 3 }, "notes": "Rodillas al pecho y pies despegados." },
+        { "order": 3, "name": "Planche agrupada avanzada", "exerciseId": "planche-advanced-tuck", "criterion": { "metric": "seconds", "target": 8, "sets": 3 }, "notes": "Cadera abierta y espalda paralela al suelo." },
+        { "order": 4, "name": "Planche con piernas abiertas", "exerciseId": "planche-straddle", "criterion": { "metric": "seconds", "target": 5, "sets": 3 }, "notes": "Piernas extendidas y separadas." },
+        { "order": 5, "name": "Planche completa", "exerciseId": "planche-full", "criterion": { "metric": "seconds", "target": 3, "sets": 3 }, "notes": "Piernas juntas y paralelas al suelo." }
+      ],
+      "patternRoutines": [
+        {
+          "id": "r1",
+          "name": "Modelo R1",
+          "intensity": 2,
+          "equipment": "Sin equipamiento",
+          "items": [
+            { "exerciseId": "planche-tuck", "sets": 4, "holdSecondsMin": 5, "holdSecondsMax": 15, "restSeconds": 180, "notes": "Mantener al máximo (max hold tuck planche)." },
+            { "exerciseId": "pike-to-tuck-planche", "sets": 3, "repsMin": 4, "repsMax": 5, "restSeconds": 240, "notes": "Marcando tuck 1–2 s." },
+            { "exerciseId": "pike-push-up", "sets": 4, "repsMin": 4, "repsMax": 8, "restSeconds": 180, "notes": "Flexiones en pica 90° en suelo." },
+            { "exerciseId": "lean-planche-push-up", "sets": 3, "repsMin": 7, "repsMax": 7, "restSeconds": 180 }
+          ]
+        },
+        {
+          "id": "r2",
+          "name": "Modelo R2",
+          "intensity": 2,
+          "equipment": "Sin equipamiento",
+          "items": [
+            { "exerciseId": "lean-planche-walk", "sets": 3, "holdSecondsMin": 20, "holdSecondsMax": 20, "restSeconds": 90 },
+            { "exerciseId": "lean-planche-knees", "sets": 4, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 180, "supersetGroup": 1, "notes": "Intentar despegar los pies." },
+            { "exerciseId": "planche-tuck", "sets": 4, "holdSecondsMin": 6, "holdSecondsMax": 10, "restSeconds": 180, "supersetGroup": 1 },
+            { "exerciseId": "lean-planche-push-up", "sets": 4, "repsMin": 5, "repsMax": 7, "restSeconds": 210 },
+            { "exerciseId": "diamond-push-up", "sets": 3, "repsMin": 10, "repsMax": 15, "restSeconds": 90 }
+          ]
+        },
+        {
+          "id": "r3",
+          "name": "Modelo R3",
+          "intensity": 3,
+          "equipment": "Sin equipamiento",
+          "items": [
+            { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 90 },
+            { "exerciseId": "tuck-planche-push-up", "sets": 4, "repsMin": 4, "repsMax": 6, "restSeconds": 240, "supersetGroup": 1 },
+            { "exerciseId": "planche-tuck", "sets": 4, "holdSecondsMin": 5, "holdSecondsMax": 15, "restSeconds": 240, "supersetGroup": 1, "notes": "Mantener al máximo." },
+            { "exerciseId": "lean-planche-explosive", "sets": 4, "repsMin": 5, "repsMax": 5, "restSeconds": 180, "supersetGroup": 2, "notes": "Explosivas desde el suelo." },
+            { "exerciseId": "supine-lean-hold", "sets": 4, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 180, "supersetGroup": 2 },
+            { "exerciseId": "pike-to-lean-push-up", "sets": 3, "repsMin": 5, "repsMax": 5, "restSeconds": 180, "supersetGroup": 3 },
+            { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 180, "supersetGroup": 3 }
+          ]
+        },
+        {
+          "id": "r4",
+          "name": "Modelo R4",
+          "intensity": 3,
+          "equipment": "Sin equipamiento",
+          "items": [
+            { "exerciseId": "pike-to-advanced-tuck", "sets": 4, "repsMin": 4, "repsMax": 4, "restSeconds": 240, "supersetGroup": 1, "notes": "Biserie solo al final." },
+            { "exerciseId": "planche-lean", "sets": 4, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 240, "supersetGroup": 1 },
+            { "exerciseId": "tuck-planche-push-up", "sets": 3, "repsMin": 3, "repsMax": 4, "restSeconds": 240, "supersetGroup": 2 },
+            { "exerciseId": "planche-tuck", "sets": 3, "holdSecondsMin": 5, "holdSecondsMax": 5, "restSeconds": 240, "supersetGroup": 2 },
+            { "exerciseId": "pike-push-up", "sets": 3, "repsMin": 3, "repsMax": 4, "restSeconds": 210, "supersetGroup": 3 },
+            { "exerciseId": "lean-planche-push-up", "sets": 3, "repsMin": 3, "repsMax": 4, "restSeconds": 210, "supersetGroup": 3 },
+            { "exerciseId": "supine-push-up", "sets": 3, "repsMin": 10, "repsMax": 12, "restSeconds": 150 }
+          ]
+        },
+        {
+          "id": "r5",
+          "name": "Modelo R5",
+          "intensity": 3,
+          "equipment": "Sin equipamiento",
+          "items": [
+            { "exerciseId": "lean-planche-knees", "sets": 4, "holdSecondsMin": 15, "holdSecondsMax": 15, "restSeconds": 180, "notes": "Levantando las rodillas." },
+            { "exerciseId": "lean-planche-explosive", "sets": 4, "repsMin": 5, "repsMax": 5, "restSeconds": 180, "supersetGroup": 1 },
+            { "exerciseId": "supine-lean-hold", "sets": 4, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 180, "supersetGroup": 1 },
+            { "exerciseId": "pike-to-lean-push-up", "sets": 3, "repsMin": 5, "repsMax": 5, "restSeconds": 180, "supersetGroup": 2 },
+            { "exerciseId": "planche-lean", "sets": 3, "holdSecondsMin": 10, "holdSecondsMax": 10, "restSeconds": 180, "supersetGroup": 2 },
+            { "exerciseId": "pike-push-up", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 180 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pistol-squat",
+      "name": "Pistol squat",
+      "group": "leg",
+      "lever": false,
+      "stages": [
+        { "order": 1, "name": "Pistol al cajón", "exerciseId": "pistol-box", "criterion": { "metric": "reps", "target": 5, "sets": 3 }, "notes": "Bajar hasta un cajón alto, talón apoyado." },
+        { "order": 2, "name": "Pistol asistida", "exerciseId": "pistol-assisted", "criterion": { "metric": "reps", "target": 5, "sets": 3 }, "notes": "Con apoyo ligero para controlar el descenso." },
+        { "order": 3, "name": "Pistol negativa", "exerciseId": "pistol-negative", "criterion": { "metric": "reps", "target": 4, "sets": 3 }, "notes": "Descenso controlado y subida con las dos piernas." },
+        { "order": 4, "name": "Pistol completa", "exerciseId": "pistol-full", "criterion": { "metric": "reps", "target": 3, "sets": 3 }, "notes": "Pierna libre extendida y sin apoyo." },
+        { "order": 5, "name": "Pistol con pausa", "exerciseId": "pistol-paused", "criterion": { "metric": "reps", "target": 3, "sets": 3 }, "notes": "Pausa de 2 s abajo manteniendo el equilibrio." }
+      ],
+      "patternRoutines": [
+        {
+          "id": "r1",
+          "name": "Modelo R1",
+          "intensity": 2,
+          "equipment": "Sin equipamiento",
+          "items": [
+            { "exerciseId": "cossack-squat", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 },
+            { "exerciseId": "shrimp-squat", "sets": 3, "repsMin": 4, "repsMax": 6, "restSeconds": 120 },
+            { "exerciseId": "bulgarian-split-squat", "sets": 3, "repsMin": 6, "repsMax": 8, "restSeconds": 90 },
+            { "exerciseId": "calf-raise", "sets": 3, "repsMin": 12, "repsMax": 15, "restSeconds": 60 }
+          ]
+        }
+      ]
+    }
+  ]
+}

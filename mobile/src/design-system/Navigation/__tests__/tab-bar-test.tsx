@@ -12,12 +12,12 @@ import { TabBarItem } from '../TabBar';
  */
 describe('TabBarItem', () => {
   it('es un tab seleccionado en primary/on-primary cuando está activo', async () => {
-    await render(<TabBarItem label="Inicio" isFocused />);
+    await render(<TabBarItem label="Entrenar" isFocused />);
 
-    const tab = screen.getByRole('tab', { name: 'Inicio', selected: true });
+    const tab = screen.getByRole('tab', { name: 'Entrenar', selected: true });
     expect(tab).toBeOnTheScreen();
     expect(tab).toHaveProp('className', expect.stringContaining('bg-primary'));
-    expect(screen.getByText('Inicio')).toHaveProp(
+    expect(screen.getByText('Entrenar')).toHaveProp(
       'className',
       expect.stringContaining('text-on-primary'),
     );
@@ -37,9 +37,9 @@ describe('TabBarItem', () => {
 
   it('reenvía onPress', async () => {
     const onPress = jest.fn();
-    await render(<TabBarItem label="Inicio" onPress={onPress} />);
+    await render(<TabBarItem label="Entrenar" onPress={onPress} />);
 
-    fireEvent.press(screen.getByRole('tab', { name: 'Inicio' }));
+    fireEvent.press(screen.getByRole('tab', { name: 'Entrenar' }));
 
     expect(onPress).toHaveBeenCalledTimes(1);
   });

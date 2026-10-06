@@ -14,6 +14,7 @@ import {
   type MaximumDraft,
   type MaximumFieldErrors,
 } from '@/api/athleteProfile';
+import { messageOf } from '@/api/messageOf';
 import { Button } from '@/design-system/Button';
 import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
 import { Banner, Loading } from '@/design-system/Feedback';
@@ -22,6 +23,7 @@ import { Header, Screen } from '@/design-system/Navigation';
 import { StatusBadge } from '@/design-system/StatusBadge';
 import { Text } from '@/design-system/Text';
 import { TextField } from '@/design-system/TextField';
+import { ObjectiveSection } from '@/features/profile/ObjectiveSection';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
@@ -44,10 +46,6 @@ const DEFAULT_TRAINING_DAYS = String(TRAINING_DAYS_LIMITS.min);
 /** Un borrador vacío por cada ejercicio básico. */
 function emptyMaximumDrafts(): Record<string, string> {
   return Object.fromEntries(BASIC_EXERCISES.map((exercise) => [exercise.code, '']));
-}
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : 'Error desconocido';
 }
 
 /**
@@ -320,6 +318,8 @@ export default function ProfileScreen() {
                 </Text>
               )}
             </Box>
+
+            {persisted ? <ObjectiveSection /> : null}
           </>
         ) : null}
       </Stack>

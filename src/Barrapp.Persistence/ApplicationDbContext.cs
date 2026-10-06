@@ -1,5 +1,7 @@
 using Barrapp.Application.Abstractions;
 using Barrapp.Domain.Athlete;
+using Barrapp.Domain.Objectives;
+using Barrapp.Domain.SkillProgress;
 using Barrapp.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +20,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     /// <summary>Perfiles de atleta.</summary>
     public DbSet<AthleteProfile> AthleteProfiles => Set<AthleteProfile>();
+
+    /// <summary>Objetivos del mesociclo.</summary>
+    public DbSet<Objective> Objectives => Set<Objective>();
+
+    /// <summary>Etapa actual del atleta por skill.</summary>
+    public DbSet<AthleteSkillProgress> AthleteSkillProgresses => Set<AthleteSkillProgress>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
