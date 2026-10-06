@@ -1,4 +1,5 @@
 using Barrapp.Application.Abstractions;
+using Barrapp.Application.Common;
 using Barrapp.Application.Features.Catalog;
 using Barrapp.Domain.Knowledge;
 using Barrapp.Domain.Planning;
@@ -16,7 +17,8 @@ internal static class PlanMappings
         plan.SkillId,
         plan.TrainingDays,
         ToStage(plan.CurrentStage),
-        plan.Microcycles.Select(microcycle => ToMicrocycle(microcycle, catalog)).ToList());
+        plan.Microcycles.Select(microcycle => ToMicrocycle(microcycle, catalog)).ToList(),
+        plan.StartDate);
 
     private static SkillStageResponse ToStage(SkillStage stage) => new(
         stage.Order,
@@ -34,7 +36,9 @@ internal static class PlanMappings
 
     private static SessionResponse ToSession(Session session, IKnowledgeBase catalog) => new(
         session.Day,
-        session.Items.Select(item => ToItem(item, catalog)).ToList());
+        session.Items.Select(item => ToItem(item, catalog)).ToList(),
+        session.Weekday is { } weekday ? WeekdayCode.ToCode(weekday) : null,
+        session.Date);
 
     private static SessionItemResponse ToItem(SessionItem item, IKnowledgeBase catalog) => new(
         item.ExerciseId,

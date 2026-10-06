@@ -107,8 +107,9 @@ public static class SoloSessionGenerator
             items.Add(core.Value);
         }
 
-        // La suelta es una sesión fuera del mesociclo; el día no aplica y queda fijo.
-        return Result.Success(new Session(day: 1, items));
+        // La suelta es una sesión fuera del mesociclo: no ocupa un día del calendario, así que ni el día
+        // de la semana ni la fecha aplican (#94).
+        return Result.Success(new Session(day: 1, weekday: null, date: null, items));
     }
 
     /// <summary>

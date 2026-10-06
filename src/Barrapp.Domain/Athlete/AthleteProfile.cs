@@ -5,8 +5,9 @@ namespace Barrapp.Domain.Athlete;
 /// <summary>
 /// Perfil del atleta: sus datos corporales, de entrenamiento y sus máximos por ejercicio
 /// básico. Guarda <b>peso</b> (kg), <b>altura</b> (cm), <b>envergadura</b> (cm),
-/// <b>entrepierna</b> (cm), <b>días de entrenamiento</b> por semana (3–5) y el
-/// <see cref="Maximum"/> de cada ejercicio de <see cref="BasicExercises"/>.
+/// <b>entrepierna</b> (cm), los <b>días de la semana</b> que entrena (3–5, ver
+/// <see cref="TrainingWeekday"/>) y el <see cref="Maximum"/> de cada ejercicio de
+/// <see cref="BasicExercises"/>.
 /// </summary>
 /// <remarks>
 /// El estado solo cambia por sus métodos (<see cref="Create"/>, <see cref="Update"/>), que
@@ -47,6 +48,7 @@ public sealed class AthleteProfile
     public const int MaxTrainingDays = 5;
 
     private readonly List<Maximum> _maximums = [];
+    private readonly List<TrainingWeekday> _trainingWeekdays = [];
 
     private AthleteProfile(
         Guid id,
@@ -55,7 +57,8 @@ public sealed class AthleteProfile
         double heightCentimeters,
         double armSpanCentimeters,
         double inseamCentimeters,
-        int trainingDays)
+        int trainingDays,
+        IReadOnlyList<DayOfWeek> trainingWeekdays)
     {
         Id = id;
         UserId = userId;
@@ -64,6 +67,7 @@ public sealed class AthleteProfile
         ArmSpanCentimeters = armSpanCentimeters;
         InseamCentimeters = inseamCentimeters;
         TrainingDays = trainingDays;
+        _trainingWeekdays.AddRange(trainingWeekdays.Select(day => new TrainingWeekday(day)));
     }
 
     // Requerido por EF Core para materializar la entidad; nunca se usa desde el dominio.
@@ -92,6 +96,19 @@ public sealed class AthleteProfile
     /// <summary>Días de entrenamiento por semana (3–5).</summary>
     public int TrainingDays { get; private set; }
 
+    /// <summary>
+    /// Días de la semana que entrena (3–5), de lunes a domingo. Son los días concretos que el
+    /// motor reparte en las sesiones del mesociclo (#94).
+    /// </summary>
+    public IReadOnlyCollection<TrainingWeekday> TrainingWeekdays => _trainingWeekdays;
+
+    /// <summary>
+    /// Días de la semana entrenados, ordenados de lunes a domingo: una sesión por día, en ese
+    /// orden. Es la forma en que el motor los consume.
+    /// </summary>
+    public IReadOnlyList<DayOfWeek> TrainingDaysInOrder() =>
+        _trainingWeekdays.OrderBy(weekday => (int)weekday.Day).Select(weekday => weekday.Day).ToList();
+
     /// <summary>Máximo por cada ejercicio básico; uno por ejercicio, siempre completo.</summary>
     public IReadOnlyCollection<Maximum> Maximums => _maximums;
 
@@ -119,7 +136,8 @@ public sealed class AthleteProfile
         double armSpanCentimeters,
         double inseamCentimeters,
         int trainingDays,
-        IReadOnlyCollection<MaximumInput> maximums)
+        IReadOnlyCollection<MaximumInput> maximums,
+        IReadOnlyCollection<DayOfWeek>? trainingWeekdays = null)
     {
         var validation = ValidateProfile(
             weightKilograms,
@@ -130,6 +148,12 @@ public sealed class AthleteProfile
         if (validation.IsFailure)
         {
             return Result.Failure<AthleteProfile>(validation.Error);
+        }
+
+        var weekdayValidation = ValidateTrainingWeekdays(trainingDays, trainingWeekdays);
+        if (weekdayValidation.IsFailure)
+        {
+            return Result.Failure<AthleteProfile>(weekdayValidation.Error);
         }
 
         var maximumValidation = ValidateMaximums(maximums);
@@ -145,7 +169,8 @@ public sealed class AthleteProfile
             heightCentimeters,
             armSpanCentimeters,
             inseamCentimeters,
-            trainingDays);
+            trainingDays,
+            weekdayValidation.Value);
         profile._maximums.AddRange(maximumValidation.Value);
 
         return profile;
@@ -162,7 +187,8 @@ public sealed class AthleteProfile
         double armSpanCentimeters,
         double inseamCentimeters,
         int trainingDays,
-        IReadOnlyCollection<MaximumInput> maximums)
+        IReadOnlyCollection<MaximumInput> maximums,
+        IReadOnlyCollection<DayOfWeek>? trainingWeekdays = null)
     {
         var validation = ValidateProfile(
             weightKilograms,
@@ -173,6 +199,12 @@ public sealed class AthleteProfile
         if (validation.IsFailure)
         {
             return validation;
+        }
+
+        var weekdayValidation = ValidateTrainingWeekdays(trainingDays, trainingWeekdays);
+        if (weekdayValidation.IsFailure)
+        {
+            return Result.Failure(weekdayValidation.Error);
         }
 
         var maximumValidation = ValidateMaximums(maximums);
@@ -186,6 +218,8 @@ public sealed class AthleteProfile
         ArmSpanCentimeters = armSpanCentimeters;
         InseamCentimeters = inseamCentimeters;
         TrainingDays = trainingDays;
+        _trainingWeekdays.Clear();
+        _trainingWeekdays.AddRange(weekdayValidation.Value.Select(day => new TrainingWeekday(day)));
         ApplyMaximums(maximumValidation.Value);
 
         return Result.Success();
@@ -260,6 +294,37 @@ public sealed class AthleteProfile
         return IsWithinRange(trainingDays, MinTrainingDays, MaxTrainingDays)
             ? Result.Success()
             : Result.Failure(DomainErrors.AthleteProfile.TrainingDaysOutOfRange);
+    }
+
+    /// <summary>
+    /// Días de la semana que el perfil guarda, ya en orden de lunes a domingo. Sin elección
+    /// explícita se toman los de <see cref="TrainingWeekday.DefaultFor"/> para la frecuencia. Con
+    /// elección, los días no pueden repetirse y su número tiene que ser la frecuencia (el número de
+    /// días de entrenamiento es cuántos elige).
+    /// </summary>
+    private static Result<List<DayOfWeek>> ValidateTrainingWeekdays(
+        int trainingDays,
+        IReadOnlyCollection<DayOfWeek>? trainingWeekdays)
+    {
+        if (trainingWeekdays is null || trainingWeekdays.Count == 0)
+        {
+            return Result.Success<List<DayOfWeek>>([.. TrainingWeekday.DefaultFor(trainingDays)]);
+        }
+
+        var days = trainingWeekdays.ToList();
+        if (days.Distinct().Count() != days.Count)
+        {
+            return Result.Failure<List<DayOfWeek>>(DomainErrors.AthleteProfile.DuplicateTrainingWeekday);
+        }
+
+        if (days.Count != trainingDays)
+        {
+            return Result.Failure<List<DayOfWeek>>(DomainErrors.AthleteProfile.TrainingWeekdaysMismatch);
+        }
+
+        days.Sort((left, right) => ((int)left).CompareTo((int)right));
+
+        return Result.Success(days);
     }
 
     private static Result<List<Maximum>> ValidateMaximums(IReadOnlyCollection<MaximumInput> maximums)

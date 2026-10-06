@@ -120,7 +120,14 @@ internal sealed class CloseMesocycleCommandHandler(
                 candidate => candidate.UserId == SingleUser.Id && candidate.SkillId == objective.SkillId,
                 cancellationToken);
 
-        var generation = PlanGenerator.Generate(profile, objective, progress?.StageOrder, catalog);
+        // El mesociclo que se sintetiza aquí está ya vencido: arranca hace cuatro semanas (#94), que es
+        // lo que permite que sus sesiones caigan en el pasado y el cierre ajusta los máximos con lo registrado.
+        var generation = PlanGenerator.Generate(
+            profile,
+            objective,
+            progress?.StageOrder,
+            DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-28)),
+            catalog);
         if (generation.IsFailure)
         {
             return Result.Failure<Mesocycle>(generation.Error);

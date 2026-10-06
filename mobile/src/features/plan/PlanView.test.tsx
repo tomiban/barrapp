@@ -10,6 +10,8 @@ const microcycles: Plan['microcycles'] = [
     sessions: [
       {
         day: 1,
+        weekday: null,
+        date: null,
         items: [
           {
             exerciseId: 'handstand-back-to-wall',
@@ -29,7 +31,13 @@ const microcycles: Plan['microcycles'] = [
 ];
 
 function makePlan(stage: Plan['skillStage']): Plan {
-  return { skillId: 'handstand', trainingDays: 3, skillStage: stage, microcycles };
+  return {
+    skillId: 'handstand',
+    trainingDays: 3,
+    startDate: '2026-03-02',
+    skillStage: stage,
+    microcycles,
+  };
 }
 
 /**

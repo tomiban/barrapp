@@ -13,6 +13,7 @@ import {
 const plan: Plan = {
   skillId: 'planche',
   trainingDays: 3,
+  startDate: '2026-03-02',
   skillStage: {
     order: 1,
     name: 'Planche inclinada',
@@ -26,6 +27,8 @@ const plan: Plan = {
       sessions: [
         {
           day: 1,
+          weekday: null,
+          date: null,
           items: [
             {
               exerciseId: 'handstand-wall-support',
@@ -108,6 +111,7 @@ const savedLog: SessionLog = {
 const strengthPlan: Plan = {
   skillId: 'planche',
   trainingDays: 3,
+  startDate: '2026-03-02',
   skillStage: {
     order: 1,
     name: 'Planche inclinada',
@@ -121,6 +125,8 @@ const strengthPlan: Plan = {
       sessions: [
         {
           day: 1,
+          weekday: null,
+          date: null,
           items: [
             {
               exerciseId: 'push_up',
@@ -274,6 +280,8 @@ describe('SessionLoggingView', () => {
           sessions: [
             {
               day: 1,
+              weekday: null,
+              date: null,
               items: [
                 {
                   exerciseId: 'handstand-wall-support',
@@ -356,6 +364,8 @@ describe('SessionLoggingView', () => {
           sessions: [
             {
               day: 1,
+              weekday: null,
+              date: null,
               items: [
                 {
                   exerciseId: 'pistol-box',
@@ -594,6 +604,8 @@ describe('SessionLoggingView', () => {
           sessions: [
             {
               day: 1,
+              weekday: null,
+              date: null,
               items: [],
             },
           ],

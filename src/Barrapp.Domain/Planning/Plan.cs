@@ -17,11 +17,13 @@ public sealed class Plan
     internal Plan(
         string skillId,
         int trainingDays,
+        DateOnly startDate,
         SkillStage currentStage,
         IReadOnlyList<Microcycle> microcycles)
     {
         SkillId = skillId;
         TrainingDays = trainingDays;
+        StartDate = startDate;
         CurrentStage = currentStage;
         Microcycles = microcycles;
     }
@@ -31,6 +33,13 @@ public sealed class Plan
 
     /// <summary>Días de entrenamiento por semana.</summary>
     public int TrainingDays { get; }
+
+    /// <summary>
+    /// Fecha en la que arranca el mesociclo: el primer <b>día de entrenamiento</b> en o después de
+    /// la fecha elegida por el atleta (#94). Cada sesión cae en el día de la semana que le toca de
+    /// <see cref="Session.Weekday"/>.
+    /// </summary>
+    public DateOnly StartDate { get; }
 
     /// <summary>Etapa actual del atleta en el skill objetivo, con su criterio de avance.</summary>
     public SkillStage CurrentStage { get; }

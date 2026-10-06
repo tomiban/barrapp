@@ -102,13 +102,29 @@ public static class PlanGenerator
     /// Etapa actual del atleta en el skill objetivo; <c>null</c> si aún no tiene progresión guardada,
     /// en cuyo caso practica la primera etapa.
     /// </param>
+    /// <param name="startDate">
+    /// Fecha elegida por el atleta para arrancar el mesociclo. El mesociclo empieza en el primer
+    /// día de entrenamiento en o después de ella (#94).
+    /// </param>
     public static Result<Plan> Generate(
         AthleteProfile profile,
         Objective objective,
         int? stageOrder,
+        DateOnly startDate,
         IGenerationCatalog catalog)
     {
         var weeklySplit = WeeklySplitFor(profile.TrainingDays);
+
+        // Calendario (#94): cada sesión cae en uno de los días de entrenamiento que eligió el
+        // atleta, en el orden en que los eligió. El perfil garantiza que son tantos como la
+        // frecuencia, así que hay un día por sesión.
+        var trainingWeekdays = profile.TrainingDaysInOrder();
+        if (trainingWeekdays.Count != weeklySplit.Count)
+        {
+            return Result.Failure<Plan>(DomainErrors.AthleteProfile.TrainingWeekdaysMismatch);
+        }
+
+        var firstTrainingDay = FirstTrainingDayOnOrAfter(startDate, trainingWeekdays);
 
         var skill = catalog.FindSkill(objective.SkillId);
         if (skill is null)
@@ -142,19 +158,49 @@ public static class PlanGenerator
         for (var number = 1; number <= MicrocycleCount; number++)
         {
             var repsInReserve = RirWave.RepsInReserve(number);
+            var weekStart = firstTrainingDay.AddDays(7 * (number - 1));
             var sessions = new List<Session>(weeklySplit.Count);
             for (var index = 0; index < weeklySplit.Count; index++)
             {
                 sessions.Add(new Session(
                     index + 1,
+                    trainingWeekdays[index],
+                    weekStart.AddDays(OffsetWithinWeek(trainingWeekdays, index)),
                     BuildItems(currentStage, strength.Value, lever, weeklySplit[index], repsInReserve, number)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
         }
 
-        return new Plan(skill.Id, profile.TrainingDays, currentStage, microcycles);
+        return new Plan(skill.Id, profile.TrainingDays, firstTrainingDay, currentStage, microcycles);
     }
+
+    /// <summary>
+    /// Primer día de entrenamiento en o después de <paramref name="startDate"/>. El mesociclo no
+    /// arranca en un día que el atleta no entrena: si la fecha elegida cae entre dos días de
+    /// entrenamiento, arranca en el siguiente.
+    /// </summary>
+    private static DateOnly FirstTrainingDayOnOrAfter(DateOnly startDate, IReadOnlyList<DayOfWeek> trainingWeekdays)
+    {
+        for (var offset = 0; offset <= 6; offset++)
+        {
+            var candidate = startDate.AddDays(offset);
+            if (trainingWeekdays.Contains(candidate.DayOfWeek))
+            {
+                return candidate;
+            }
+        }
+
+        // Una semana entera sin coincidir es imposible con al menos un día de entrenamiento.
+        return startDate;
+    }
+
+    /// <summary>
+    /// Días que separan el día de entrenamiento de la sesión <paramref name="index"/> del primero de
+    /// la semana (<c>0..6</c>), para que las sesiones caigan en su día real al ordenarse.
+    /// </summary>
+    private static int OffsetWithinWeek(IReadOnlyList<DayOfWeek> trainingWeekdays, int index) =>
+        ((int)trainingWeekdays[index] - (int)trainingWeekdays[0] + 7) % 7;
 
     private static Result<IReadOnlyList<StrengthSlot>> ResolveStrengthSlots(
         IGenerationCatalog catalog,

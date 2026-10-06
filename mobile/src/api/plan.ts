@@ -1,4 +1,5 @@
 import { apiError, getApiBaseUrl } from '@/api/client';
+import type { TrainingWeekdayCode } from '@/api/athleteProfile';
 import type { ExerciseGroupCode } from '@/api/catalog/exercises';
 import type { SkillStage } from '@/api/catalog/skills';
 
@@ -21,6 +22,10 @@ export type PlanSessionItem = {
 /** Sesión del plan: el día que ocupa y sus filas. */
 export type PlanSession = {
   day: number;
+  /** Día de la semana en el que se entrena la sesión; `null` en una sesión suelta. */
+  weekday: TrainingWeekdayCode | null;
+  /** Fecha en la que se entrena la sesión; `null` en una sesión suelta. */
+  date: string | null;
   items: PlanSessionItem[];
 };
 
@@ -34,6 +39,8 @@ export type PlanMicrocycle = {
 export type Plan = {
   skillId: string;
   trainingDays: number;
+  /** Fecha en la que arranca el mesociclo (su primer día de entrenamiento). */
+  startDate: string;
   /** Etapa actual del skill objetivo, con su criterio para avanzar. */
   skillStage: SkillStage;
   microcycles: PlanMicrocycle[];

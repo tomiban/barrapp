@@ -21,14 +21,64 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         int trainingDays,
         IReadOnlyList<MaximumResponse>? maximums = null,
         double armSpanCentimeters = 180,
-        double inseamCentimeters = 85) =>
+        double inseamCentimeters = 85,
+        IReadOnlyList<string>? trainingWeekdays = null) =>
         new(
             weightKilograms,
             heightCentimeters,
             armSpanCentimeters,
             inseamCentimeters,
             trainingDays,
-            maximums ?? Maximums());
+            maximums ?? Maximums(),
+            trainingWeekdays);
+
+    [Fact]
+    public async Task Put_profile_with_training_weekdays_then_get_profile_returns_them()
+    {
+        using var client = factory.CreateClient();
+        var payload = Profile(
+            78.5,
+            181,
+            3,
+            trainingWeekdays: ["tuesday", "thursday", "saturday"]);
+
+        using var putResponse = await client.PutAsJsonAsync("/profile", payload);
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+
+        using var getResponse = await client.GetAsync("/profile");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        var loaded = await getResponse.Content.ReadFromJsonAsync<AthleteProfileResponse>();
+        Assert.NotNull(loaded);
+        Assert.Equal(
+            ["tuesday", "thursday", "saturday"],
+            loaded!.TrainingWeekdays);
+    }
+
+    [Fact]
+    public async Task Get_profile_travels_the_training_weekdays_as_lowercase_codes()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            Profile(78.5, 181, 3, trainingWeekdays: ["tuesday", "thursday", "saturday"]));
+
+        using var response = await client.GetAsync("/profile");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Contains("\"trainingWeekdays\":[\"tuesday\",\"thursday\",\"saturday\"]", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Put_profile_with_repeated_training_weekdays_returns_400()
+    {
+        using var client = factory.CreateClient();
+        var payload = Profile(78.5, 181, 3, trainingWeekdays: ["tuesday", "tuesday", "thursday"]);
+
+        using var response = await client.PutAsJsonAsync("/profile", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 
     [Fact]
     public async Task Put_profile_then_get_profile_returns_the_saved_values()

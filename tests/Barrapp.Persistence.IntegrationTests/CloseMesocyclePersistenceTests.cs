@@ -15,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
+
+
 namespace Barrapp.Persistence.IntegrationTests;
 
 /// <summary>
@@ -26,6 +28,7 @@ namespace Barrapp.Persistence.IntegrationTests;
 /// </summary>
 public sealed class CloseMesocyclePersistenceTests : IDisposable
 {
+    private static readonly DateOnly StartDate = new(2026, 3, 2);
     private readonly SqliteConnection _connection;
     private readonly ApplicationDbContext _dbContext;
 
@@ -260,7 +263,7 @@ public sealed class CloseMesocyclePersistenceTests : IDisposable
 
         var objective = Objective.Create(SingleUser.Id, "planche", catalog).Value;
 
-        return PlanGenerator.Generate(profile, objective, stageOrder: 1, catalog).Value;
+        return PlanGenerator.Generate(profile, objective, stageOrder: 1, StartDate, catalog).Value;
     }
 
     private static ServiceProvider CreateServices(ApplicationDbContext dbContext)

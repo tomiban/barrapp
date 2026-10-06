@@ -17,6 +17,9 @@ public sealed class MesocycleSnapshot
     /// <summary>Días de entrenamiento por semana.</summary>
     public int TrainingDays { get; init; }
 
+    /// <summary>Fecha en la que arranca el mesociclo (#94).</summary>
+    public DateOnly StartDate { get; init; }
+
     /// <summary>Etapa actual del skill objetivo con la que se generó el plan.</summary>
     public SnapshotStage CurrentStage { get; init; } = new();
 
@@ -28,6 +31,7 @@ public sealed class MesocycleSnapshot
     {
         SkillId = plan.SkillId,
         TrainingDays = plan.TrainingDays,
+        StartDate = plan.StartDate,
         CurrentStage = SnapshotStage.From(plan.CurrentStage),
         Microcycles = plan.Microcycles
             .Select(microcycle => new SnapshotMicrocycle
@@ -37,6 +41,8 @@ public sealed class MesocycleSnapshot
                     .Select(session => new SnapshotSession
                     {
                         Day = session.Day,
+                        Weekday = session.Weekday,
+                        Date = session.Date,
                         Items = session.Items.Select(SnapshotSessionItem.From).ToList(),
                     })
                     .ToList(),
@@ -48,6 +54,7 @@ public sealed class MesocycleSnapshot
     public Plan ToPlan() => new(
         SkillId,
         TrainingDays,
+        StartDate,
         CurrentStage.ToStage(),
         Microcycles
             .Select(microcycle => new Microcycle(
@@ -55,6 +62,8 @@ public sealed class MesocycleSnapshot
                 microcycle.Sessions
                     .Select(session => new Session(
                         session.Day,
+                        session.Weekday,
+                        session.Date,
                         session.Items.Select(item => item.ToItem()).ToList()))
                     .ToList()))
             .ToList());
@@ -120,6 +129,12 @@ public sealed class SnapshotSession
 {
     /// <summary>Día de la sesión dentro del microciclo (empieza en 1).</summary>
     public int Day { get; init; }
+
+    /// <summary>Día de la semana en el que se entrena (#94).</summary>
+    public DayOfWeek? Weekday { get; init; }
+
+    /// <summary>Fecha en la que se entrena la sesión (#94).</summary>
+    public DateOnly? Date { get; init; }
 
     /// <summary>Filas de la sesión, en orden de ejecución.</summary>
     public IReadOnlyList<SnapshotSessionItem> Items { get; init; } = [];

@@ -34,6 +34,19 @@ public static class DomainErrors
             "athlete_profile.training_days_out_of_range",
             "Los días de entrenamiento deben estar entre 3 y 5.");
 
+        /// <summary>El mismo día de la semana está repetido entre los días de entrenamiento.</summary>
+        public static readonly Error DuplicateTrainingWeekday = Error.Validation(
+            "athlete_profile.duplicate_training_weekday",
+            "No puedes repetir un día de la semana entre los días de entrenamiento.");
+
+        /// <summary>
+        /// Los días de la semana elegidos no son tantos como la frecuencia declarada: el número de
+        /// días de entrenamiento es cuántos días de la semana elige el atleta.
+        /// </summary>
+        public static readonly Error TrainingWeekdaysMismatch = Error.Validation(
+            "athlete_profile.training_weekdays_mismatch",
+            "El número de días de la semana debe coincidir con los días de entrenamiento.");
+
         /// <summary>El máximo de un ejercicio no puede ser negativo (0 sí vale).</summary>
         public static readonly Error MaximumMustBeNonNegative = Error.Validation(
             "athlete_profile.maximum_must_be_non_negative",

@@ -15,6 +15,7 @@ namespace Barrapp.Domain.UnitTests;
 /// </summary>
 public sealed class MesocycleTests
 {
+    private static readonly DateOnly StartDate = new(2026, 3, 2);
     private static readonly Guid UserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private const string SkillId = "planche";
     private static readonly DateTimeOffset StartedAtUtc = DateTimeOffset.Parse("2026-10-01T08:00:00+00:00");
@@ -74,10 +75,31 @@ public sealed class MesocycleTests
     }
 
     [Fact]
+    public void Snapshot_preserves_the_start_date_and_the_session_calendar()
+    {
+        var plan = PlanGenerator.Generate(
+            BuildProfile(trainingDays: 3),
+            BuildObjective(),
+            stageOrder: 1,
+            StartDate,
+            Catalog()).Value;
+
+        var roundTripped = Mesocycle.Create(UserId, plan, StartedAtUtc).Value.Snapshot.ToPlan();
+
+        Assert.Equal(plan.StartDate, roundTripped.StartDate);
+        Assert.Equal(
+            plan.Microcycles[0].Sessions.Select(session => (session.Weekday, session.Date)),
+            roundTripped.Microcycles[0].Sessions.Select(session => (session.Weekday, session.Date)));
+        Assert.All(
+            roundTripped.Microcycles.SelectMany(microcycle => microcycle.Sessions),
+            session => Assert.Equal(session.Weekday, session.Date!.Value.DayOfWeek));
+    }
+
+    [Fact]
     public void Snapshot_preserves_the_note_of_the_skill_item_for_a_levered_skill()
     {
         var plan = PlanGenerator
-            .Generate(BuildProfile(weightKilograms: 100, heightCentimeters: 185), BuildObjective(), 1, Catalog())
+            .Generate(BuildProfile(weightKilograms: 100, heightCentimeters: 185), BuildObjective(), 1, StartDate, Catalog())
             .Value;
 
         var roundTripped = Mesocycle.Create(UserId, plan, StartedAtUtc).Value.Snapshot.ToPlan();
@@ -136,7 +158,7 @@ public sealed class MesocycleTests
     private static Plan BuildPlan(int stageOrder = 1)
     {
         var catalog = Catalog();
-        return PlanGenerator.Generate(BuildProfile(), BuildObjective(), stageOrder, catalog).Value;
+        return PlanGenerator.Generate(BuildProfile(), BuildObjective(), stageOrder, StartDate, catalog).Value;
     }
 
     private static AthleteProfile BuildProfile(
