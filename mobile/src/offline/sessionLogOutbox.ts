@@ -102,9 +102,9 @@ const FIND_BY_BUSINESS_KEY_SQL = `
 
 /** Identificador idempotente generado en el cliente (uuid v4), con respaldo para entornos sin `crypto.randomUUID`. */
 function newClientId(): string {
-  const randomUUID = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto?.randomUUID;
-  if (typeof randomUUID === 'function') {
-    return randomUUID();
+  const globalCrypto = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (typeof globalCrypto?.randomUUID === 'function') {
+    return globalCrypto.randomUUID();
   }
   const randomHex = () => Math.floor(Math.random() * 16).toString(16);
   const hex = (count: number) => Array.from({ length: count }, randomHex).join('');
