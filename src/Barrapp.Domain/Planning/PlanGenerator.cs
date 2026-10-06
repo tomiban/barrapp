@@ -20,8 +20,10 @@ namespace Barrapp.Domain.Planning;
 /// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. El bloque de
 /// skill practica la etapa actual del atleta (#14) y, en los skills apalancados, ajusta ±1 serie
 /// según la <see cref="AthleteLever"/> y añade su nota de ritmo esperado (#68); el criterio de
-/// etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3; el deload de
-/// la semana 4 (#13) se apoyará en este mismo punto de entrada.
+/// etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3; la
+/// semana 4 es un <i>deload</i> (#13) con RIR 4 y ~50 % del volumen, bajando las series de
+/// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión. Con un máximo de 0
+/// en algún patrón, el hueco de fuerza se cubre con la regresión del ejercicio (#17).
 /// </remarks>
 public static class PlanGenerator
 {
@@ -32,9 +34,16 @@ public static class PlanGenerator
     private const string CoreExerciseId = "hollow-body-hold";
 
     private const int StrengthSets = 3;
-    private const int CoreSets = 3;
     private const int CoreHoldSecondsMin = 20;
     private const int CoreHoldSecondsMax = 30;
+
+    /// <summary>Microciclo de descarga: el deload (#13) baja las series y sube el RIR.</summary>
+    private const int DeloadMicrocycleNumber = 4;
+
+    /// <summary>
+    /// Series de fuerza y de core en el deload: 3 → 2 para dejar ~50 % del volumen de la semana 3.
+    /// </summary>
+    private const int DeloadSets = 2;
 
     /// <summary>Plantilla de la sesión full-body de 3 días (US-11): cubre los tres patrones.</summary>
     private static readonly SessionTemplate FullBody = new(
@@ -123,7 +132,7 @@ public static class PlanGenerator
             {
                 sessions.Add(new Session(
                     index + 1,
-                    BuildItems(currentStage, strength.Value, lever, weeklySplit[index], repsInReserve)));
+                    BuildItems(currentStage, strength.Value, lever, weeklySplit[index], repsInReserve, number)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
@@ -153,10 +162,32 @@ public static class PlanGenerator
                     DomainErrors.AthleteProfile.MissingExerciseMaximum);
             }
 
-            slots.Add(new StrengthSlot(ToGroup(basic.Pattern), exercise.Id, maximum.Value));
+            slots.Add(ResolveStrengthSlot(catalog, exercise, ToGroup(basic.Pattern), maximum.Value));
         }
 
         return Result.Success<IReadOnlyList<StrengthSlot>>(slots);
+    }
+
+    // D3 (#17): un máximo de 0 no admite prescripción sobre el ancla (no hay margen ni para una
+    // repetición), así que el hueco de fuerza de ese patrón pasa a la regresión del ejercicio,
+    // prescrita sobre una base de trabajo asumida y modesta (`StrengthLoad.RegressionWorkableReps`).
+    // La onda de RIR sigue aplicando sobre esa base, de modo que la regresión nunca se prescribe al
+    // fallo ni con 0 repeticiones. El catálogo valida que toda regresión referenciada exista y se
+    // resuelva; si no se pudiera resolver, se conserva el marcador neutro previo al #17.
+    private static StrengthSlot ResolveStrengthSlot(
+        IGenerationCatalog catalog,
+        Exercise exercise,
+        ExerciseGroup pattern,
+        int maximum)
+    {
+        if (maximum == 0
+            && exercise.RegressionId is not null
+            && catalog.FindExercise(exercise.RegressionId) is { } regression)
+        {
+            return new StrengthSlot(pattern, regression.Id, StrengthLoad.RegressionWorkableReps);
+        }
+
+        return new StrengthSlot(pattern, exercise.Id, maximum);
     }
 
     private static IReadOnlyList<SessionItem> BuildItems(
@@ -164,7 +195,8 @@ public static class PlanGenerator
         IReadOnlyList<StrengthSlot> strength,
         AthleteLever? lever,
         SessionTemplate template,
-        int repsInReserve)
+        int repsInReserve,
+        int microcycleNumber)
     {
         var items = new List<SessionItem>(strength.Count + 2);
 
@@ -175,17 +207,20 @@ public static class PlanGenerator
             items.Add(BuildSkillItem(stage, lever));
         }
 
+        // El deload (#13) baja las series de fuerza y de core de la semana 4 (3 → 2), de modo que
+        // con la onda RIR 4 de ese microciclo (RirWave) el volumen queda en ~50 % del de la semana
+        // 3. La anatomía de la sesión y el bloque de skill no cambian.
+        var sets = SetsForMicrocycle(microcycleNumber);
+
         foreach (var slot in strength.Where(slot => template.StrengthPatterns.Contains(slot.Pattern)))
         {
-            // La onda por microciclo (#12) fija cuántas repeticiones se dejan en reserva; el RIR
-            // baja de 3 a 1 en las tres primeras semanas.
             var reps = StrengthLoad.Derive(slot.MaximumRepetitions, repsInReserve);
 
             items.Add(new SessionItem(
                 slot.ExerciseId,
                 SessionItemRole.Strength,
                 slot.Pattern,
-                StrengthSets,
+                sets,
                 reps.Min,
                 reps.Max,
                 null,
@@ -196,7 +231,7 @@ public static class PlanGenerator
             CoreExerciseId,
             SessionItemRole.Core,
             null,
-            CoreSets,
+            sets,
             null,
             null,
             CoreHoldSecondsMin,
@@ -204,6 +239,13 @@ public static class PlanGenerator
 
         return items;
     }
+
+    /// <summary>
+    /// Series de un ítem en un microciclo: las normales salvo en el deload (#13), que las reduce
+    /// (3 → 2) para bajar el volumen a ~50 %.
+    /// </summary>
+    private static int SetsForMicrocycle(int microcycleNumber) =>
+        microcycleNumber == DeloadMicrocycleNumber ? DeloadSets : StrengthSets;
 
     private static SessionItem BuildSkillItem(SkillStage stage, AthleteLever? lever)
     {
