@@ -91,11 +91,6 @@ public static class DomainErrors
     /// <summary>Errores del motor de generación del plan.</summary>
     public static class Plan
     {
-        /// <summary>La frecuencia pedida todavía no tiene reparto implementado (hoy 3 y 4 días).</summary>
-        public static readonly Error UnsupportedFrequency = Error.Validation(
-            "plan.unsupported_frequency",
-            "Por ahora solo se puede generar un plan de 3 o 4 días.");
-
         /// <summary>El skill objetivo no tiene la etapa actual del atleta en su escalera.</summary>
         public static readonly Error UnknownStage = Error.Validation(
             "plan.unknown_stage",
