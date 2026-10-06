@@ -264,6 +264,8 @@ describe('sessionLogOutbox', () => {
         sessionDay: 2,
         recordedAtUtc: '2026-10-05T10:00:00.000Z',
         sets: PUSH_UP_INPUT.sets,
+        // La marca `pending` es la costura que la vista usa para no ofrecer editar/borrar (#22).
+        pending: true,
       });
     });
   });

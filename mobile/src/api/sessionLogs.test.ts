@@ -1,4 +1,4 @@
-import { fetchSessionLogs, registerSessionLog } from './sessionLogs';
+import { deleteSessionLog, fetchSessionLogs, registerSessionLog, updateSessionLog } from './sessionLogs';
 
 /**
  * El cliente de registro habla con `POST /session-logs` y `GET /session-logs`. Se mockea
@@ -129,5 +129,63 @@ describe('fetchSessionLogs', () => {
       expect.objectContaining({ signal: undefined }),
     );
     expect(logs).toEqual([savedLog]);
+  });
+});
+
+describe('updateSessionLog', () => {
+  it('envía un PUT a /session-logs/{id} con las nuevas series y devuelve el registro actualizado', async () => {
+    const updated = { ...savedLog, sets: [{ setNumber: 1, value: 12 }] };
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(updated));
+
+    const result = await updateSessionLog('log-1', {
+      sets: [{ setNumber: 1, value: 12 }],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toBe(`${BASE}/session-logs/log-1`);
+    expect(init?.method).toBe('PUT');
+    expect(JSON.parse(init?.body as string)).toEqual({
+      sets: [{ setNumber: 1, value: 12 }],
+    });
+    expect(result).toEqual(updated);
+  });
+
+  it('propaga el detalle del Problem Details cuando el API rechaza la edición', async () => {
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        jsonResponse({ detail: 'El registro de sesión indicado no existe.' }, 404),
+      );
+
+    await expect(updateSessionLog('ghost', { sets: [{ setNumber: 1, value: 12 }] })).rejects.toThrow(
+      'El registro de sesión indicado no existe.',
+    );
+  });
+});
+
+describe('deleteSessionLog', () => {
+  it('envía un DELETE a /session-logs/{id} sin cuerpo', async () => {
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(null, 204));
+
+    await deleteSessionLog('log-1');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toBe(`${BASE}/session-logs/log-1`);
+    expect(init?.method).toBe('DELETE');
+    expect(init?.body).toBeUndefined();
+  });
+
+  it('propaga el detalle del Problem Details cuando el API no encuentra el registro', async () => {
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        jsonResponse({ detail: 'El registro de sesión indicado no existe.' }, 404),
+      );
+
+    await expect(deleteSessionLog('ghost')).rejects.toThrow(
+      'El registro de sesión indicado no existe.',
+    );
   });
 });
