@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
 
-import { ArrowLeft } from '@/design-system/Icon';
+import { ArrowLeft, Icon } from '@/design-system/Icon';
 import { Header, Screen } from '@/design-system/Navigation';
 import { MesocycleDetail } from '@/features/history/MesocycleDetail';
 
@@ -34,7 +34,7 @@ export default function MesocycleHistoryDetailScreen() {
               accessibilityLabel="Volver al historial"
               testID="history-detail-back"
             >
-              <ArrowLeft size={24} color="var(--color-text)" />
+              <Icon icon={ArrowLeft} size={24} />
             </Pressable>
           }
         />

@@ -5,7 +5,7 @@ import { fetchMesocycleHistory, type MesocycleSummary } from '@/api/mesocycleHis
 import { messageOf } from '@/api/messageOf';
 import { Button } from '@/design-system/Button';
 import { Banner, EmptyState, Loading } from '@/design-system/Feedback';
-import { ChevronRight } from '@/design-system/Icon';
+import { ChevronRight, Icon } from '@/design-system/Icon';
 import { Stack } from '@/design-system/layout';
 import { ListRow } from '@/design-system/ListRow';
 import { Text } from '@/design-system/Text';
@@ -94,7 +94,7 @@ export function MesocycleHistory() {
               key={entry.id}
               title={summarize(entry)}
               subtitle={`Cerrado el ${formatDate(entry.closedAtUtc)}`}
-              trailing={<ChevronRight size={20} color="var(--color-text-muted)" />}
+              trailing={<Icon icon={ChevronRight} size={20} />}
               onPress={() => router.push(`/plan-historial/${entry.id}`)}
               last={index === state.entries.length - 1}
               testID={`mesocycle-history-item-${entry.id}`}
