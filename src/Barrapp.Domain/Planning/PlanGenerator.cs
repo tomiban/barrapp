@@ -13,8 +13,10 @@ namespace Barrapp.Domain.Planning;
 /// <remarks>
 /// Ticket #10 implementa el reparto de 3 días/semana; las frecuencias 4 y 5 devuelven
 /// <see cref="DomainErrors.Plan.UnsupportedFrequency"/>. La carga de fuerza se deriva del máximo
-/// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. La onda
-/// semanal de RIR (#12) y el deload (#13) se apoyarán en este mismo punto de entrada.
+/// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. Para los
+/// skills apalancados, el bloque de skill ajusta ±1 serie según la <see cref="AthleteLever"/> y
+/// añade su nota de ritmo esperado (#68); el criterio de etapa no cambia. La onda semanal de RIR
+/// (#12) y el deload (#13) se apoyarán en este mismo punto de entrada.
 /// </remarks>
 public static class PlanGenerator
 {
@@ -59,6 +61,10 @@ public static class PlanGenerator
             return Result.Failure<Plan>(DomainErrors.Plan.MissingSkillStage);
         }
 
+        // Solo los skills apalancados ajustan su bloque por palanca (ADR-0011); el criterio de la
+        // etapa no se toca, sigue siendo dato de la escalera.
+        var lever = skill.Lever ? AthleteLever.Classify(profile) : null;
+
         var strength = ResolveStrengthSlots(catalog, profile);
         if (strength.IsFailure)
         {
@@ -76,7 +82,7 @@ public static class PlanGenerator
             var sessions = new List<Session>(profile.TrainingDays);
             for (var day = 1; day <= profile.TrainingDays; day++)
             {
-                sessions.Add(new Session(day, BuildItems(firstStage, strength.Value)));
+                sessions.Add(new Session(day, BuildItems(firstStage, strength.Value, lever)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
@@ -114,11 +120,12 @@ public static class PlanGenerator
 
     private static IReadOnlyList<SessionItem> BuildItems(
         SkillStage stage,
-        IReadOnlyList<StrengthSlot> strength)
+        IReadOnlyList<StrengthSlot> strength,
+        AthleteLever? lever)
     {
         var items = new List<SessionItem>(strength.Count + 2)
         {
-            BuildSkillItem(stage),
+            BuildSkillItem(stage, lever),
         };
 
         foreach (var slot in strength)
@@ -150,19 +157,21 @@ public static class PlanGenerator
         return items;
     }
 
-    private static SessionItem BuildSkillItem(SkillStage stage)
+    private static SessionItem BuildSkillItem(SkillStage stage, AthleteLever? lever)
     {
         var isHold = stage.Criterion.Metric == Metric.Seconds;
+        var sets = Math.Max(1, stage.Criterion.Sets + (lever?.SetAdjustment ?? 0));
 
         return new SessionItem(
             stage.ExerciseId,
             SessionItemRole.Skill,
             null,
-            stage.Criterion.Sets,
+            sets,
             isHold ? null : stage.Criterion.Target,
             isHold ? null : stage.Criterion.Target,
             isHold ? stage.Criterion.Target : null,
-            isHold ? stage.Criterion.Target : null);
+            isHold ? stage.Criterion.Target : null,
+            lever?.Note);
     }
 
     // Puente entre el patrón anclado a los máximos (Athlete) y el grupo del catálogo. Ojo con el

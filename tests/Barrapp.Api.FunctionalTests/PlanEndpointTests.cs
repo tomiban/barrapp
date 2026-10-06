@@ -60,6 +60,41 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
     }
 
     [Fact]
+    public async Task Get_plan_adjusts_the_skill_block_and_its_note_by_the_athlete_lever()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            new AthleteProfileResponse(
+                100,
+                185,
+                190,
+                80,
+                3,
+                [
+                    new MaximumResponse("push_up", 10),
+                    new MaximumResponse("pull_up", 5),
+                    new MaximumResponse("squat", 20),
+                ]));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.GetAsync("/plan");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+
+        var skillBlocks = plan!.Microcycles
+            .SelectMany(microcycle => microcycle.Sessions)
+            .Select(session => session.Items[0])
+            .ToList();
+
+        // La escalera de planche arranca en 3 series; una palanca desfavorable pide una más.
+        Assert.All(skillBlocks, block => Assert.Equal(4, block.Sets));
+        Assert.All(skillBlocks, block => Assert.Contains("lento", block.Note));
+    }
+
+    [Fact]
     public async Task Get_plan_for_an_unsupported_frequency_returns_400_with_a_spanish_detail()
     {
         using var client = factory.CreateClient();

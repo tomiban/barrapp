@@ -33,7 +33,8 @@ internal static class PlanMappings
         item.RepsMin,
         item.RepsMax,
         item.HoldSecondsMin,
-        item.HoldSecondsMax);
+        item.HoldSecondsMax,
+        item.Note);
 
     private static string ToCode(SessionItemRole role) => role switch
     {
