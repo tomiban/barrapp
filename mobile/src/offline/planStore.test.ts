@@ -13,6 +13,13 @@ const openDatabaseAsyncMock = SQLite.openDatabaseAsync as jest.Mock;
 const PLANCHE_PLAN: Plan = {
   skillId: 'planche',
   trainingDays: 3,
+  skillStage: {
+    order: 1,
+    name: 'Planche inclinada',
+    exerciseId: 'planche-lean',
+    criterion: { metric: 'seconds', target: 20, sets: 3 },
+    notes: 'Inclinación con los hombros por delante de las manos.',
+  },
   microcycles: [
     {
       number: 1,
@@ -42,6 +49,13 @@ const PLANCHE_PLAN: Plan = {
 const HANDSTAND_PLAN: Plan = {
   skillId: 'handstand',
   trainingDays: 3,
+  skillStage: {
+    order: 1,
+    name: 'Pino apoyado a la pared',
+    exerciseId: 'handstand-wall-support',
+    criterion: { metric: 'seconds', target: 30, sets: 3 },
+    notes: 'Pies apoyados en la pared, cuerpo alineado y hombros activos.',
+  },
   microcycles: [
     {
       number: 1,

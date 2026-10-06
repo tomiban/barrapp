@@ -1,5 +1,6 @@
 import { apiError, getApiBaseUrl } from '@/api/client';
 import type { ExerciseGroupCode } from '@/api/catalog/exercises';
+import type { SkillStage } from '@/api/catalog/skills';
 
 /** Papel de una fila dentro de la sesión del plan. */
 export type PlanItemRole = 'skill' | 'strength' | 'core';
@@ -33,6 +34,8 @@ export type PlanMicrocycle = {
 export type Plan = {
   skillId: string;
   trainingDays: number;
+  /** Etapa actual del skill objetivo, con su criterio para avanzar. */
+  skillStage: SkillStage;
   microcycles: PlanMicrocycle[];
 };
 
