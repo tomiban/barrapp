@@ -12,8 +12,8 @@ namespace Barrapp.Domain.UnitTests;
 /// bloque de skill en la etapa actual del atleta (#14) y el resultado es determinista. La carga de
 /// fuerza se deriva del máximo del atleta y nunca llega al fallo (#11); el bloque de skill se
 /// ajusta por la palanca del atleta en los skills apalancados (#68). El RIR baja de 3 a 1 en las
-/// tres primeras semanas, lo que sube las reps y el volumen (#12). Solo se prueba por su interfaz
-/// pública.
+/// tres primeras semanas, lo que sube las reps y el volumen (#12); la semana 4 es un deload con
+/// RIR 4 y ~50 % del volumen de la semana 3 (#13). Solo se prueba por su interfaz pública.
 /// </summary>
 public sealed class PlanGeneratorTests
 {
@@ -265,6 +265,66 @@ public sealed class PlanGeneratorTests
 
         Assert.True(volumeByMicrocycle[0] <= volumeByMicrocycle[1], "la semana 2 no puede bajar el volumen de la 1");
         Assert.True(volumeByMicrocycle[1] <= volumeByMicrocycle[2], "la semana 3 no puede bajar el volumen de la 2");
+    }
+
+    [Fact]
+    public void Generate_raises_the_strength_reserve_to_four_in_the_deload_microcycle()
+    {
+        // Deload (#13): la semana 4 deja 4 reps en reserva (RIR 4), el tope más conservador de la
+        // onda. Con un mismo máximo, el tope prescrito baja respecto a la semana 3 (RIR 1).
+        const int maximum = 10;
+
+        var plan = PlanGenerator
+            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Value;
+
+        foreach (var exerciseId in new[] { "push_up", "pull_up", "squat" })
+        {
+            Assert.Equal(9, StrengthItem(plan, 2, exerciseId).RepsMax); // RIR 1 (semana 3)
+            Assert.Equal(6, StrengthItem(plan, 3, exerciseId).RepsMax); // RIR 4 (deload)
+        }
+    }
+
+    [Fact]
+    public void Generate_halves_the_strength_volume_in_the_deload_microcycle()
+    {
+        // Deload (#13): la semana 4 baja las series de fuerza (3 → 2) y sube el RIR a 4, dejando el
+        // volumen (series × reps) en ~50 % del de la semana 3. Con los máximos concretos del
+        // fixture (10/5/20) el cociente queda en ~48 %.
+        var plan = PlanGenerator
+            .Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog())
+            .Value;
+
+        var volume = VolumeByMicrocycle(plan, 4);
+        var ratio = volume[3] / (double)volume[2];
+
+        Assert.True(volume[3] < volume[2], "el deload no puede subir el volumen de la semana 3");
+        Assert.True(
+            ratio is >= 0.4 and <= 0.6,
+            $"el volumen del deload debe rondar el 50 % del de la semana 3 (fue {ratio:P0})");
+    }
+
+    [Fact]
+    public void Generate_reduces_strength_and_core_sets_in_the_deload_microcycle()
+    {
+        // Deload (#13): la semana 4 descarga el volumen bajando las series de fuerza y de core
+        // (3 → 2); el bloque de skill y la anatomía de la sesión no cambian.
+        var plan = PlanGenerator
+            .Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog())
+            .Value;
+
+        foreach (var microcycle in plan.Microcycles)
+        {
+            var expectedSets = microcycle.Number == 4 ? 2 : 3;
+            foreach (var session in microcycle.Sessions)
+            {
+                Assert.All(
+                    session.Items.Where(item => item.Role == SessionItemRole.Strength),
+                    item => Assert.Equal(expectedSets, item.Sets));
+                Assert.Equal(expectedSets, session.Items[^1].Sets); // core
+                Assert.Equal(3, session.Items[0].Sets); // skill: el deload no toca la escalera
+            }
+        }
     }
 
     [Theory]

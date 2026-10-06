@@ -17,8 +17,9 @@ namespace Barrapp.Domain.Planning;
 /// del atleta (#11) con <see cref="StrengthLoad"/>, dejando repeticiones en reserva. El bloque de
 /// skill practica la etapa actual del atleta (#14) y, en los skills apalancados, ajusta ±1 serie
 /// según la <see cref="AthleteLever"/> y añade su nota de ritmo esperado (#68); el criterio de
-/// etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3; el deload de
-/// la semana 4 (#13) se apoyará en este mismo punto de entrada.
+/// etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3; la
+/// semana 4 es un <i>deload</i> (#13) con RIR 4 y ~50 % del volumen, bajando las series de
+/// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión.
 /// </remarks>
 public static class PlanGenerator
 {
@@ -32,9 +33,16 @@ public static class PlanGenerator
     private const string CoreExerciseId = "hollow-body-hold";
 
     private const int StrengthSets = 3;
-    private const int CoreSets = 3;
     private const int CoreHoldSecondsMin = 20;
     private const int CoreHoldSecondsMax = 30;
+
+    /// <summary>Microciclo de descarga: el deload (#13) baja las series y sube el RIR.</summary>
+    private const int DeloadMicrocycleNumber = 4;
+
+    /// <summary>
+    /// Series de fuerza y de core en el deload: 3 → 2 para dejar ~50 % del volumen de la semana 3.
+    /// </summary>
+    private const int DeloadSets = 2;
 
     /// <summary>
     /// Genera el mesociclo para <paramref name="profile"/> y <paramref name="objective"/> contra el
@@ -93,7 +101,7 @@ public static class PlanGenerator
             var sessions = new List<Session>(profile.TrainingDays);
             for (var day = 1; day <= profile.TrainingDays; day++)
             {
-                sessions.Add(new Session(day, BuildItems(currentStage, strength.Value, lever, repsInReserve)));
+                sessions.Add(new Session(day, BuildItems(currentStage, strength.Value, lever, repsInReserve, number)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
@@ -133,24 +141,28 @@ public static class PlanGenerator
         SkillStage stage,
         IReadOnlyList<StrengthSlot> strength,
         AthleteLever? lever,
-        int repsInReserve)
+        int repsInReserve,
+        int microcycleNumber)
     {
         var items = new List<SessionItem>(strength.Count + 2)
         {
             BuildSkillItem(stage, lever),
         };
 
+        // El deload (#13) baja las series de fuerza y de core de la semana 4 (3 → 2), de modo que
+        // con la onda RIR 4 de ese microciclo (RirWave) el volumen queda en ~50 % del de la semana
+        // 3. La anatomía de la sesión y el bloque de skill no cambian.
+        var sets = SetsForMicrocycle(microcycleNumber);
+
         foreach (var slot in strength)
         {
-            // La onda por microciclo (#12) fija cuántas repeticiones se dejan en reserva; el RIR
-            // baja de 3 a 1 en las tres primeras semanas.
             var reps = StrengthLoad.Derive(slot.MaximumRepetitions, repsInReserve);
 
             items.Add(new SessionItem(
                 slot.ExerciseId,
                 SessionItemRole.Strength,
                 slot.Pattern,
-                StrengthSets,
+                sets,
                 reps.Min,
                 reps.Max,
                 null,
@@ -161,7 +173,7 @@ public static class PlanGenerator
             CoreExerciseId,
             SessionItemRole.Core,
             null,
-            CoreSets,
+            sets,
             null,
             null,
             CoreHoldSecondsMin,
@@ -169,6 +181,13 @@ public static class PlanGenerator
 
         return items;
     }
+
+    /// <summary>
+    /// Series de un ítem en un microciclo: las normales salvo en el deload (#13), que las reduce
+    /// (3 → 2) para bajar el volumen a ~50 %.
+    /// </summary>
+    private static int SetsForMicrocycle(int microcycleNumber) =>
+        microcycleNumber == DeloadMicrocycleNumber ? DeloadSets : StrengthSets;
 
     private static SessionItem BuildSkillItem(SkillStage stage, AthleteLever? lever)
     {
