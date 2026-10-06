@@ -13,7 +13,7 @@ public interface IKnowledgeBase : IGenerationCatalog
     IReadOnlyList<Exercise> Exercises { get; }
 
     /// <summary>Ejercicios del grupo indicado.</summary>
-    IReadOnlyList<Exercise> ExercisesByGroup(ExerciseGroup group);
+    new IReadOnlyList<Exercise> ExercisesByGroup(ExerciseGroup group);
 
     /// <summary>Todos los skills.</summary>
     IReadOnlyList<Skill> Skills { get; }
