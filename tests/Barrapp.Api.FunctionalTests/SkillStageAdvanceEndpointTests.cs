@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Barrapp.Application.Features.Plans;
 using Barrapp.Application.Features.SkillProgress;
 using Microsoft.AspNetCore.Mvc;
 
@@ -172,17 +173,41 @@ internal static class SkillStageAdvanceTestData
         int sessionDay,
         params int[] values)
     {
-        var response = await client.PostAsJsonAsync(
-            "/session-logs",
-            new
+        using var planResponse = await client.GetAsync("/plan");
+        var plan = planResponse.IsSuccessStatusCode
+            ? await planResponse.Content.ReadFromJsonAsync<PlanResponse>()
+            : null;
+        var date = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(sessionDay - 1));
+        var response = await client.PostAsJsonAsync("/session-logs", new
+        {
+            session = new
+            {
+                kind = plan?.MesocycleId is null ? "suelta" : "mesocycle",
+                date,
+                mesocycleId = plan?.MesocycleId,
+                microcycleNumber = plan?.MesocycleId is null ? (int?)null : 1,
+                sessionDay = plan?.MesocycleId is null ? (int?)null : sessionDay,
+            },
+            item = new
             {
                 exerciseId,
-                mesocycleId = (Guid?)null,
-                sessionDay,
-                sets = values
-                    .Select((value, index) => new { setNumber = index + 1, value })
-                    .ToList(),
-            });
+                role = "skill",
+                pattern = (string?)null,
+                prescribedSets = values.Length,
+                repsMin = (int?)1,
+                repsMax = (int?)100,
+                holdSecondsMin = (int?)null,
+                holdSecondsMax = (int?)null,
+                note = (string?)null,
+                sets = values.Select((value, index) => new
+                {
+                    setNumber = index + 1,
+                    value,
+                    actualRir = (int?)null,
+                    loadKg = (double?)null,
+                }),
+            },
+        });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

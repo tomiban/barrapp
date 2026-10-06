@@ -21,6 +21,7 @@ internal sealed class SessionLogItemConfiguration : IEntityTypeConfiguration<Ses
         builder.ToTable("SessionLogItems");
 
         builder.HasKey(item => item.Id);
+        builder.Property(item => item.Id).ValueGeneratedNever();
 
         builder.Property(item => item.Position).IsRequired();
         builder.Property(item => item.ExerciseId).IsRequired();
@@ -50,7 +51,8 @@ internal sealed class SessionLogItemConfiguration : IEntityTypeConfiguration<Ses
             sets.ToTable("SessionLogSets");
             sets.WithOwner().HasForeignKey("SessionLogItemId");
             sets.HasKey("SessionLogItemId", nameof(SessionLogSet.SetNumber));
-            sets.Property(set => set.SetNumber).IsRequired();
+            sets.Property<Guid>("SessionLogItemId").ValueGeneratedNever();
+            sets.Property(set => set.SetNumber).ValueGeneratedNever().IsRequired();
             sets.Property(set => set.Value).IsRequired();
             sets.Property(set => set.ActualRir);
             sets.Property(set => set.LoadKg);

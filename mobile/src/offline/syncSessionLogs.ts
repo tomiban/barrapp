@@ -1,4 +1,4 @@
-import type { RegisterSessionLogInput, SessionLog } from '@/api/sessionLogs';
+import type { RegisterSessionLogItemInput, SessionLogSession } from '@/api/sessionLogs';
 import type { PendingSessionLog } from './sessionLogOutbox';
 
 /** Resultado de un intento de sincronización de la cola. */
@@ -26,19 +26,18 @@ export type SessionLogSyncOutbox = {
  */
 export async function syncPendingSessionLogs(
   outbox: SessionLogSyncOutbox,
-  register: (input: RegisterSessionLogInput) => Promise<SessionLog>,
+  register: (input: RegisterSessionLogItemInput) => Promise<SessionLogSession>,
+  requestForLegacy?: (log: PendingSessionLog) => RegisterSessionLogItemInput | null,
 ): Promise<SessionLogSyncResult> {
   const pending = await outbox.listPending();
   let synced = 0;
   for (const log of pending) {
     try {
-      await register({
-        clientId: log.clientId,
-        exerciseId: log.exerciseId,
-        mesocycleId: log.mesocycleId,
-        sessionDay: log.sessionDay,
-        sets: log.sets,
-      });
+      const request = log.request ?? requestForLegacy?.(log);
+      if (!request) {
+        break;
+      }
+      await register({ ...request, clientId: log.clientId });
       await outbox.remove(log.clientId);
       synced += 1;
     } catch {

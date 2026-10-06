@@ -194,6 +194,8 @@ public sealed class GeneratePlanEndpointTests
             .Where(mesocycle => mesocycle.Status == MesocycleStatus.Active)
             .ToListAsync();
         Assert.Single(actives);
+        Assert.NotNull(plan.MesocycleId);
+        Assert.Equal(actives[0].Id, plan.MesocycleId);
     }
 
     /// <summary>Los records no comparan colecciones estructuralmente; JSON sí.</summary>

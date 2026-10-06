@@ -13,12 +13,13 @@ namespace Barrapp.Application.Features.Plans;
 /// </summary>
 internal static class PlanMappings
 {
-    public static PlanResponse ToResponse(Plan plan, IKnowledgeBase catalog) => new(
+    public static PlanResponse ToResponse(Plan plan, IKnowledgeBase catalog, Guid? mesocycleId = null) => new(
         plan.SkillId,
         plan.TrainingDays,
         ToStage(plan.CurrentStage),
         plan.Microcycles.Select(microcycle => ToMicrocycle(microcycle, catalog)).ToList(),
-        plan.StartDate);
+        plan.StartDate,
+        mesocycleId);
 
     private static SkillStageResponse ToStage(SkillStage stage) => new(
         stage.Order,
