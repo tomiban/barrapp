@@ -60,6 +60,27 @@ export async function fetchPlan(signal?: AbortSignal): Promise<Plan> {
   return (await response.json()) as Plan;
 }
 
+/**
+ * Genera el mesociclo y lo deja como el activo del atleta (`POST /plan`). `startDate` es la fecha
+ * que el atleta elige para arrancar; sin ella el mesociclo arranca hoy. El mesociclo empieza
+ * siempre en el primer día de entrenamiento elegido que cae en o después de esa fecha, de modo que
+ * cada sesión cae en su día de la semana.
+ */
+export async function generatePlan(startDate?: string, signal?: AbortSignal): Promise<Plan> {
+  const response = await fetch(`${getApiBaseUrl()}/plan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ startDate: startDate ?? null }),
+    signal,
+  });
+
+  if (!response.ok) {
+    throw await apiError(response);
+  }
+
+  return (await response.json()) as Plan;
+}
+
 /** Máximo de un ejercicio básico tras el ajuste del cierre. */
 export type ClosedMesocycleMaximum = {
   exerciseCode: string;

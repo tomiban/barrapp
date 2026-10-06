@@ -30,7 +30,7 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
             inseamCentimeters,
             trainingDays,
             maximums ?? Maximums(),
-            trainingWeekdays);
+            trainingWeekdays ?? PlanTestData.DefaultWeekdays(trainingDays));
 
     [Fact]
     public async Task Put_profile_with_training_weekdays_then_get_profile_returns_them()
@@ -311,7 +311,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
                 new MaximumResponse("push_up", 10),
                 new MaximumResponse("pull_up", 0),
                 new MaximumResponse("bench_press", 20),
-            ]);
+            ],
+            ["monday", "tuesday", "thursday", "friday"]);
 
         using var response = await client.PutAsJsonAsync("/profile", payload);
 
@@ -335,7 +336,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
             [
                 new MaximumResponse("push_up", 10),
                 new MaximumResponse("squat", 20),
-            ]);
+            ],
+            ["monday", "tuesday", "thursday", "friday"]);
 
         using var response = await client.PutAsJsonAsync("/profile", payload);
 
@@ -382,7 +384,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
                 new MaximumResponse("push_up", 10),
                 new MaximumResponse("push_up", 12),
                 new MaximumResponse("squat", 20),
-            ]);
+            ],
+            ["monday", "tuesday", "thursday", "friday"]);
 
         using var response = await client.PutAsJsonAsync("/profile", payload);
 

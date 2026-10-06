@@ -13,7 +13,10 @@ namespace Barrapp.Application.Features.Plans;
 /// sin guardar). En ambos casos la regla de programación vive en <see cref="PlanGenerator"/>;
 /// la excepción pragmática a «las queries proyectan directo a DTO» sigue intacta (ver ADR-0012).
 /// </summary>
-internal sealed class GetPlanQueryHandler(IApplicationDbContext dbContext, IKnowledgeBase catalog)
+internal sealed class GetPlanQueryHandler(
+    IApplicationDbContext dbContext,
+    IKnowledgeBase catalog,
+    TimeProvider timeProvider)
     : IQueryHandler<GetPlanQuery, PlanResponse>
 {
     public async Task<Result<PlanResponse>> Handle(
@@ -61,7 +64,7 @@ internal sealed class GetPlanQueryHandler(IApplicationDbContext dbContext, IKnow
             profile,
             objective,
             progress?.StageOrder,
-            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime),
             catalog);
 
         return generation.IsFailure

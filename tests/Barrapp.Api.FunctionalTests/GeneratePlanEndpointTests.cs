@@ -158,7 +158,8 @@ public sealed class GeneratePlanEndpointTests
                     new MaximumResponse("push_up", 20),
                     new MaximumResponse("pull_up", 5),
                     new MaximumResponse("squat", 20),
-                ]));
+                ],
+                ["monday", "wednesday", "friday"]));
 
         var served = await (await client.GetAsync("/plan")).Content.ReadFromJsonAsync<PlanResponse>();
 

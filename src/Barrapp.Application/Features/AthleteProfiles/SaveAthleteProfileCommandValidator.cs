@@ -36,22 +36,9 @@ internal sealed class SaveAthleteProfileCommandValidator : AbstractValidator<Sav
             .InclusiveBetween(AthleteProfile.MinTrainingDays, AthleteProfile.MaxTrainingDays)
             .WithMessage("Los días de entrenamiento deben estar entre {From} y {To}.");
 
-        // Los días de la semana elegidos (#94) tienen que ser tantos como la frecuencia y sin
-        // repetir: el número de días de entrenamiento es cuántos días de la semana elige el atleta.
-        RuleFor(command => command)
-            .Must(command =>
-                command.TrainingWeekdays is null
-                || command.TrainingWeekdays.Count == command.TrainingDays)
-            .WithName("TrainingWeekdays")
-            .WithMessage("Elige tantos días de la semana como días de entrenamiento.");
-
-        RuleFor(command => command)
-            .Must(command =>
-                command.TrainingWeekdays is null
-                || command.TrainingWeekdays.Distinct().Count() == command.TrainingWeekdays.Count)
-            .WithName("TrainingWeekdays")
-            .WithMessage("No puedes repetir un día de la semana.");
-
+        // Solo la forma de la entrada: cada día tiene que ser uno de los siete códigos, porque sin eso ni
+        // siquiera se puede construir el valor del dominio. Cuántos días son y si se repiten lo
+        // decide <see cref="AthleteProfile"/>, que devuelve su propio error de validación.
         RuleFor(command => command)
             .Must(command =>
                 command.TrainingWeekdays is null

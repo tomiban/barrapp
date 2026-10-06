@@ -28,7 +28,9 @@ namespace Barrapp.Persistence.IntegrationTests;
 /// </summary>
 public sealed class CloseMesocyclePersistenceTests : IDisposable
 {
+    /// <summary>Lunes de referencia para el calendario del mesociclo (#94).</summary>
     private static readonly DateOnly StartDate = new(2026, 3, 2);
+
     private readonly SqliteConnection _connection;
     private readonly ApplicationDbContext _dbContext;
 

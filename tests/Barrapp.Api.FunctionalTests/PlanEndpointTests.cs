@@ -166,7 +166,8 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
                     new MaximumResponse("push_up", 10),
                     new MaximumResponse("pull_up", 5),
                     new MaximumResponse("squat", 20),
-                ]));
+                ],
+                ["monday", "wednesday", "friday"]));
         await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
 
         using var response = await client.GetAsync("/plan");
@@ -337,6 +338,21 @@ public sealed class PlanWithoutProgressEndpointTests(BarrappApiFactory factory)
 /// <summary>Datos compartidos por los tests de plan.</summary>
 internal static class PlanTestData
 {
+    /// <summary>
+    /// Días por defecto de cada frecuencia, los mismos que usa el dominio cuando el request no los
+    /// trae. Es el escenario mayoritario de los tests de plan.
+    /// </summary>
+    public static IReadOnlyList<string> DefaultWeekdays(int trainingDays) => trainingDays switch
+    {
+        3 => ["monday", "wednesday", "friday"],
+        4 => ["monday", "tuesday", "thursday", "friday"],
+        5 => ["monday", "tuesday", "wednesday", "thursday", "friday"],
+
+        // Frecuencia fuera de rango: los días son irrelevantes porque el request ya se rechaza por
+        // la frecuencia, y este helper se usa justo para construir esos casos.
+        _ => [],
+    };
+
     public static AthleteProfileResponse Profile(
         int trainingDays,
         IReadOnlyList<string>? trainingWeekdays = null) => new(
@@ -350,5 +366,5 @@ internal static class PlanTestData
                 new MaximumResponse("pull_up", 5),
                 new MaximumResponse("squat", 20),
             ],
-            trainingWeekdays);
+            trainingWeekdays ?? DefaultWeekdays(trainingDays));
 }

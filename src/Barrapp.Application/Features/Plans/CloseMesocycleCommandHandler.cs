@@ -30,7 +30,8 @@ internal sealed class CloseMesocycleCommandHandler(
     IApplicationDbContext dbContext,
     IKnowledgeBase catalog,
     IMesocycleRepository repository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    TimeProvider timeProvider)
     : ICommandHandler<CloseMesocycleCommand, CloseMesocycleResponse>
 {
     public async Task<Result<CloseMesocycleResponse>> Handle(
@@ -56,7 +57,7 @@ internal sealed class CloseMesocycleCommandHandler(
         }
 
         var mesocycle = candidate.Value;
-        var closedAtUtc = DateTimeOffset.UtcNow;
+        var closedAtUtc = timeProvider.GetUtcNow();
         var closing = mesocycle.Close(closedAtUtc);
         if (closing.IsFailure)
         {
@@ -126,7 +127,7 @@ internal sealed class CloseMesocycleCommandHandler(
             profile,
             objective,
             progress?.StageOrder,
-            DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-28)),
+            DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime.AddDays(-28)),
             catalog);
         if (generation.IsFailure)
         {
@@ -136,7 +137,7 @@ internal sealed class CloseMesocycleCommandHandler(
         var creation = Mesocycle.Create(
             SingleUser.Id,
             generation.Value,
-            DateTimeOffset.UtcNow.AddDays(-28));
+            timeProvider.GetUtcNow().AddDays(-28));
         if (creation.IsFailure)
         {
             return Result.Failure<Mesocycle>(creation.Error);

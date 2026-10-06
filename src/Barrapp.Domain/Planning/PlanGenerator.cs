@@ -124,7 +124,7 @@ public static class PlanGenerator
             return Result.Failure<Plan>(DomainErrors.AthleteProfile.TrainingWeekdaysMismatch);
         }
 
-        var firstTrainingDay = FirstTrainingDayOnOrAfter(startDate, trainingWeekdays);
+        var firstSessionDate = FirstSessionDateOnOrAfter(startDate, trainingWeekdays);
 
         var skill = catalog.FindSkill(objective.SkillId);
         if (skill is null)
@@ -158,7 +158,7 @@ public static class PlanGenerator
         for (var number = 1; number <= MicrocycleCount; number++)
         {
             var repsInReserve = RirWave.RepsInReserve(number);
-            var weekStart = firstTrainingDay.AddDays(7 * (number - 1));
+            var weekStart = firstSessionDate.AddDays(7 * (number - 1));
             var sessions = new List<Session>(weeklySplit.Count);
             for (var index = 0; index < weeklySplit.Count; index++)
             {
@@ -172,27 +172,23 @@ public static class PlanGenerator
             microcycles.Add(new Microcycle(number, sessions));
         }
 
-        return new Plan(skill.Id, profile.TrainingDays, firstTrainingDay, currentStage, microcycles);
+        return new Plan(skill.Id, profile.TrainingDays, firstSessionDate, currentStage, microcycles);
     }
 
     /// <summary>
-    /// Primer día de entrenamiento en o después de <paramref name="startDate"/>. El mesociclo no
-    /// arranca en un día que el atleta no entrena: si la fecha elegida cae entre dos días de
-    /// entrenamiento, arranca en el siguiente.
+    /// Fecha de la primera sesión de la primera semana: el primer día <c>trainingWeekdays[0]</c> —el
+    /// primero de los días que eligió el atleta, en orden de semana— en o después de la fecha pedida.
+    /// Anclar la semana en ese día es lo que garantiza que cada sesión caiga en su día de la semana:
+    /// los desplazamientos hacia el resto de días se miden desde ahí.
     /// </summary>
-    private static DateOnly FirstTrainingDayOnOrAfter(DateOnly startDate, IReadOnlyList<DayOfWeek> trainingWeekdays)
+    private static DateOnly FirstSessionDateOnOrAfter(
+        DateOnly startDate,
+        IReadOnlyList<DayOfWeek> trainingWeekdays)
     {
-        for (var offset = 0; offset <= 6; offset++)
-        {
-            var candidate = startDate.AddDays(offset);
-            if (trainingWeekdays.Contains(candidate.DayOfWeek))
-            {
-                return candidate;
-            }
-        }
+        var firstWeekday = trainingWeekdays[0];
+        var daysUntilFirstWeekday = ((int)firstWeekday - (int)startDate.DayOfWeek + 7) % 7;
 
-        // Una semana entera sin coincidir es imposible con al menos un día de entrenamiento.
-        return startDate;
+        return startDate.AddDays(daysUntilFirstWeekday);
     }
 
     /// <summary>

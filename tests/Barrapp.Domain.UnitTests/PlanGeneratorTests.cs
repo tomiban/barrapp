@@ -799,7 +799,7 @@ public sealed class PlanGeneratorTests
     }
 
     [Fact]
-    public void Generate_starts_the_mesocycle_on_the_first_training_day_on_or_after_the_start_date()
+    public void Generate_starts_the_mesocycle_on_the_first_training_weekday_on_or_after_the_start_date()
     {
         var profile = BuildProfile(3, weekdays: [DayOfWeek.Tuesday, DayOfWeek.Thursday, DayOfWeek.Saturday]);
 
@@ -809,6 +809,53 @@ public sealed class PlanGeneratorTests
         Assert.Equal(
             [new DateOnly(2026, 3, 3), new DateOnly(2026, 3, 5), new DateOnly(2026, 3, 7)],
             plan.Microcycles[0].Sessions.Select(session => session.Date));
+    }
+
+    [Fact]
+    public void Generate_waits_for_the_first_chosen_weekday_when_the_start_date_falls_in_the_middle()
+    {
+        // El atleta entrena lunes, miércoles y viernes, pero el mesociclo no puede empezar hasta el
+        // lunes siguiente: una semana que empezara en miércoles dejaría la sesión del lunes en un día
+        // que no es lunes.
+        var profile = BuildProfile(3, weekdays: [DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday]);
+
+        var plan = PlanGenerator.Generate(
+            profile,
+            BuildObjective(),
+            FirstStageOrder,
+            MondayStart.AddDays(1),
+            Catalog()).Value;
+
+        Assert.Equal(new DateOnly(2026, 3, 9), plan.StartDate);
+        Assert.Equal(
+            [new DateOnly(2026, 3, 9), new DateOnly(2026, 3, 11), new DateOnly(2026, 3, 13)],
+            plan.Microcycles[0].Sessions.Select(session => session.Date));
+    }
+
+    [Fact]
+    public void Generate_dates_every_session_on_the_weekday_it_claims_for_any_start_date()
+    {
+        var weekdays = new[]
+        {
+            DayOfWeek.Monday,
+            DayOfWeek.Wednesday,
+            DayOfWeek.Friday,
+            DayOfWeek.Saturday,
+        };
+
+        // Cualquier día de inicio, incluidos los que no son día de entrenamiento.
+        for (var offset = 0; offset < 7; offset++)
+        {
+            var startDate = MondayStart.AddDays(offset);
+            var profile = BuildProfile(4, weekdays: weekdays);
+
+            var plan = PlanGenerator.Generate(profile, BuildObjective(), FirstStageOrder, startDate, Catalog())
+                .Value;
+
+            Assert.All(
+                plan.Microcycles.SelectMany(microcycle => microcycle.Sessions),
+                session => Assert.Equal(session.Weekday, session.Date!.Value.DayOfWeek));
+        }
     }
 
     [Fact]

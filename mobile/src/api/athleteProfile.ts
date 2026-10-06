@@ -63,14 +63,17 @@ export const WEEKDAY_LABELS: Record<TrainingWeekdayCode, string> = {
 };
 
 /**
- * Días por defecto de cada frecuencia (3–5): los que usa el API cuando el atleta todavía no ha
- * elegido cuáles, para que «hoy» sea siempre un día real de entrenamiento.
+ * Días por defecto de cada frecuencia (3–5), los mismos que usa el API cuando el atleta todavía no
+ * ha elegido cuáles, para que «hoy» sea siempre un día real de entrenamiento.
  */
 export const DEFAULT_TRAINING_WEEKDAYS: Readonly<Record<number, readonly TrainingWeekdayCode[]>> = {
   3: ['monday', 'wednesday', 'friday'],
   4: ['monday', 'tuesday', 'thursday', 'friday'],
   5: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
 };
+
+/** Días de entrenamiento que puede tener un perfil: 3–5 días de la semana. */
+export type TrainingWeekdaySelection = TrainingWeekdayCode[];
 
 /** Perfil del atleta: peso y medidas en cm, días de entrenamiento y máximos. */
 export type AthleteProfile = {
@@ -83,7 +86,7 @@ export type AthleteProfile = {
    * Días de la semana que entrena. Si no se envían, el API usa los días por defecto de la
    * frecuencia (ver `DEFAULT_TRAINING_WEEKDAYS`).
    */
-  trainingWeekdays?: TrainingWeekdayCode[];
+  trainingWeekdays?: TrainingWeekdaySelection;
   maximums: Maximum[];
 };
 
