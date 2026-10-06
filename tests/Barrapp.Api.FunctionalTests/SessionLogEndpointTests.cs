@@ -328,6 +328,34 @@ public sealed class SessionLogEndpointTests(BarrappApiFactory factory)
         Assert.Equal([10], loaded.Sets.Select(set => set.Value));
     }
 
+    [Fact]
+    public async Task Delete_removes_the_log_and_returns_no_content()
+    {
+        using var client = factory.CreateClient();
+        var created = await PostPushUpAsync(client, values: [10, 11]);
+
+        using var response = await client.DeleteAsync($"/session-logs/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var logs = await client.GetFromJsonAsync<List<SessionLogResponse>>("/session-logs");
+        Assert.NotNull(logs);
+        Assert.DoesNotContain(logs!, log => log.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task Delete_with_an_unknown_id_returns_404()
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.DeleteAsync($"/session-logs/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains("El registro de sesión indicado no existe.", problem!.Detail);
+    }
+
     private static async Task<SessionLogResponse> PostPushUpAsync(
         HttpClient client,
         IReadOnlyList<int> values)

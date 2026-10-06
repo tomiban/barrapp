@@ -70,6 +70,21 @@ internal static class SessionLogEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapDelete(
+                "/{id:guid}",
+                async (Guid id, ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(new DeleteSessionLogCommand(id), cancellationToken);
+
+                    return result.IsSuccess
+                        ? Results.NoContent()
+                        : result.Error.ToProblemDetails();
+                })
+            .WithName("DeleteSessionLog")
+            .WithSummary("Elimina un registro de sesión y sus series.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return app;
     }
 }
