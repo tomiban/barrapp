@@ -1,8 +1,8 @@
 using Barrapp.Application.Abstractions;
-using MediatR;
 using Barrapp.Domain.Knowledge;
 using Barrapp.Domain.Planning;
 using Barrapp.Domain.Sessions;
+using MediatR;
 
 namespace Barrapp.Application.Features.SessionLogs;
 
