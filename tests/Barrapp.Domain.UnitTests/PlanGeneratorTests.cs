@@ -15,8 +15,8 @@ namespace Barrapp.Domain.UnitTests;
 /// y nunca llega al fallo (#11); el bloque de skill se ajusta por la palanca del atleta en los
 /// skills apalancados (#68). El RIR baja de 3 a 1 en las tres primeras semanas, lo que sube las
 /// reps y el volumen (#12); la semana 4 es un deload con RIR 4 y ~50 % del volumen de la semana 3
-/// (#13). Con un máximo de 0, el hueco de fuerza de ese patrón pasa a la regresión del ejercicio
-/// (#17). Solo se prueba por su interfaz pública.
+/// (#13). Con un máximo de 0 o 1, el hueco de fuerza de ese patrón pasa a la regresión del ejercicio
+/// (#17, #91). Solo se prueba por su interfaz pública.
 /// </summary>
 public sealed class PlanGeneratorTests
 {
@@ -30,7 +30,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_returns_a_four_week_plan_with_three_sessions_per_week()
     {
-        var result = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog());
+        var result = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, MondayStart, Catalog());
 
         Assert.True(result.IsSuccess);
         Assert.Equal(SkillId, result.Value.SkillId);
@@ -42,7 +42,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_for_four_days_alternates_upper_and_lower_sessions()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(4), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(4), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         Assert.Equal(4, plan.TrainingDays);
         Assert.All(plan.Microcycles, microcycle => Assert.Equal(4, microcycle.Sessions.Count));
@@ -88,7 +88,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_for_four_days_puts_the_skill_block_only_on_upper_days()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(4), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(4), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         foreach (var microcycle in plan.Microcycles)
         {
@@ -107,7 +107,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_for_four_days_gives_every_strength_pattern_work_twice_per_week()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(4), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(4), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         foreach (var microcycle in plan.Microcycles)
         {
@@ -132,7 +132,7 @@ public sealed class PlanGeneratorTests
         // tren superior sube 7 → 8 → 9 en las tres primeras semanas.
         const int maximum = 10;
         var plan = PlanGenerator
-            .Generate(BuildProfile(4, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(4, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         Assert.Equal(7, StrengthItem(plan, 0, day: 1, "push_up").RepsMax); // RIR 3 (base)
@@ -143,7 +143,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_for_five_days_builds_the_pattern_split_with_five_sessions_per_week()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(5), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(5), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         Assert.Equal(5, plan.TrainingDays);
         Assert.All(plan.Microcycles, microcycle => Assert.Equal(5, microcycle.Sessions.Count));
@@ -172,7 +172,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_for_five_days_practises_the_skill_in_every_session()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(5), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(5), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         // En 5 días el reparto es por patrón y el bloque de skill abre todas las sesiones (D1);
         // el core sigue cerrando la anatomía de la sesión.
@@ -188,7 +188,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_for_five_days_gives_every_strength_pattern_work_twice_per_week()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(5), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(5), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         foreach (var microcycle in plan.Microcycles)
         {
@@ -214,7 +214,7 @@ public sealed class PlanGeneratorTests
         // (#13) y baja a RIR 4 (tope 6) con las series de fuerza 3 → 2. La anatomía no cambia.
         const int maximum = 10;
         var plan = PlanGenerator
-            .Generate(BuildProfile(5, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(5, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         Assert.Equal(7, StrengthItem(plan, 0, day: 1, "push_up").RepsMax); // RIR 3 (base)
@@ -231,7 +231,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_gives_every_strength_pattern_work_at_least_twice_per_week()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         foreach (var microcycle in plan.Microcycles)
         {
@@ -254,7 +254,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_builds_each_session_as_skill_then_strength_by_pattern_then_core()
     {
-        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
         {
@@ -285,7 +285,7 @@ public sealed class PlanGeneratorTests
         var catalog = Catalog();
         var firstStage = catalog.FindSkill(SkillId)!.Stages.Single(stage => stage.Order == 1);
 
-        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, catalog).Value;
+        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, MondayStart, catalog).Value;
 
         foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
         {
@@ -308,6 +308,7 @@ public sealed class PlanGeneratorTests
             BuildProfile(3),
             BuildObjective(),
             currentStage.Order,
+            MondayStart,
             catalog).Value;
 
         foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
@@ -332,6 +333,7 @@ public sealed class PlanGeneratorTests
             BuildProfile(3),
             BuildObjective(PistolSkillId),
             currentStage.Order,
+            MondayStart,
             catalog).Value;
 
         var firstItem = plan.Microcycles[0].Sessions[0].Items[0];
@@ -351,7 +353,7 @@ public sealed class PlanGeneratorTests
         var firstStage = catalog.FindSkill(SkillId)!.Stages.Single(stage => stage.Order == 1);
 
         var plan = PlanGenerator
-            .Generate(BuildProfile(3), BuildObjective(), stageOrder: null, catalog)
+            .Generate(BuildProfile(3), BuildObjective(), stageOrder: null, MondayStart, catalog)
             .Value;
 
         Assert.All(
@@ -362,7 +364,7 @@ public sealed class PlanGeneratorTests
     [Fact]
     public void Generate_fails_when_the_current_stage_is_not_in_the_ladder()
     {
-        var result = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), stageOrder: 99, Catalog());
+        var result = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), stageOrder: 99, MondayStart, Catalog());
 
         Assert.True(result.IsFailure);
         Assert.Equal(DomainErrors.Plan.UnknownStage, result.Error);
@@ -377,6 +379,7 @@ public sealed class PlanGeneratorTests
                 BuildProfile(3, pushUpMaximum: 8, pullUpMaximum: 4, squatMaximum: 20),
                 BuildObjective(),
                 FirstStageOrder,
+                MondayStart,
                 Catalog())
             .Value;
 
@@ -392,10 +395,10 @@ public sealed class PlanGeneratorTests
     public void Generate_scales_strength_reps_with_the_maximum()
     {
         var lowMaximums = PlanGenerator
-            .Generate(BuildProfile(3, pushUpMaximum: 6, pullUpMaximum: 6, squatMaximum: 6), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(3, pushUpMaximum: 6, pullUpMaximum: 6, squatMaximum: 6), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
         var highMaximums = PlanGenerator
-            .Generate(BuildProfile(3, pushUpMaximum: 15, pullUpMaximum: 15, squatMaximum: 15), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(3, pushUpMaximum: 15, pullUpMaximum: 15, squatMaximum: 15), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         foreach (var exerciseId in new[] { "push_up", "pull_up", "squat" })
@@ -414,7 +417,7 @@ public sealed class PlanGeneratorTests
         const int maximum = 10;
 
         var plan = PlanGenerator
-            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         foreach (var exerciseId in new[] { "push_up", "pull_up", "squat" })
@@ -431,7 +434,7 @@ public sealed class PlanGeneratorTests
         // Al bajar el RIR suben las reps prescritas y, con las series fijas, el volumen total
         // (series × reps) crece semana a semana.
         var plan = PlanGenerator
-            .Generate(BuildProfile(3, 10, 10, 10), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(3, 10, 10, 10), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         var volumeByMicrocycle = VolumeByMicrocycle(plan, 3);
@@ -450,7 +453,7 @@ public sealed class PlanGeneratorTests
         // La onda nunca quita volumen: lo sube o, cuando el máximo no da margen para reservar más
         // reps (≤ 2), lo deja plano. Convertir ese caso en una regresión real es #17.
         var plan = PlanGenerator
-            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         var volumeByMicrocycle = VolumeByMicrocycle(plan, 3);
@@ -459,32 +462,43 @@ public sealed class PlanGeneratorTests
         Assert.True(volumeByMicrocycle[1] <= volumeByMicrocycle[2], "la semana 3 no puede bajar el volumen de la 2");
     }
 
-    [Fact]
-    public void Generate_raises_the_strength_reserve_to_four_in_the_deload_microcycle()
+    [Theory]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Generate_raises_the_strength_reserve_to_four_in_the_deload_microcycle(int trainingDays)
     {
         // Deload (#13): la semana 4 deja 4 reps en reserva (RIR 4), el tope más conservador de la
-        // onda. Con un mismo máximo, el tope prescrito baja respecto a la semana 3 (RIR 1).
+        // onda, en todas las frecuencias. Con un mismo máximo, el tope prescrito baja respecto a la
+        // semana 3 (RIR 1).
         const int maximum = 10;
 
         var plan = PlanGenerator
-            .Generate(BuildProfile(3, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(trainingDays, maximum, maximum, maximum), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         foreach (var exerciseId in new[] { "push_up", "pull_up", "squat" })
         {
-            Assert.Equal(9, StrengthItem(plan, 2, exerciseId).RepsMax); // RIR 1 (semana 3)
-            Assert.Equal(6, StrengthItem(plan, 3, exerciseId).RepsMax); // RIR 4 (deload)
+            Assert.All(
+                StrengthItemsInMicrocycle(plan, 2, exerciseId),
+                item => Assert.Equal(9, item.RepsMax)); // RIR 1 (semana 3)
+            Assert.All(
+                StrengthItemsInMicrocycle(plan, 3, exerciseId),
+                item => Assert.Equal(6, item.RepsMax)); // RIR 4 (deload)
         }
     }
 
-    [Fact]
-    public void Generate_halves_the_strength_volume_in_the_deload_microcycle()
+    [Theory]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Generate_halves_the_strength_volume_in_the_deload_microcycle(int trainingDays)
     {
         // Deload (#13): la semana 4 baja las series de fuerza (3 → 2) y sube el RIR a 4, dejando el
-        // volumen (series × reps) en ~50 % del de la semana 3. Con los máximos concretos del
-        // fixture (10/5/20) el cociente queda en ~48 %.
+        // volumen (series × reps) en ~50 % del de la semana 3, en todas las frecuencias. Con los
+        // máximos concretos del fixture (10/5/20) el cociente queda en ~48 %.
         var plan = PlanGenerator
-            .Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         var volume = VolumeByMicrocycle(plan, 4);
@@ -502,7 +516,7 @@ public sealed class PlanGeneratorTests
         // Deload (#13): la semana 4 descarga el volumen bajando las series de fuerza y de core
         // (3 → 2); el bloque de skill y la anatomía de la sesión no cambian.
         var plan = PlanGenerator
-            .Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         foreach (var microcycle in plan.Microcycles)
@@ -531,7 +545,7 @@ public sealed class PlanGeneratorTests
     {
         var profile = BuildProfile(3, pushUpMaximum, pullUpMaximum, squatMaximum);
 
-        var plan = PlanGenerator.Generate(profile, BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var plan = PlanGenerator.Generate(profile, BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         foreach (var item in AllStrengthItems(plan))
         {
@@ -563,6 +577,7 @@ public sealed class PlanGeneratorTests
                 BuildProfile(3, pushUpMaximum: 0, pullUpMaximum: 5, squatMaximum: 20),
                 BuildObjective(),
                 FirstStageOrder,
+                MondayStart,
                 Catalog())
             .Value;
 
@@ -596,7 +611,7 @@ public sealed class PlanGeneratorTests
     public void Generate_substitutes_every_pattern_by_its_regression_when_all_maximums_are_zero()
     {
         var plan = PlanGenerator
-            .Generate(BuildProfile(3, 0, 0, 0), BuildObjective(), FirstStageOrder, Catalog())
+            .Generate(BuildProfile(3, 0, 0, 0), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
             .Value;
 
         Assert.Equal(
@@ -613,19 +628,27 @@ public sealed class PlanGeneratorTests
     }
 
     [Fact]
-    public void Generate_keeps_a_neutral_strength_placeholder_for_a_maximum_of_one()
+    public void Generate_uses_the_pattern_regression_when_an_anchor_maximum_is_one()
     {
-        var result = PlanGenerator
-            .Generate(BuildProfile(3, 1, 1, 1), BuildObjective(), FirstStageOrder, Catalog());
+        // #91/#17: un máximo de 1 tampoco admite prescripción segura (no hay margen para reservar la
+        // repetición que el motor nunca alcanza), así que igual que el 0 pasa a la regresión del
+        // patrón en vez del marcador neutro (1,1).
+        var plan = PlanGenerator
+            .Generate(BuildProfile(3, 1, 1, 1), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
+            .Value;
 
-        Assert.True(result.IsSuccess);
+        Assert.Equal(
+            new[] { "incline-push-up", "negative-pull-up", "box-squat" },
+            StrengthItems(plan).Select(item => item.ExerciseId));
 
-        // (1,1) es el marcador neutro documentado, no una prescripción segura. Un máximo de 1 no
-        // deja margen para reservar, pero tampoco entra en la regresión (#17 solo aplica al 0).
-        Assert.All(StrengthItems(result.Value), item =>
+        // La regresión se prescribe sobre la base de trabajo asumida y modesta (RIR 3 → 3–5) y nunca
+        // con 0 repeticiones ni un rango invertido.
+        Assert.All(StrengthItems(plan), item =>
         {
-            Assert.Equal(1, item.RepsMin);
-            Assert.Equal(1, item.RepsMax);
+            Assert.Equal(3, item.RepsMin);
+            Assert.Equal(5, item.RepsMax);
+            Assert.True(item.RepsMin >= 1, $"{item.ExerciseId} no puede prescribir 0 repeticiones");
+            Assert.True(item.RepsMin <= item.RepsMax, $"{item.ExerciseId} tiene un rango invertido");
         });
     }
 
@@ -634,7 +657,7 @@ public sealed class PlanGeneratorTests
     {
         var catalog = Catalog();
         var stage = catalog.FindSkill(SkillId)!.Stages.Single(s => s.Order == 1);
-        var plan = PlanGenerator.Generate(UnfavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value;
+        var plan = PlanGenerator.Generate(UnfavorableProfile(), BuildObjective(), FirstStageOrder, MondayStart, catalog).Value;
 
         foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
         {
@@ -654,7 +677,7 @@ public sealed class PlanGeneratorTests
     {
         var catalog = Catalog();
         var stage = catalog.FindSkill(SkillId)!.Stages.Single(s => s.Order == 1);
-        var plan = PlanGenerator.Generate(FavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value;
+        var plan = PlanGenerator.Generate(FavorableProfile(), BuildObjective(), FirstStageOrder, MondayStart, catalog).Value;
 
         foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
         {
@@ -673,10 +696,10 @@ public sealed class PlanGeneratorTests
         var stage = catalog.FindSkill(SkillId)!.Stages.Single(s => s.Order == 1);
 
         var favorableBlock = PlanGenerator
-            .Generate(FavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value
+            .Generate(FavorableProfile(), BuildObjective(), FirstStageOrder, MondayStart, catalog).Value
             .Microcycles[0].Sessions[0].Items[0];
         var unfavorableBlock = PlanGenerator
-            .Generate(UnfavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value
+            .Generate(UnfavorableProfile(), BuildObjective(), FirstStageOrder, MondayStart, catalog).Value
             .Microcycles[0].Sessions[0].Items[0];
 
         // El criterio (etapa, ejercicio y marca) no depende del cubo: solo cambia el volumen del bloque.
@@ -692,7 +715,7 @@ public sealed class PlanGeneratorTests
     {
         var catalog = Catalog(lever: false);
         var stage = catalog.FindSkill(SkillId)!.Stages.Single(s => s.Order == 1);
-        var plan = PlanGenerator.Generate(UnfavorableProfile(), BuildObjective(), FirstStageOrder, catalog).Value;
+        var plan = PlanGenerator.Generate(UnfavorableProfile(), BuildObjective(), FirstStageOrder, MondayStart, catalog).Value;
 
         foreach (var session in plan.Microcycles.SelectMany(microcycle => microcycle.Sessions))
         {
@@ -707,8 +730,8 @@ public sealed class PlanGeneratorTests
     [InlineData(5)]
     public void Generate_is_deterministic_for_the_supported_frequencies(int trainingDays)
     {
-        var first = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog()).Value;
-        var second = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, Catalog()).Value;
+        var first = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
+        var second = PlanGenerator.Generate(BuildProfile(trainingDays), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
 
         Assert.Equal(Snapshot(first), Snapshot(second));
     }
@@ -735,6 +758,15 @@ public sealed class PlanGeneratorTests
     private static IEnumerable<SessionItem> StrengthItems(Plan plan) =>
         plan.Microcycles[0].Sessions[0].Items.Where(item => item.Role == SessionItemRole.Strength);
 
+    /// <summary>
+    /// Ítems de fuerza de un ejercicio en una semana, en todas las sesiones de esa semana (cada
+    /// patrón aparece más de una vez en las frecuencias de 4 y 5 días).
+    /// </summary>
+    private static IEnumerable<SessionItem> StrengthItemsInMicrocycle(Plan plan, int microcycleIndex, string exerciseId) =>
+        plan.Microcycles[microcycleIndex].Sessions
+            .SelectMany(session => session.Items)
+            .Where(item => item.Role == SessionItemRole.Strength && item.ExerciseId == exerciseId);
+
     private static IEnumerable<SessionItem> AllStrengthItems(Plan plan) =>
         plan.Microcycles
             .SelectMany(microcycle => microcycle.Sessions)
@@ -751,6 +783,111 @@ public sealed class PlanGeneratorTests
                 .Sum(item => item.Sets * item.RepsMax!.Value))
             .ToArray();
 
+    /// <summary>Lunes de referencia de los tests de calendario (#94).</summary>
+    private static readonly DateOnly MondayStart = new(2026, 3, 2);
+
+    [Fact]
+    public void Generate_places_each_session_on_the_training_weekday_the_athlete_chose()
+    {
+        var profile = BuildProfile(3, weekdays: [DayOfWeek.Tuesday, DayOfWeek.Thursday, DayOfWeek.Saturday]);
+
+        var plan = PlanGenerator.Generate(profile, BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
+
+        Assert.Equal(
+            [DayOfWeek.Tuesday, DayOfWeek.Thursday, DayOfWeek.Saturday],
+            plan.Microcycles[0].Sessions.Select(session => session.Weekday));
+    }
+
+    [Fact]
+    public void Generate_starts_the_mesocycle_on_the_first_training_weekday_on_or_after_the_start_date()
+    {
+        var profile = BuildProfile(3, weekdays: [DayOfWeek.Tuesday, DayOfWeek.Thursday, DayOfWeek.Saturday]);
+
+        var plan = PlanGenerator.Generate(profile, BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
+
+        Assert.Equal(new DateOnly(2026, 3, 3), plan.StartDate);
+        Assert.Equal(
+            [new DateOnly(2026, 3, 3), new DateOnly(2026, 3, 5), new DateOnly(2026, 3, 7)],
+            plan.Microcycles[0].Sessions.Select(session => session.Date));
+    }
+
+    [Fact]
+    public void Generate_waits_for_the_first_chosen_weekday_when_the_start_date_falls_in_the_middle()
+    {
+        // El atleta entrena lunes, miércoles y viernes, pero el mesociclo no puede empezar hasta el
+        // lunes siguiente: una semana que empezara en miércoles dejaría la sesión del lunes en un día
+        // que no es lunes.
+        var profile = BuildProfile(3, weekdays: [DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday]);
+
+        var plan = PlanGenerator.Generate(
+            profile,
+            BuildObjective(),
+            FirstStageOrder,
+            MondayStart.AddDays(1),
+            Catalog()).Value;
+
+        Assert.Equal(new DateOnly(2026, 3, 9), plan.StartDate);
+        Assert.Equal(
+            [new DateOnly(2026, 3, 9), new DateOnly(2026, 3, 11), new DateOnly(2026, 3, 13)],
+            plan.Microcycles[0].Sessions.Select(session => session.Date));
+    }
+
+    [Fact]
+    public void Generate_dates_every_session_on_the_weekday_it_claims_for_any_start_date()
+    {
+        var weekdays = new[]
+        {
+            DayOfWeek.Monday,
+            DayOfWeek.Wednesday,
+            DayOfWeek.Friday,
+            DayOfWeek.Saturday,
+        };
+
+        // Cualquier día de inicio, incluidos los que no son día de entrenamiento.
+        for (var offset = 0; offset < 7; offset++)
+        {
+            var startDate = MondayStart.AddDays(offset);
+            var profile = BuildProfile(4, weekdays: weekdays);
+
+            var plan = PlanGenerator.Generate(profile, BuildObjective(), FirstStageOrder, startDate, Catalog())
+                .Value;
+
+            Assert.All(
+                plan.Microcycles.SelectMany(microcycle => microcycle.Sessions),
+                session => Assert.Equal(session.Weekday, session.Date!.Value.DayOfWeek));
+        }
+    }
+
+    [Fact]
+    public void Generate_repeats_the_same_training_days_seven_days_later_in_every_microcycle()
+    {
+        var profile = BuildProfile(3, weekdays: [DayOfWeek.Tuesday, DayOfWeek.Thursday, DayOfWeek.Saturday]);
+
+        var plan = PlanGenerator.Generate(profile, BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
+
+        Assert.Equal(4, plan.Microcycles.Count);
+        for (var week = 0; week < plan.Microcycles.Count; week++)
+        {
+            var firstDay = MondayStart.AddDays((7 * week) + 1);
+
+            Assert.Equal(
+                [firstDay, firstDay.AddDays(2), firstDay.AddDays(4)],
+                plan.Microcycles[week].Sessions.Select(session => session.Date));
+        }
+    }
+
+    [Fact]
+    public void Generate_keeps_the_default_training_weekdays_when_the_athlete_chose_none()
+    {
+        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, MondayStart, Catalog())
+            .Value;
+
+        Assert.Equal(
+            [DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday],
+            plan.Microcycles[0].Sessions.Select(session => session.Weekday));
+        Assert.Equal(new DateOnly(2026, 3, 2), plan.StartDate);
+    }
+
     private static AthleteProfile BuildProfile(
         int trainingDays,
         int pushUpMaximum = 10,
@@ -759,7 +896,8 @@ public sealed class PlanGeneratorTests
         double weightKilograms = 78,
         double heightCentimeters = 180,
         double armSpanCentimeters = 180,
-        double inseamCentimeters = 85) =>
+        double inseamCentimeters = 85,
+        IReadOnlyCollection<DayOfWeek>? weekdays = null) =>
         AthleteProfile.Create(
             UserId,
             weightKilograms,
@@ -771,7 +909,8 @@ public sealed class PlanGeneratorTests
                 new MaximumInput("push_up", pushUpMaximum),
                 new MaximumInput("pull_up", pullUpMaximum),
                 new MaximumInput("squat", squatMaximum),
-            ]).Value;
+            ],
+            weekdays).Value;
 
     private static Objective BuildObjective(string skillId = SkillId) =>
         Objective.Create(UserId, skillId, Catalog()).Value;

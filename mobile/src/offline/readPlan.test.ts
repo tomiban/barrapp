@@ -6,6 +6,7 @@ import type { PlanStore } from './planStore';
 const NETWORK_PLAN: Plan = {
   skillId: 'planche',
   trainingDays: 3,
+  startDate: '2026-03-02',
   skillStage: {
     order: 1,
     name: 'Planche inclinada',
@@ -19,6 +20,8 @@ const NETWORK_PLAN: Plan = {
       sessions: [
         {
           day: 1,
+          weekday: null,
+          date: null,
           items: [
             {
               exerciseId: 'planche-lean',
@@ -42,6 +45,7 @@ const NETWORK_PLAN: Plan = {
 const CACHED_PLAN: Plan = {
   skillId: 'handstand',
   trainingDays: 3,
+  startDate: '2026-03-02',
   skillStage: {
     order: 1,
     name: 'Pino apoyado a la pared',
@@ -55,6 +59,8 @@ const CACHED_PLAN: Plan = {
       sessions: [
         {
           day: 1,
+          weekday: null,
+          date: null,
           items: [
             {
               exerciseId: 'handstand-wall-support',

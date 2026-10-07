@@ -8,6 +8,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
+
+
 namespace Barrapp.Persistence.IntegrationTests;
 
 /// <summary>
@@ -19,6 +21,9 @@ namespace Barrapp.Persistence.IntegrationTests;
 /// </summary>
 public sealed class MesocyclePersistenceTests : IDisposable
 {
+    /// <summary>Lunes de referencia para el calendario del mesociclo (#94).</summary>
+    private static readonly DateOnly StartDate = new(2026, 3, 2);
+
     private readonly SqliteConnection _connection;
     private readonly ApplicationDbContext _dbContext;
 
@@ -171,7 +176,7 @@ public sealed class MesocyclePersistenceTests : IDisposable
 
         var objective = Objective.Create(SingleUser.Id, "planche", catalog).Value;
 
-        return PlanGenerator.Generate(profile, objective, stageOrder: 1, catalog).Value;
+        return PlanGenerator.Generate(profile, objective, stageOrder: 1, StartDate, catalog).Value;
     }
 
     /// <summary>Proyección canónica del plan para comparar sin depender de Equals.</summary>
@@ -181,8 +186,10 @@ public sealed class MesocyclePersistenceTests : IDisposable
             plan.Microcycles.SelectMany(microcycle =>
                 microcycle.Sessions.SelectMany(session =>
                     session.Items.Select(item =>
-                        $"{microcycle.Number}:{session.Day}:{item.ExerciseId}:{item.Role}:{item.Pattern}:"
-                        + $"{item.Sets}:{item.RepsMin}-{item.RepsMax}:{item.HoldSecondsMin}-{item.HoldSecondsMax}:{item.Note}"))));
+                        $"{microcycle.Number}:{session.Day}:{session.Weekday}:{session.Date}:"
+                        + $"{item.ExerciseId}:{item.Role}:{item.Pattern}:"
+                        + $"{item.Sets}:{item.RepsMin}-{item.RepsMax}:{item.HoldSecondsMin}-{item.HoldSecondsMax}:{item.Note}"))))
+        + $"|start:{plan.StartDate}";
 
     private ApplicationDbContext CreateContext()
     {

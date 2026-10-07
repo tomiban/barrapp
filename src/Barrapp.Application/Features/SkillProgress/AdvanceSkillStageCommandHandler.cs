@@ -48,6 +48,7 @@ internal sealed class AdvanceSkillStageCommandHandler(
         // Los registros viajan con sus series (objetos valor owned), así que no hace falta include.
         var logs = await dbContext.SessionLogs
             .AsNoTracking()
+            .Include(log => log.Items)
             .Where(log => log.UserId == SingleUser.Id)
             .ToListAsync(cancellationToken);
 

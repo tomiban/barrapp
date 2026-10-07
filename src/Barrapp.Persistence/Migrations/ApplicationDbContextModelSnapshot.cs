@@ -114,20 +114,25 @@ namespace Barrapp.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ClientId")
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ExerciseId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid?>("MesocycleId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("MicrocycleNumber")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTimeOffset>("RecordedAtUtc")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("SessionDay")
+                    b.Property<DateOnly>("SessionDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SessionDay")
                         .HasColumnType("INTEGER");
 
                     b.Property<Guid>("UserId")
@@ -139,11 +144,75 @@ namespace Barrapp.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId", "ClientId")
+                    b.HasIndex("UserId", "SessionDate");
+
+                    b.HasIndex("UserId", "Kind", "MesocycleId", "MicrocycleNumber", "SessionDay")
+                        .IsUnique()
+                        .HasFilter("\"Kind\" = 0");
+
+                    b.ToTable("SessionLogs", (string)null);
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Sessions.SessionLogItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExerciseId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExerciseName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("HoldSecondsMax")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("HoldSecondsMin")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Metric")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Pattern")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PrescribedSets")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RepsMax")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RepsMin")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("SessionLogId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId")
                         .IsUnique()
                         .HasFilter("ClientId IS NOT NULL");
 
-                    b.ToTable("SessionLogs", (string)null);
+                    b.HasIndex("SessionLogId", "ExerciseId")
+                        .IsUnique();
+
+                    b.ToTable("SessionLogItems", (string)null);
                 });
 
             modelBuilder.Entity("Barrapp.Domain.Sessions.SessionSuelta", b =>
@@ -254,7 +323,25 @@ namespace Barrapp.Persistence.Migrations
                                 .HasForeignKey("AthleteProfileId");
                         });
 
+                    b.OwnsMany("Barrapp.Domain.Athlete.TrainingWeekday", "TrainingWeekdays", b1 =>
+                        {
+                            b1.Property<Guid>("AthleteProfileId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("Day")
+                                .HasColumnType("INTEGER");
+
+                            b1.HasKey("AthleteProfileId", "Day");
+
+                            b1.ToTable("TrainingWeekdays", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("AthleteProfileId");
+                        });
+
                     b.Navigation("Maximums");
+
+                    b.Navigation("TrainingWeekdays");
                 });
 
             modelBuilder.Entity("Barrapp.Domain.Objectives.Objective", b =>
@@ -282,28 +369,40 @@ namespace Barrapp.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Sessions.SessionLogItem", b =>
+                {
+                    b.HasOne("Barrapp.Domain.Sessions.SessionLog", null)
+                        .WithMany("Items")
+                        .HasForeignKey("SessionLogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.OwnsMany("Barrapp.Domain.Sessions.SessionLogSet", "Sets", b1 =>
                         {
-                            b1.Property<Guid>("SessionLogId")
+                            b1.Property<Guid>("SessionLogItemId")
                                 .HasColumnType("TEXT");
 
                             b1.Property<int>("SetNumber")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("INTEGER");
 
-                            b1.Property<int?>("Effort")
+                            b1.Property<int?>("ActualRir")
                                 .HasColumnType("INTEGER");
+
+                            b1.Property<double?>("LoadKg")
+                                .HasColumnType("REAL");
 
                             b1.Property<int>("Value")
                                 .HasColumnType("INTEGER");
 
-                            b1.HasKey("SessionLogId", "SetNumber");
+                            b1.HasKey("SessionLogItemId", "SetNumber");
 
                             b1.ToTable("SessionLogSets", (string)null);
 
                             b1.WithOwner()
-                                .HasForeignKey("SessionLogId");
+                                .HasForeignKey("SessionLogItemId");
                         });
 
                     b.Navigation("Sets");
@@ -372,6 +471,11 @@ namespace Barrapp.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Barrapp.Domain.Sessions.SessionLog", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

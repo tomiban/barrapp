@@ -8,13 +8,14 @@ import { Banner, Loading } from '@/design-system/Feedback';
 import { CloudOff } from '@/design-system/Icon';
 import { Stack } from '@/design-system/layout';
 import { SectionHeader } from '@/design-system/ListRow';
-import { Header, Screen } from '@/design-system/Navigation';
+import { Screen } from '@/design-system/Navigation';
 import { StageAdvanceAction, type StageAdvanceState } from '@/features/plan/StageAdvanceAction';
 import {
   CloseMesocycleAction,
   type CloseMesocycleState,
 } from '@/features/plan/CloseMesocycleAction';
 import { MesocycleHistory } from '@/features/history/MesocycleHistory';
+import { AppHeader } from '@/features/navigation';
 import { PlanView } from '@/features/plan/PlanView';
 import { openPlanStore } from '@/offline/planStore';
 import { readPlan, type PlanReadResult } from '@/offline/readPlan';
@@ -113,7 +114,7 @@ export default function PlanScreen() {
   }, [state, load]);
 
   return (
-    <Screen testID="plan-screen" header={<Header title="Plan" />} scrollable>
+    <Screen testID="plan-screen" header={<AppHeader section="Plan" />} scrollable>
       {state.status === 'loading' ? (
         <Loading label="Generando el plan…" testID="plan-loading" />
       ) : null}

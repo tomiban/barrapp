@@ -1,4 +1,4 @@
-import { closeMesocycle } from './plan';
+import { closeMesocycle, generatePlan } from './plan';
 
 /** El cliente del cierre del mesociclo habla con `POST /plan/close`. Se mockea `fetch` en la
  * frontera del sistema; la URL base se fija con `EXPO_PUBLIC_API_URL`. */
@@ -73,5 +73,47 @@ describe('closeMesocycle', () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({}, 500));
 
     await expect(closeMesocycle()).rejects.toThrow('El API respondió 500');
+  });
+});
+
+describe('generatePlan (#94)', () => {
+  const plan = {
+    skillId: 'planche',
+    trainingDays: 3,
+    startDate: '2026-03-09',
+    skillStage: {
+      order: 1,
+      name: 'Tuck',
+      exerciseId: 'planche-tuck',
+      criterion: { metric: 'seconds', target: 10, sets: 3 },
+      notes: '',
+    },
+    microcycles: [],
+  };
+
+  it('posts the start date the athlete chose and returns the generated plan', async () => {
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(plan));
+
+    const result = await generatePlan('2026-03-03');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${BASE}/plan`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ startDate: '2026-03-03' }),
+      }),
+    );
+    expect(result).toEqual(plan);
+  });
+
+  it('sends no start date when the athlete has not chosen one', async () => {
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(plan));
+
+    await generatePlan();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${BASE}/plan`,
+      expect.objectContaining({ body: JSON.stringify({ startDate: null }) }),
+    );
   });
 });

@@ -12,12 +12,15 @@ export type SessionLogSet = {
 
 /** Registro de sesión tal y como lo sirve el API. */
 export type SessionLog = {
+  /** Item ID used by item-scoped update and delete routes. */
   id: string;
+  sessionLogId?: string;
   exerciseId: string;
   exerciseName: string;
   metric: SessionLogMetric;
   mesocycleId: string | null;
   sessionDay: number;
+  microcycleNumber?: number | null;
   recordedAtUtc: string;
   sets: SessionLogSet[];
   /**
@@ -29,25 +32,75 @@ export type SessionLog = {
   pending?: boolean;
 };
 
-/** Entrada para registrar un ejercicio de la sesión, serie a serie. */
-export type RegisterSessionLogInput = {
-  exerciseId: string;
-  mesocycleId?: string | null;
-  sessionDay: number;
-  sets: { setNumber: number; value: number; effort?: number | null }[];
-  /**
-   * Id idempotente de la outbox offline (#26): si un envío pierde la respuesta y se reintenta con
-   * el mismo id, el servidor actualiza el registro original en lugar de duplicar la fila.
-   */
+/** Session identity and plan snapshot required by the aggregate workout API. */
+export type RegisterSessionLogItemInput = {
+  session: {
+    kind: 'mesocycle';
+    date: string;
+    mesocycleId: string;
+    microcycleNumber: number;
+    sessionDay: number;
+  };
+  item: {
+    exerciseId: string;
+    role: 'skill' | 'strength' | 'core';
+    pattern: string | null;
+    prescribedSets: number;
+    repsMin: number | null;
+    repsMax: number | null;
+    holdSecondsMin: number | null;
+    holdSecondsMax: number | null;
+    note: string | null;
+    sets: { setNumber: number; value: number; actualRir?: number | null; loadKg?: number | null }[];
+  };
   clientId?: string;
 };
 
-/**
- * Registra lo ejecutado, serie a serie, en un ejercicio de una sesión (`POST /session-logs`).
- * Devuelve el registro tal y como quedó guardado (el servidor deriva la unidad del ejercicio).
- * Con `clientId` el alta es idempotente: un reintento con el mismo id actualiza, nunca duplica.
- */
-export async function registerSessionLog(input: RegisterSessionLogInput): Promise<SessionLog> {
+/** A logged item in a session aggregate response. */
+export type SessionLogItem = {
+  id: string;
+  sessionLogId: string;
+  position: number;
+  exerciseId: string;
+  exerciseName: string;
+  role: 'skill' | 'strength' | 'core';
+  pattern: string | null;
+  metric: 'reps' | 'seconds';
+  objective: {
+    sets: number;
+    repsMin: number | null;
+    repsMax: number | null;
+    holdSecondsMin: number | null;
+    holdSecondsMax: number | null;
+  };
+  note: string | null;
+  sets: {
+    setNumber: number;
+    value: number;
+    metric: 'reps' | 'seconds';
+    actualRir: number | null;
+    loadKg: number | null;
+  }[];
+};
+
+/** Aggregate response returned by the session-log API. */
+export type SessionLogSession = {
+  id: string;
+  kind: 'mesocycle' | 'suelta';
+  sessionDate: string;
+  mesocycleId: string | null;
+  microcycleNumber: number | null;
+  sessionDay: number | null;
+  recordedAtUtc: string;
+  completedAtUtc: string | null;
+  completed: boolean;
+  items: SessionLogItem[];
+};
+
+/** Registers an exercise item in a session aggregate (`POST /session-logs`). */
+export async function registerSessionLogItem(
+  input: RegisterSessionLogItemInput,
+): Promise<SessionLogSession> {
   const response = await fetch(`${getApiBaseUrl()}/session-logs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -58,7 +111,7 @@ export async function registerSessionLog(input: RegisterSessionLogInput): Promis
     throw await apiError(response);
   }
 
-  return (await response.json()) as SessionLog;
+  return (await response.json()) as SessionLogSession;
 }
 
 /** Lista los registros de sesión guardados (`GET /session-logs`). */
@@ -69,33 +122,49 @@ export async function fetchSessionLogs(signal?: AbortSignal): Promise<SessionLog
     throw await apiError(response);
   }
 
-  return (await response.json()) as SessionLog[];
+  const sessions = (await response.json()) as SessionLogSession[];
+  return sessions.flatMap((session) =>
+    session.items.map((item) => ({
+      id: item.id,
+      sessionLogId: session.id,
+      exerciseId: item.exerciseId,
+      exerciseName: item.exerciseName,
+      metric: item.metric,
+      mesocycleId: session.mesocycleId,
+      sessionDay: session.sessionDay ?? 0,
+      microcycleNumber: session.microcycleNumber,
+      recordedAtUtc: session.recordedAtUtc,
+      sets: item.sets.map((set) => ({
+        setNumber: set.setNumber,
+        value: set.value,
+        effort: set.actualRir,
+      })),
+    })),
+  );
 }
 
-/**
- * Edita un registro ya guardado (`PUT /session-logs/{id}`): sustituye los valores de sus series.
- * La identidad de la sesión no cambia; el servidor vuelve a derivar la unidad del ejercicio.
- */
-export async function updateSessionLog(
-  id: string,
-  input: { sets: { setNumber: number; value: number; effort?: number | null }[] },
-): Promise<SessionLog> {
-  const response = await fetch(`${getApiBaseUrl()}/session-logs/${id}`, {
+/** Replaces an item's sets (`PUT /session-logs/{id}/items/{itemId}`). */
+export async function updateSessionLogItem(
+  sessionId: string,
+  itemId: string,
+  sets: RegisterSessionLogItemInput['item']['sets'],
+): Promise<SessionLogItem> {
+  const response = await fetch(`${getApiBaseUrl()}/session-logs/${sessionId}/items/${itemId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify({ sets }),
   });
 
   if (!response.ok) {
     throw await apiError(response);
   }
 
-  return (await response.json()) as SessionLog;
+  return (await response.json()) as SessionLogItem;
 }
 
-/** Elimina un registro ya guardado (`DELETE /session-logs/{id}`). */
-export async function deleteSessionLog(id: string): Promise<void> {
-  const response = await fetch(`${getApiBaseUrl()}/session-logs/${id}`, {
+/** Deletes an item (`DELETE /session-logs/{id}/items/{itemId}`). */
+export async function deleteSessionLogItem(sessionId: string, itemId: string): Promise<void> {
+  const response = await fetch(`${getApiBaseUrl()}/session-logs/${sessionId}/items/${itemId}`, {
     method: 'DELETE',
   });
 

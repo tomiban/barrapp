@@ -211,13 +211,23 @@ Encabezado de sección con hairline y contador/slot opcionales. `label`, `count?
 ### Screen / Header
 
 Chasis de pantalla: `Screen` envuelve `SafeAreaView` (`canvas`, márgenes de
-página) y un `header` opcional; `Header` es título `headlineSm` + slots
+página) y un `header` opcional; `Header` es título `headlineSm` + slot `kicker`
+opcional (`labelTechnical`, para el patrón `BARRAS / <SECCIÓN>`) + slots
 `leading`/`trailing` y hairline inferior.
+
+### Avatar
+
+`Avatar` es el control del atleta en la cabecera: celda cuadrada `primary` con
+glifo `on-primary`, tamaño táctil secundario y sin sombras. Es presentacional y
+acepta `accessibilityLabel` (default «Perfil»); la app lo enlaza a Perfil con
+`ProfileAvatar` (`src/features/navigation/`).
 
 ### TabBar
 
-Navegador inferior custom sobre `expo-router/ui`. `tabs: { name, href, label }[]`;
-`TabBarItem` es el botón (`isFocused` → `primary`/`on-primary`).
+Navegador inferior custom sobre `expo-router/ui`. `tabs: { name, href, label,
+icon, prominent? }[]`; `TabBarItem` es el botón (icono sobre etiqueta). La
+pestaña activa se pinta en `primary` sin relleno; la `prominent` (la central del
+diseño, Entreno) es una celda rellena en `primary`/`on-primary`.
 
 ### BottomSheet
 

@@ -53,17 +53,7 @@ public sealed class CloseMesocycleEndpointTests
         // El atleta logra 14 flexiones en el mesociclo sintetizado (marca mejor que su máximo de 10).
         var registered = await client.PostAsJsonAsync(
             "/session-logs",
-            new
-            {
-                exerciseId = "push_up",
-                mesocycleId = (Guid?)null,
-                sessionDay = 1,
-                sets = new[]
-                {
-                    new { setNumber = 1, value = 14, effort = (int?)null },
-                    new { setNumber = 2, value = 14, effort = (int?)null },
-                },
-            });
+            SessionLogRequest(plan, 1, 14, 14));
         Assert.Equal(HttpStatusCode.OK, registered.StatusCode);
 
         using var closeResponse = await client.PostAsync("/plan/close", content: null);
@@ -97,21 +87,13 @@ public sealed class CloseMesocycleEndpointTests
         await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3)); // push_up 10
         await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
         await client.PostAsync("/plan", content: null);
+        var plan = await (await client.GetAsync("/plan")).Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
 
         // El atleta logra 14 flexiones en el mesociclo (marca mejor que su máximo de 10).
         var registered = await client.PostAsJsonAsync(
             "/session-logs",
-            new
-            {
-                exerciseId = "push_up",
-                mesocycleId = (Guid?)null,
-                sessionDay = 1,
-                sets = new[]
-                {
-                    new { setNumber = 1, value = 14, effort = (int?)null },
-                    new { setNumber = 2, value = 14, effort = (int?)null },
-                },
-            });
+            SessionLogRequest(plan, 1, 14, 14));
         Assert.Equal(HttpStatusCode.OK, registered.StatusCode);
 
         using var closeResponse = await client.PostAsync("/plan/close", content: null);
@@ -124,8 +106,8 @@ public sealed class CloseMesocycleEndpointTests
         Assert.Contains(closed.Maximums, maximum => maximum.ExerciseCode == "push_up" && maximum.Repetitions == 14);
 
         // Sin mesociclo activo, GET /plan regenera con el máximo ajustado: semana 1 RIR 3 → 9–11.
-        var plan = await (await client.GetAsync("/plan")).Content.ReadFromJsonAsync<PlanResponse>();
-        var pushUp = plan!.Microcycles[0].Sessions[0].Items.Single(item => item.ExerciseId == "push_up");
+        var updatedPlan = await (await client.GetAsync("/plan")).Content.ReadFromJsonAsync<PlanResponse>();
+        var pushUp = updatedPlan!.Microcycles[0].Sessions[0].Items.Single(item => item.ExerciseId == "push_up");
         Assert.Equal(9, pushUp.RepsMin);
         Assert.Equal(11, pushUp.RepsMax);
     }
@@ -138,29 +120,20 @@ public sealed class CloseMesocycleEndpointTests
         await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3)); // push_up 10
         await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
         await client.PostAsync("/plan", content: null);
+        var plan = await (await client.GetAsync("/plan")).Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
 
         await client.PostAsJsonAsync(
             "/session-logs",
-            new
-            {
-                exerciseId = "push_up",
-                mesocycleId = (Guid?)null,
-                sessionDay = 1,
-                sets = new[]
-                {
-                    new { setNumber = 1, value = 8, effort = (int?)null },
-                    new { setNumber = 2, value = 9, effort = (int?)null },
-                },
-            });
+            SessionLogRequest(plan, 1, 8, 9));
 
         using var closeResponse = await client.PostAsync("/plan/close", content: null);
         var closed = await closeResponse.Content.ReadFromJsonAsync<CloseMesocycleResponse>();
 
         Assert.Equal(10, closed!.Maximums.Single(maximum => maximum.ExerciseCode == "push_up").Repetitions);
-
         // La prescripción se mantiene con el máximo sin tocar: semana 1 RIR 3 → 5–7.
-        var plan = await (await client.GetAsync("/plan")).Content.ReadFromJsonAsync<PlanResponse>();
-        var pushUp = plan!.Microcycles[0].Sessions[0].Items.Single(item => item.ExerciseId == "push_up");
+        var updatedPlan = await (await client.GetAsync("/plan")).Content.ReadFromJsonAsync<PlanResponse>();
+        var pushUp = updatedPlan!.Microcycles[0].Sessions[0].Items.Single(item => item.ExerciseId == "push_up");
         Assert.Equal(5, pushUp.RepsMin);
         Assert.Equal(7, pushUp.RepsMax);
     }
@@ -235,4 +208,35 @@ public sealed class CloseMesocycleEndpointTests
         Assert.Equal(Domain.Planning.MesocycleStatus.Closed, saved.Status);
         Assert.NotNull(saved.ClosedAtUtc);
     }
+
+    private static object SessionLogRequest(PlanResponse? plan, int sessionDay, params int[] values) => new
+    {
+        session = new
+        {
+            kind = plan?.MesocycleId is null ? "suelta" : "mesocycle",
+            date = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(sessionDay - 1)),
+            mesocycleId = plan?.MesocycleId,
+            microcycleNumber = plan?.MesocycleId is null ? (int?)null : 1,
+            sessionDay = plan?.MesocycleId is null ? (int?)null : sessionDay,
+        },
+        item = new
+        {
+            exerciseId = "push_up",
+            role = "strength",
+            pattern = "push",
+            prescribedSets = values.Length,
+            repsMin = (int?)8,
+            repsMax = (int?)12,
+            holdSecondsMin = (int?)null,
+            holdSecondsMax = (int?)null,
+            note = (string?)null,
+            sets = values.Select((value, index) => new
+            {
+                setNumber = index + 1,
+                value,
+                actualRir = (int?)null,
+                loadKg = (double?)null,
+            }),
+        },
+    };
 }

@@ -42,5 +42,16 @@ internal sealed class AthleteProfileConfiguration : IEntityTypeConfiguration<Ath
             .WithMany()
             .HasForeignKey(profile => profile.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Los días de entrenamiento (#94) son parte del perfil: viven en su propia tabla, con una
+        // fila por día de la semana. La clave compuesta (perfil, día) garantiza un solo día por
+        // semana sin repetir.
+        builder.OwnsMany(profile => profile.TrainingWeekdays, weekdays =>
+        {
+            weekdays.ToTable("TrainingWeekdays");
+            weekdays.WithOwner().HasForeignKey("AthleteProfileId");
+            weekdays.HasKey("AthleteProfileId", nameof(TrainingWeekday.Day));
+            weekdays.Property(weekday => weekday.Day).IsRequired();
+        });
     }
 }

@@ -1,6 +1,11 @@
 import * as SQLite from 'expo-sqlite';
 
-import type { SessionLog, SessionLogMetric, SessionLogSet } from '@/api/sessionLogs';
+import type {
+  RegisterSessionLogItemInput,
+  SessionLog,
+  SessionLogMetric,
+  SessionLogSet,
+} from '@/api/sessionLogs';
 
 /** Superficie de la tabla `session_log_outbox` que usa la cola; estructural para permitir un fake en tests. */
 export interface SessionLogOutboxTable {
@@ -20,12 +25,11 @@ const OUTBOX_SCHEMA_SQL = `
     exercise_name TEXT NOT NULL,
     metric TEXT,
     mesocycle_id TEXT,
+    microcycle_number INTEGER,
     session_day INTEGER NOT NULL,
     sets TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
-  CREATE UNIQUE INDEX IF NOT EXISTS session_log_outbox_business_key
-    ON session_log_outbox (exercise_id, session_day);
 `;
 
 /** Entrada de la cola de sincronización: un registro de sesión hecho sin conexión, pendiente de subir. */
@@ -36,8 +40,10 @@ export type PendingSessionLog = {
   exerciseName: string;
   metric: SessionLogMetric;
   mesocycleId: string | null;
+  microcycleNumber?: number | null;
   sessionDay: number;
   sets: SessionLogSet[];
+  request?: RegisterSessionLogItemInput;
   /** Fecha de la última escritura (ISO 8601): con ella gana la última escritura (LWW). */
   updatedAt: string;
 };
@@ -48,8 +54,10 @@ export type EnqueueSessionLogInput = {
   exerciseName: string;
   metric: SessionLogMetric;
   mesocycleId?: string | null;
+  microcycleNumber?: number | null;
   sessionDay: number;
   sets: SessionLogSet[];
+  request?: Omit<RegisterSessionLogItemInput, 'clientId'>;
 };
 
 /** Cola de sincronización local: encola registros sin conexión y los retira al subirlos. */
@@ -72,6 +80,7 @@ type OutboxRow = {
   exercise_name: string;
   metric: string | null;
   mesocycle_id: string | null;
+  microcycle_number: number | null;
   session_day: number;
   sets: string;
   updated_at: string;
@@ -79,25 +88,27 @@ type OutboxRow = {
 
 const ENQUEUE_SQL = `
   INSERT INTO session_log_outbox
-    (client_id, exercise_id, exercise_name, metric, mesocycle_id, session_day, sets, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(exercise_id, session_day) DO UPDATE SET
+    (client_id, exercise_id, exercise_name, metric, mesocycle_id, microcycle_number, session_day, sets, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(exercise_id, mesocycle_id, microcycle_number, session_day) DO UPDATE SET
     client_id = excluded.client_id,
     exercise_name = excluded.exercise_name,
     metric = excluded.metric,
     mesocycle_id = excluded.mesocycle_id,
+    microcycle_number = excluded.microcycle_number,
     sets = excluded.sets,
     updated_at = excluded.updated_at;
 `;
 
 const LIST_PENDING_SQL = `
-  SELECT client_id, exercise_id, exercise_name, metric, mesocycle_id, session_day, sets, updated_at
+  SELECT client_id, exercise_id, exercise_name, metric, mesocycle_id, microcycle_number, session_day, sets, updated_at
   FROM session_log_outbox
   ORDER BY updated_at ASC;
 `;
 
 const FIND_BY_BUSINESS_KEY_SQL = `
-  SELECT client_id FROM session_log_outbox WHERE exercise_id = ? AND session_day = ?;
+  SELECT client_id FROM session_log_outbox
+  WHERE exercise_id = ? AND mesocycle_id IS ? AND microcycle_number IS ? AND session_day = ?;
 `;
 
 /** Identificador idempotente generado en el cliente (uuid v4), con respaldo para entornos sin `crypto.randomUUID`. */
@@ -112,14 +123,19 @@ function newClientId(): string {
 }
 
 function rowToPending(row: OutboxRow): PendingSessionLog {
+  const payload = JSON.parse(row.sets) as
+    SessionLogSet[] | { sets: SessionLogSet[]; request?: RegisterSessionLogItemInput };
+  const sets = Array.isArray(payload) ? payload : payload.sets;
   return {
     clientId: row.client_id,
     exerciseId: row.exercise_id,
     exerciseName: row.exercise_name,
     metric: row.metric as SessionLogMetric,
     mesocycleId: row.mesocycle_id,
+    microcycleNumber: row.microcycle_number,
     sessionDay: row.session_day,
-    sets: JSON.parse(row.sets) as SessionLogSet[],
+    sets,
+    ...(Array.isArray(payload) || !payload.request ? {} : { request: payload.request }),
     updatedAt: row.updated_at,
   };
 }
@@ -143,6 +159,8 @@ export function createSessionLogOutbox(
       const existing = await db.getFirstAsync<{ client_id: string }>(
         FIND_BY_BUSINESS_KEY_SQL,
         input.exerciseId,
+        input.mesocycleId ?? null,
+        input.microcycleNumber ?? null,
         input.sessionDay,
       );
       const clientId = existing?.client_id ?? generateId();
@@ -154,8 +172,12 @@ export function createSessionLogOutbox(
         input.exerciseName,
         input.metric,
         input.mesocycleId ?? null,
+        input.microcycleNumber ?? null,
         input.sessionDay,
-        JSON.stringify(input.sets),
+        JSON.stringify({
+          sets: input.sets,
+          request: input.request ? { ...input.request, clientId } : undefined,
+        }),
         updatedAt,
       );
       return {
@@ -164,8 +186,10 @@ export function createSessionLogOutbox(
         exerciseName: input.exerciseName,
         metric: input.metric,
         mesocycleId: input.mesocycleId ?? null,
+        microcycleNumber: input.microcycleNumber ?? null,
         sessionDay: input.sessionDay,
         sets: input.sets,
+        ...(input.request ? { request: { ...input.request, clientId } } : {}),
         updatedAt,
       };
     },
@@ -185,6 +209,15 @@ export function createSessionLogOutbox(
 export async function openSessionLogOutbox(): Promise<SessionLogOutbox> {
   const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
   await db.execAsync(OUTBOX_SCHEMA_SQL);
+  const columns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(session_log_outbox);');
+  if (!columns.some((column) => column.name === 'microcycle_number')) {
+    await db.execAsync('ALTER TABLE session_log_outbox ADD COLUMN microcycle_number INTEGER;');
+  }
+  await db.execAsync(`
+    DROP INDEX IF EXISTS session_log_outbox_business_key;
+    CREATE UNIQUE INDEX IF NOT EXISTS session_log_outbox_business_key
+      ON session_log_outbox (exercise_id, mesocycle_id, microcycle_number, session_day);
+  `);
   return createSessionLogOutbox(db);
 }
 
@@ -192,11 +225,13 @@ export async function openSessionLogOutbox(): Promise<SessionLogOutbox> {
 export function pendingToSessionLog(pending: PendingSessionLog): SessionLog {
   return {
     id: pending.clientId,
+    sessionLogId: undefined,
     exerciseId: pending.exerciseId,
     exerciseName: pending.exerciseName,
     metric: pending.metric,
     mesocycleId: pending.mesocycleId,
     sessionDay: pending.sessionDay,
+    microcycleNumber: pending.microcycleNumber,
     recordedAtUtc: pending.updatedAt,
     sets: pending.sets,
     // La única marca que distingue en la vista lo que sigue en la cola (#26) de lo confirmado (#22).
@@ -213,9 +248,11 @@ export function mergeSessionLogs(
   serverLogs: SessionLog[],
   pending: PendingSessionLog[],
 ): SessionLog[] {
-  const pendingKeys = new Set(pending.map((entry) => `${entry.exerciseId}:${entry.sessionDay}`));
-  const fromServer = serverLogs.filter(
-    (log) => !pendingKeys.has(`${log.exerciseId}:${log.sessionDay}`),
-  );
+  const keyOf = (
+    entry: Pick<SessionLog, 'exerciseId' | 'mesocycleId' | 'microcycleNumber' | 'sessionDay'>,
+  ) =>
+    `${entry.mesocycleId ?? ''}:${entry.microcycleNumber ?? ''}:${entry.sessionDay}:${entry.exerciseId}`;
+  const pendingKeys = new Set(pending.map(keyOf));
+  const fromServer = serverLogs.filter((log) => !pendingKeys.has(keyOf(log)));
   return fromServer.concat(pending.map(pendingToSessionLog));
 }

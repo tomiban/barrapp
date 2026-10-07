@@ -24,7 +24,7 @@ public interface IApplicationDbContext
     /// <summary>Etapa actual del atleta por skill.</summary>
     DbSet<AthleteSkillProgress> AthleteSkillProgresses { get; }
 
-    /// <summary>Registros de sesión (serie a serie).</summary>
+    /// <summary>Registros de sesión (cabecera con su clave de sesión y su marca de completada).</summary>
     DbSet<SessionLog> SessionLogs { get; }
 
     /// <summary>Historial de sesiones sueltas (aislado de los registros de sesión).</summary>

@@ -30,7 +30,8 @@ internal sealed class CloseMesocycleCommandHandler(
     IApplicationDbContext dbContext,
     IKnowledgeBase catalog,
     IMesocycleRepository repository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    TimeProvider timeProvider)
     : ICommandHandler<CloseMesocycleCommand, CloseMesocycleResponse>
 {
     public async Task<Result<CloseMesocycleResponse>> Handle(
@@ -56,7 +57,7 @@ internal sealed class CloseMesocycleCommandHandler(
         }
 
         var mesocycle = candidate.Value;
-        var closedAtUtc = DateTimeOffset.UtcNow;
+        var closedAtUtc = timeProvider.GetUtcNow();
         var closing = mesocycle.Close(closedAtUtc);
         if (closing.IsFailure)
         {
@@ -69,6 +70,7 @@ internal sealed class CloseMesocycleCommandHandler(
         // historial, que ordena en memoria).
         var candidates = await dbContext.SessionLogs
             .AsNoTracking()
+            .Include(log => log.Items)
             .Where(log => log.UserId == SingleUser.Id
                 && (log.MesocycleId == mesocycle.Id || log.MesocycleId == null))
             .ToListAsync(cancellationToken);
@@ -120,7 +122,14 @@ internal sealed class CloseMesocycleCommandHandler(
                 candidate => candidate.UserId == SingleUser.Id && candidate.SkillId == objective.SkillId,
                 cancellationToken);
 
-        var generation = PlanGenerator.Generate(profile, objective, progress?.StageOrder, catalog);
+        // El mesociclo que se sintetiza aquí está ya vencido: arranca hace cuatro semanas (#94), que es
+        // lo que permite que sus sesiones caigan en el pasado y el cierre ajusta los máximos con lo registrado.
+        var generation = PlanGenerator.Generate(
+            profile,
+            objective,
+            progress?.StageOrder,
+            DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime.AddDays(-28)),
+            catalog);
         if (generation.IsFailure)
         {
             return Result.Failure<Mesocycle>(generation.Error);
@@ -129,7 +138,7 @@ internal sealed class CloseMesocycleCommandHandler(
         var creation = Mesocycle.Create(
             SingleUser.Id,
             generation.Value,
-            DateTimeOffset.UtcNow.AddDays(-28));
+            timeProvider.GetUtcNow().AddDays(-28));
         if (creation.IsFailure)
         {
             return Result.Failure<Mesocycle>(creation.Error);

@@ -13,7 +13,10 @@ namespace Barrapp.Application.Features.Plans;
 /// sin guardar). En ambos casos la regla de programación vive en <see cref="PlanGenerator"/>;
 /// la excepción pragmática a «las queries proyectan directo a DTO» sigue intacta (ver ADR-0012).
 /// </summary>
-internal sealed class GetPlanQueryHandler(IApplicationDbContext dbContext, IKnowledgeBase catalog)
+internal sealed class GetPlanQueryHandler(
+    IApplicationDbContext dbContext,
+    IKnowledgeBase catalog,
+    TimeProvider timeProvider)
     : IQueryHandler<GetPlanQuery, PlanResponse>
 {
     public async Task<Result<PlanResponse>> Handle(
@@ -47,7 +50,7 @@ internal sealed class GetPlanQueryHandler(IApplicationDbContext dbContext, IKnow
 
         if (active is not null)
         {
-            return PlanMappings.ToResponse(active.Snapshot.ToPlan(), catalog);
+            return PlanMappings.ToResponse(active.Snapshot.ToPlan(), catalog, active.Id);
         }
 
         var progress = await dbContext.AthleteSkillProgresses
@@ -55,8 +58,14 @@ internal sealed class GetPlanQueryHandler(IApplicationDbContext dbContext, IKnow
                 candidate => candidate.UserId == SingleUser.Id && candidate.SkillId == objective.SkillId,
                 cancellationToken);
 
-        // Sin mesociclo persistido ni progreso guardado, el motor practica la primera etapa.
-        var generation = PlanGenerator.Generate(profile, objective, progress?.StageOrder, catalog);
+        // Sin mesociclo persistido ni progreso guardado, el motor practica la primera etapa. No hay fecha
+        // de inicio guardada en este camino, así que el calendario arranca en hoy (#94).
+        var generation = PlanGenerator.Generate(
+            profile,
+            objective,
+            progress?.StageOrder,
+            DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime),
+            catalog);
 
         return generation.IsFailure
             ? Result.Failure<PlanResponse>(generation.Error)

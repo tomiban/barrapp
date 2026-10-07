@@ -10,7 +10,7 @@ import { Box, Grid, GridItem, Stack } from '@/design-system/layout';
 import { ListRow, SectionHeader } from '@/design-system/ListRow';
 import { MetricCounter } from '@/design-system/MetricCounter';
 import { BottomSheet } from '@/design-system/Modal';
-import { Header, Screen } from '@/design-system/Navigation';
+import { Avatar, Header, Screen } from '@/design-system/Navigation';
 import { ProgressIndicator } from '@/design-system/ProgressIndicator';
 import { Checkbox, Radio } from '@/design-system/Selection';
 import { StatusBadge } from '@/design-system/StatusBadge';
@@ -518,6 +518,13 @@ export function ShowcaseScreen() {
               Screen y Header enmarcan esta pantalla; TabBar es la barra inferior del layout de
               pestañas. Se demuestran en vivo, no como pieza aislada.
             </Text>
+          </Demo>
+
+          <Demo caption="Avatar · atleta en la cabecera">
+            <Stack direction="row" gap="sm" className="items-center">
+              <Avatar onPress={() => {}} testID="showcase-avatar" />
+              <Avatar accessibilityLabel="Sin perfil" testID="showcase-avatar-alt" />
+            </Stack>
           </Demo>
 
           <Demo caption="BottomSheet / Modal · disparador">

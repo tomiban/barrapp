@@ -23,6 +23,7 @@ export type SessionLogSetPayload = { setNumber: number; value: number; effort: n
 /** Series parseadas de un ejercicio, listas para el API. */
 export type ExerciseSetsPayload = {
   exerciseId: string;
+  item: PlanSessionItem;
   sets: SessionLogSetPayload[];
 };
 
@@ -32,11 +33,14 @@ export type SessionLoggingViewProps = {
   logs: SessionLog[];
   saving: boolean;
   feedback: SaveFeedback | null;
-  onSave: (day: number, exercises: ExerciseSetsPayload[]) => void;
+  onSave: (
+    session: { day: number; microcycleNumber: number; date: string | null },
+    exercises: ExerciseSetsPayload[],
+  ) => void;
   /** Edita un registro confirmado sustituyendo sus series (`PUT /session-logs/{id}`). */
-  onUpdate: (logId: string, sets: SessionLogSetPayload[]) => void;
+  onUpdate: (log: SessionLog, sets: SessionLogSetPayload[]) => void;
   /** Elimina un registro confirmado (`DELETE /session-logs/{id}`). */
-  onDelete: (logId: string) => void;
+  onDelete: (log: SessionLog) => void;
 };
 
 /** Texto de la prescripción de una fila, p. ej. `3 × 8–12 reps`. */
@@ -133,7 +137,14 @@ export function SessionLoggingView({
   const sessionDay = Number(session.day);
 
   const logFor = (exerciseId: string) =>
-    logs.find((log) => log.exerciseId === exerciseId && log.sessionDay === sessionDay);
+    logs.find(
+      (log) =>
+        log.exerciseId === exerciseId &&
+        log.sessionDay === sessionDay &&
+        (log.microcycleNumber === null ||
+          log.microcycleNumber === undefined ||
+          log.microcycleNumber === microcycle.number),
+    );
 
   /**
    * Un registro confirmado por el servidor se puede editar y borrar (#22); el que sigue pendiente
@@ -233,7 +244,7 @@ export function SessionLoggingView({
       if (sets === null) {
         return;
       }
-      exercises.push({ exerciseId: item.exerciseId, sets });
+      exercises.push({ exerciseId: item.exerciseId, item, sets });
     }
 
     if (exercises.length === 0) {
@@ -241,7 +252,7 @@ export function SessionLoggingView({
       return;
     }
 
-    onSave(sessionDay, exercises);
+    onSave({ day: sessionDay, microcycleNumber: microcycle.number, date: session.date }, exercises);
   };
 
   const startEdit = (exerciseId: string) => {
@@ -268,14 +279,20 @@ export function SessionLoggingView({
       return;
     }
     setEditingExerciseId(null);
-    onUpdate(logged.id, sets);
+    onUpdate(logged, sets);
   };
 
   const handleDelete = (logged: SessionLog) => {
-    onDelete(logged.id);
+    onDelete(logged);
   };
 
-  const savedLogs = logs.filter((log) => log.sessionDay === sessionDay);
+  const savedLogs = logs.filter(
+    (log) =>
+      log.sessionDay === sessionDay &&
+      (log.microcycleNumber === null ||
+        log.microcycleNumber === undefined ||
+        log.microcycleNumber === microcycle.number),
+  );
 
   return (
     <Stack gap="lg" testID="session-log-view">

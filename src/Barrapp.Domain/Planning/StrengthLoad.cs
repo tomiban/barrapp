@@ -15,10 +15,10 @@ namespace Barrapp.Domain.Planning;
 /// Es pura y determinista. Siempre que el máximo lo permita (≥ 2) la derivación deja al menos una
 /// repetición en reserva y el tope prescrito queda estrictamente por debajo del máximo. Un máximo
 /// de 0 o 1 no admite reserva alguna, así que cae a un marcador neutro y positivo
-/// (<see cref="NeutralReps"/>), nunca a 0 repeticiones. El máximo de 0 lo resuelve el llamador
-/// antes de derivar, sustituyendo el ancla por su regresión, prescrita sobre una base asumida
-/// (<see cref="RegressionWorkableReps"/>); el marcador neutro queda para el máximo de 1 y como
-/// salvaguarda frente a catálogos incompletos.
+/// (<see cref="NeutralReps"/>), nunca a 0 repeticiones. Los máximos de 0 y 1 los resuelve el
+/// llamador antes de derivar, sustituyendo el ancla por su regresión, prescrita sobre una base
+/// asumida (<see cref="RegressionWorkableReps"/>); el marcador neutro queda como salvaguarda frente
+/// a catálogos incompletos o llamadores que no aplican la regresión.
 /// </remarks>
 internal static class StrengthLoad
 {
@@ -46,8 +46,8 @@ internal static class StrengthLoad
     /// Repeticiones (mínimo y máximo) que le corresponden a un máximo dado, dejando
     /// <paramref name="repsInReserve"/> repeticiones antes del fallo. Si el máximo lo permite
     /// (≥ 2) deja al menos una repetición reservada y el tope queda por debajo del máximo; con un
-    /// máximo de 1 no hay margen y devuelve el marcador neutro (<see cref="NeutralReps"/>). Un
-    /// máximo de 0 no debe llegar aquí: el llamador lo resuelve con la regresión (#17).
+    /// máximo de 0 o 1 no hay margen y devuelve el marcador neutro (<see cref="NeutralReps"/>). El
+    /// generador del plan no deja llegar esos casos: los resuelve con la regresión (#17/#91).
     /// </summary>
     internal static (int Min, int Max) Derive(int maximum, int repsInReserve)
     {

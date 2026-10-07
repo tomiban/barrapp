@@ -21,8 +21,8 @@ namespace Barrapp.Domain.Planning;
 /// ±1 serie según la <see cref="AthleteLever"/> y añade su nota de ritmo esperado (#68); el
 /// criterio de etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3;
 /// la semana 4 es un <i>deload</i> (#13) con RIR 4 y ~50 % del volumen, bajando las series de
-/// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión. Con un máximo de 0
-/// en algún patrón, el hueco de fuerza se cubre con la regresión del ejercicio (#17).
+/// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión. Con un máximo de 0 o 1
+/// en algún patrón, el hueco de fuerza se cubre con la regresión del ejercicio (#17/#91).
 /// </remarks>
 public static class PlanGenerator
 {
@@ -102,13 +102,29 @@ public static class PlanGenerator
     /// Etapa actual del atleta en el skill objetivo; <c>null</c> si aún no tiene progresión guardada,
     /// en cuyo caso practica la primera etapa.
     /// </param>
+    /// <param name="startDate">
+    /// Fecha elegida por el atleta para arrancar el mesociclo. El mesociclo empieza en el primer
+    /// día de entrenamiento en o después de ella (#94).
+    /// </param>
     public static Result<Plan> Generate(
         AthleteProfile profile,
         Objective objective,
         int? stageOrder,
+        DateOnly startDate,
         IGenerationCatalog catalog)
     {
         var weeklySplit = WeeklySplitFor(profile.TrainingDays);
+
+        // Calendario (#94): cada sesión cae en uno de los días de entrenamiento que eligió el
+        // atleta, en el orden en que los eligió. El perfil garantiza que son tantos como la
+        // frecuencia, así que hay un día por sesión.
+        var trainingWeekdays = profile.TrainingDaysInOrder();
+        if (trainingWeekdays.Count != weeklySplit.Count)
+        {
+            return Result.Failure<Plan>(DomainErrors.AthleteProfile.TrainingWeekdaysMismatch);
+        }
+
+        var firstSessionDate = FirstSessionDateOnOrAfter(startDate, trainingWeekdays);
 
         var skill = catalog.FindSkill(objective.SkillId);
         if (skill is null)
@@ -142,19 +158,45 @@ public static class PlanGenerator
         for (var number = 1; number <= MicrocycleCount; number++)
         {
             var repsInReserve = RirWave.RepsInReserve(number);
+            var weekStart = firstSessionDate.AddDays(7 * (number - 1));
             var sessions = new List<Session>(weeklySplit.Count);
             for (var index = 0; index < weeklySplit.Count; index++)
             {
                 sessions.Add(new Session(
                     index + 1,
+                    trainingWeekdays[index],
+                    weekStart.AddDays(OffsetWithinWeek(trainingWeekdays, index)),
                     BuildItems(currentStage, strength.Value, lever, weeklySplit[index], repsInReserve, number)));
             }
 
             microcycles.Add(new Microcycle(number, sessions));
         }
 
-        return new Plan(skill.Id, profile.TrainingDays, currentStage, microcycles);
+        return new Plan(skill.Id, profile.TrainingDays, firstSessionDate, currentStage, microcycles);
     }
+
+    /// <summary>
+    /// Fecha de la primera sesión de la primera semana: el primer día <c>trainingWeekdays[0]</c> —el
+    /// primero de los días que eligió el atleta, en orden de semana— en o después de la fecha pedida.
+    /// Anclar la semana en ese día es lo que garantiza que cada sesión caiga en su día de la semana:
+    /// los desplazamientos hacia el resto de días se miden desde ahí.
+    /// </summary>
+    private static DateOnly FirstSessionDateOnOrAfter(
+        DateOnly startDate,
+        IReadOnlyList<DayOfWeek> trainingWeekdays)
+    {
+        var firstWeekday = trainingWeekdays[0];
+        var daysUntilFirstWeekday = ((int)firstWeekday - (int)startDate.DayOfWeek + 7) % 7;
+
+        return startDate.AddDays(daysUntilFirstWeekday);
+    }
+
+    /// <summary>
+    /// Días que separan el día de entrenamiento de la sesión <paramref name="index"/> del primero de
+    /// la semana (<c>0..6</c>), para que las sesiones caigan en su día real al ordenarse.
+    /// </summary>
+    private static int OffsetWithinWeek(IReadOnlyList<DayOfWeek> trainingWeekdays, int index) =>
+        ((int)trainingWeekdays[index] - (int)trainingWeekdays[0] + 7) % 7;
 
     private static Result<IReadOnlyList<StrengthSlot>> ResolveStrengthSlots(
         IGenerationCatalog catalog,
@@ -183,19 +225,20 @@ public static class PlanGenerator
         return Result.Success<IReadOnlyList<StrengthSlot>>(slots);
     }
 
-    // D3 (#17): un máximo de 0 no admite prescripción sobre el ancla (no hay margen ni para una
-    // repetición), así que el hueco de fuerza de ese patrón pasa a la regresión del ejercicio,
-    // prescrita sobre una base de trabajo asumida y modesta (`StrengthLoad.RegressionWorkableReps`).
-    // La onda de RIR sigue aplicando sobre esa base, de modo que la regresión nunca se prescribe al
-    // fallo ni con 0 repeticiones. El catálogo valida que toda regresión referenciada exista y se
-    // resuelva; si no se pudiera resolver, se conserva el marcador neutro previo al #17.
+    // D3 (#17/#91): un máximo de 0 o 1 no admite prescripción sobre el ancla (no hay margen ni para
+    // una repetición reservada), así que el hueco de fuerza de ese patrón pasa a la regresión del
+    // ejercicio, prescrita sobre una base de trabajo asumida y modesta
+    // (`StrengthLoad.RegressionWorkableReps`). La onda de RIR sigue aplicando sobre esa base, de modo
+    // que la regresión nunca se prescribe al fallo ni con 0 repeticiones. El catálogo valida que toda
+    // regresión referenciada exista y se resuelva; si no se pudiera resolver, se conserva el marcador
+    // neutro previo al #17.
     private static StrengthSlot ResolveStrengthSlot(
         IGenerationCatalog catalog,
         Exercise exercise,
         ExerciseGroup pattern,
         int maximum)
     {
-        if (maximum == 0
+        if (maximum <= 1
             && exercise.RegressionId is not null
             && catalog.FindExercise(exercise.RegressionId) is { } regression)
         {

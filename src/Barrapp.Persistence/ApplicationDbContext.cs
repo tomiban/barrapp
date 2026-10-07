@@ -29,8 +29,11 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     /// <summary>Etapa actual del atleta por skill.</summary>
     public DbSet<AthleteSkillProgress> AthleteSkillProgresses => Set<AthleteSkillProgress>();
 
-    /// <summary>Registros de sesión (serie a serie).</summary>
+    /// <summary>Registros de sesión (la cabecera con su clave de sesión y su marca de completada).</summary>
     public DbSet<SessionLog> SessionLogs => Set<SessionLog>();
+
+    /// <summary>Ítems registrados de una sesión, con su foto por ítem (ADR-0014).</summary>
+    public DbSet<SessionLogItem> SessionLogItems => Set<SessionLogItem>();
 
     /// <summary>Historial de sesiones sueltas, aislado de los registros de sesión (D8).</summary>
     public DbSet<SessionSuelta> SessionSuelta => Set<SessionSuelta>();
