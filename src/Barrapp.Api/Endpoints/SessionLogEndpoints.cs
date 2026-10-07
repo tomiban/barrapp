@@ -47,50 +47,117 @@ internal static class SessionLogEndpoints
                 "/",
                 async (RegisterSessionLogBody body, ISender sender, CancellationToken cancellationToken) =>
                 {
-                    // Los códigos de cable (tipo de sesión, papel y patrón) se traducen aquí; un
-                    // código desconocido se responde con su propio problema, no con una excepción.
-                    if (ParseKind(body.Session.Kind) is not { } kind)
+                    if (body.Session is not null && body.Item is not null)
                     {
-                        return Result.Failure<SessionLogResponse>(
-                            DomainErrors.SessionLog.KindOutOfRange).Error.ToProblemDetails();
+                        // Los códigos de cable (tipo de sesión, papel y patrón) se traducen aquí; un
+                        // código desconocido se responde con su propio problema, no con una excepción.
+                        if (ParseKind(body.Session.Kind) is not { } kind)
+                        {
+                            return Result.Failure<SessionLogResponse>(
+                                DomainErrors.SessionLog.KindOutOfRange).Error.ToProblemDetails();
+                        }
+
+                        if (ParseRole(body.Item.Role) is not { } role)
+                        {
+                            return Result.Failure<SessionLogResponse>(
+                                DomainErrors.SessionLog.RoleOutOfRange).Error.ToProblemDetails();
+                        }
+
+                        var result = await sender.Send(
+                            new RegisterSessionLogCommand(
+                                new SessionLogKeyInput(
+                                    kind,
+                                    body.Session.Date,
+                                    body.Session.MesocycleId,
+                                    body.Session.MicrocycleNumber,
+                                    body.Session.SessionDay),
+                                new SessionLogItemBody(
+                                    body.Item.ExerciseId,
+                                    role,
+                                    ParsePattern(body.Item.Pattern),
+                                    body.Item.PrescribedSets,
+                                    body.Item.RepsMin,
+                                    body.Item.RepsMax,
+                                    body.Item.HoldSecondsMin,
+                                    body.Item.HoldSecondsMax,
+                                    body.Item.Note,
+                                    ToSetInputs(body.Item.Sets)),
+                                body.ClientId),
+                            cancellationToken);
+
+                        return result.IsSuccess
+                            ? Results.Ok(result.Value)
+                            : result.Error.ToProblemDetails();
                     }
 
-                    if (ParseRole(body.Item.Role) is not { } role)
+                    if (string.IsNullOrWhiteSpace(body.ExerciseId))
                     {
-                        return Result.Failure<SessionLogResponse>(
-                            DomainErrors.SessionLog.RoleOutOfRange).Error.ToProblemDetails();
+                        return Results.BadRequest();
                     }
 
-                    var result = await sender.Send(
+                    var resultLegacy = await sender.Send(
                         new RegisterSessionLogCommand(
                             new SessionLogKeyInput(
-                                kind,
-                                body.Session.Date,
-                                body.Session.MesocycleId,
-                                body.Session.MicrocycleNumber,
-                                body.Session.SessionDay),
+                                SessionLogKind.Mesocycle,
+                                DateOnly.FromDateTime(DateTime.UtcNow),
+                                body.MesocycleId,
+                                null,
+                                body.SessionDay ?? 1),
                             new SessionLogItemBody(
-                                body.Item.ExerciseId,
-                                role,
-                                ParsePattern(body.Item.Pattern),
-                                body.Item.PrescribedSets,
-                                body.Item.RepsMin,
-                                body.Item.RepsMax,
-                                body.Item.HoldSecondsMin,
-                                body.Item.HoldSecondsMax,
-                                body.Item.Note,
-                                ToSetInputs(body.Item.Sets)),
+                                body.ExerciseId,
+                                SessionItemRole.Strength,
+                                null,
+                                body.PrescribedSets ?? body.Sets?.Count ?? 1,
+                                body.RepsMin,
+                                body.RepsMax,
+                                body.HoldSecondsMin,
+                                body.HoldSecondsMax,
+                                body.Note,
+                                ToSetInputs(body.Sets ?? [])),
                             body.ClientId),
                         cancellationToken);
 
-                    return result.IsSuccess
-                        ? Results.Ok(result.Value)
-                        : result.Error.ToProblemDetails();
+                    return resultLegacy.IsSuccess
+                        ? Results.Ok(resultLegacy.Value)
+                        : resultLegacy.Error.ToProblemDetails();
                 })
             .WithName("RegisterSessionLog")
             .WithSummary("Registra lo ejecutado de un ejercicio de una sesión, serie a serie, creando la sesión si es la primera vez.")
             .Produces<SessionLogResponse>()
             .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapPut(
+                "/{id:guid}",
+                async (Guid id, UpdateSessionLogBody body, ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(new GetSessionLogQuery(id), cancellationToken);
+                    if (!result.IsSuccess)
+                    {
+                        return result.Error.ToProblemDetails();
+                    }
+
+                    var itemId = result.Value.Items.FirstOrDefault()?.Id;
+                    if (itemId is null)
+                    {
+                        return Results.NotFound();
+                    }
+
+                    var update = await sender.Send(
+                        new UpdateSessionLogItemCommand(
+                            id,
+                            itemId.Value,
+                            ToSetInputs(body.Sets ?? [])),
+                        cancellationToken);
+
+                    return update.IsSuccess
+                        ? Results.Ok(update.Value)
+                        : update.Error.ToProblemDetails();
+                })
+            .WithName("UpdateSessionLog")
+            .WithSummary("Edita un registro de sesión legacy: sustituye los valores de sus series.")
+            .Produces<SessionLogItemResponse>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapPut(
                 "/{id:guid}/items/{itemId:guid}",
@@ -116,6 +183,21 @@ internal static class SessionLogEndpoints
             .WithSummary("Edita un ítem registrado: sustituye los valores de sus series.")
             .Produces<SessionLogItemResponse>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapDelete(
+                "/{id:guid}",
+                async (Guid id, ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(new DeleteSessionLogCommand(id), cancellationToken);
+
+                    return result.IsSuccess
+                        ? Results.NoContent()
+                        : result.Error.ToProblemDetails();
+                })
+            .WithName("DeleteSessionLog")
+            .WithSummary("Elimina un registro de sesión y sus series.")
+            .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapDelete(
@@ -174,7 +256,11 @@ internal static class SessionLogEndpoints
 
     /// <summary>Traduce las series del cuerpo a la entrada del dominio.</summary>
     private static List<SessionLogSetInput> ToSetInputs(IReadOnlyList<SessionSetBody> sets) => sets
-        .Select(set => new SessionLogSetInput(set.SetNumber, set.Value, set.ActualRir, set.LoadKg))
+        .Select(set => new SessionLogSetInput(
+            set.SetNumber,
+            set.Value,
+            set.EffectiveEffort,
+            set.LoadKg))
         .ToList();
 
     /// <summary>
@@ -217,9 +303,21 @@ internal static class SessionLogEndpoints
 /// <param name="Item">El ejercicio, su objetivo prescrito y las series realmente ejecutadas.</param>
 /// <param name="ClientId">Id idempotente de la outbox offline del cliente (ADR-0003); opcional.</param>
 internal sealed record RegisterSessionLogBody(
-    SessionKeyBody Session,
-    SessionItemBody Item,
-    Guid? ClientId = null);
+    SessionKeyBody? Session = null,
+    SessionItemBody? Item = null,
+    Guid? ClientId = null,
+    string? ExerciseId = null,
+    Guid? MesocycleId = null,
+    int? SessionDay = null,
+    IReadOnlyList<SessionSetBody>? Sets = null,
+    string? Role = null,
+    string? Pattern = null,
+    int? PrescribedSets = null,
+    int? RepsMin = null,
+    int? RepsMax = null,
+    int? HoldSecondsMin = null,
+    int? HoldSecondsMax = null,
+    string? Note = null);
 
 /// <summary>
 /// Clave de sesión determinista del registro (ADR-0014). Para <c>kind: "mesocycle"</c> van mesociclo,
@@ -255,8 +353,19 @@ internal sealed record SessionItemBody(
 /// <param name="Value">Valor real ejecutado: repeticiones o segundos según el ejercicio.</param>
 /// <param name="ActualRir">RIR real de la serie (0–10); opcional.</param>
 /// <param name="LoadKg">Lastre en kg de la serie; opcional.</param>
-internal sealed record SessionSetBody(int SetNumber, int Value, int? ActualRir = null, double? LoadKg = null);
+internal sealed record SessionSetBody(
+    int SetNumber,
+    int Value,
+    int? ActualRir = null,
+    int? Effort = null,
+    double? LoadKg = null)
+{
+    public int? EffectiveEffort => Effort ?? ActualRir;
+}
 
 /// <summary>Cuerpo del <c>PUT</c>: solo las series nuevas; la cabecera y la foto no cambian.</summary>
 /// <param name="Sets">Series ejecutadas, numeradas desde 1 y en orden.</param>
 internal sealed record UpdateSessionLogItemBody(IReadOnlyList<SessionSetBody> Sets);
+
+/// <summary>Compatibilidad con el <c>PUT</c> legacy del cliente.</summary>
+internal sealed record UpdateSessionLogBody(IReadOnlyList<SessionSetBody>? Sets = null);

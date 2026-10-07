@@ -19,7 +19,7 @@ public sealed record SessionLogSetResponse(
     int? ActualRir,
     double? LoadKg)
 {
-    /// <summary>Compatibilidad con el contrato previo del cliente.</summary>
+    /// <summary>Compatibilidad con el contrato anterior del cliente.</summary>
     [JsonIgnore]
     public int? Effort => ActualRir;
 }
@@ -99,19 +99,19 @@ public sealed record SessionLogResponse(
     DateTimeOffset? CompletedAtUtc,
     IReadOnlyList<SessionLogItemResponse> Items)
 {
-    /// <summary>Compatibilidad con el contrato previo: el primer ejercicio registrado.</summary>
+    /// <summary>Compatibilidad con el contrato anterior del cliente: la foto de la primera fila.</summary>
     [JsonIgnore]
     public string ExerciseId => Items.FirstOrDefault()?.ExerciseId ?? string.Empty;
 
-    /// <summary>Compatibilidad con el contrato previo: nombre del primer ejercicio.</summary>
+    /// <summary>Compatibilidad con el contrato anterior del cliente: el nombre de la primera fila.</summary>
     [JsonIgnore]
     public string ExerciseName => Items.FirstOrDefault()?.ExerciseName ?? string.Empty;
 
-    /// <summary>Compatibilidad con el contrato previo: unidad del primer ítem.</summary>
+    /// <summary>Compatibilidad con el contrato anterior del cliente: la unidad del primer ítem.</summary>
     [JsonIgnore]
     public string Metric => Items.FirstOrDefault()?.Metric ?? string.Empty;
 
-    /// <summary>Compatibilidad con el contrato previo: series del primer ítem.</summary>
+    /// <summary>Compatibilidad con el contrato anterior del cliente: las series del primer ítem.</summary>
     [JsonIgnore]
     public IReadOnlyList<SessionLogSetResponse> Sets => Items.FirstOrDefault()?.Sets ?? Array.Empty<SessionLogSetResponse>();
 
