@@ -1,7 +1,7 @@
 using Barrapp.Application.Abstractions;
-using MediatR;
 using Barrapp.Domain.Common;
 using Barrapp.Domain.Sessions;
+using MediatR;
 
 namespace Barrapp.Application.Features.SessionLogs;
 
