@@ -50,7 +50,7 @@ internal sealed class GetPlanQueryHandler(
 
         if (active is not null)
         {
-            return PlanMappings.ToResponse(active.Snapshot.ToPlan(), catalog);
+            return PlanMappings.ToResponse(active.Snapshot.ToPlan(), catalog, active.Id);
         }
 
         var progress = await dbContext.AthleteSkillProgresses

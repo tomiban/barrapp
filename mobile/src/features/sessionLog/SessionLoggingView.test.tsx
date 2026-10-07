@@ -159,9 +159,12 @@ const strengthPlan: Plan = {
 
 async function renderView(options?: {
   logs?: SessionLog[];
-  onSave?: (day: number, exercises: ExerciseSetsPayload[]) => void;
-  onUpdate?: (logId: string, sets: SessionLogSetPayload[]) => void;
-  onDelete?: (logId: string) => void;
+  onSave?: (
+    session: { day: number; microcycleNumber: number; date: string | null },
+    exercises: ExerciseSetsPayload[],
+  ) => void;
+  onUpdate?: (log: SessionLog, sets: SessionLogSetPayload[]) => void;
+  onDelete?: (log: SessionLog) => void;
   feedback?: SaveFeedback | null;
   saving?: boolean;
 }) {
@@ -229,7 +232,13 @@ describe('SessionLoggingView', () => {
     await fireEvent.press(screen.getByTestId('session-log-save'));
 
     expect(onSave).toHaveBeenCalledTimes(1);
-    expect(onSave).toHaveBeenCalledWith(1, [
+    expect(onSave.mock.calls[0][0]).toEqual({ day: 1, microcycleNumber: 1, date: null });
+    expect(
+      (onSave.mock.calls[0][1] as ExerciseSetsPayload[]).map(({ exerciseId, sets }) => ({
+        exerciseId,
+        sets,
+      })),
+    ).toEqual([
       {
         exerciseId: 'push_up',
         sets: [
@@ -337,7 +346,13 @@ describe('SessionLoggingView', () => {
     await fireEvent.changeText(screen.getByTestId('session-log-set-hollow-body-hold-2'), '22');
     await fireEvent.press(screen.getByTestId('session-log-save'));
 
-    expect(onSave).toHaveBeenCalledWith(1, [
+    expect(onSave.mock.calls[0][0]).toEqual({ day: 1, microcycleNumber: 1, date: null });
+    expect(
+      (onSave.mock.calls[0][1] as ExerciseSetsPayload[]).map(({ exerciseId, sets }) => ({
+        exerciseId,
+        sets,
+      })),
+    ).toEqual([
       {
         exerciseId: 'handstand-wall-support',
         sets: [
@@ -403,7 +418,13 @@ describe('SessionLoggingView', () => {
     await fireEvent.changeText(screen.getByTestId('session-log-set-pistol-box-2'), '5');
     await fireEvent.press(screen.getByTestId('session-log-save'));
 
-    expect(onSave).toHaveBeenCalledWith(1, [
+    expect(onSave.mock.calls[0][0]).toEqual({ day: 1, microcycleNumber: 1, date: null });
+    expect(
+      (onSave.mock.calls[0][1] as ExerciseSetsPayload[]).map(({ exerciseId, sets }) => ({
+        exerciseId,
+        sets,
+      })),
+    ).toEqual([
       {
         exerciseId: 'pistol-box',
         sets: [
@@ -438,7 +459,13 @@ describe('SessionLoggingView', () => {
     await fireEvent.changeText(screen.getByTestId('session-log-set-pull_up-2'), '6');
     await fireEvent.press(screen.getByTestId('session-log-save'));
 
-    expect(onSave).toHaveBeenCalledWith(1, [
+    expect(onSave.mock.calls[0][0]).toEqual({ day: 1, microcycleNumber: 1, date: null });
+    expect(
+      (onSave.mock.calls[0][1] as ExerciseSetsPayload[]).map(({ exerciseId, sets }) => ({
+        exerciseId,
+        sets,
+      })),
+    ).toEqual([
       {
         exerciseId: 'pull_up',
         sets: [
@@ -511,7 +538,13 @@ describe('SessionLoggingView', () => {
     await fireEvent.changeText(screen.getByTestId('session-log-set-pull_up-2'), '6');
     await fireEvent.press(screen.getByTestId('session-log-save'));
 
-    expect(onSave).toHaveBeenCalledWith(1, [
+    expect(onSave.mock.calls[0][0]).toEqual({ day: 1, microcycleNumber: 1, date: null });
+    expect(
+      (onSave.mock.calls[0][1] as ExerciseSetsPayload[]).map(({ exerciseId, sets }) => ({
+        exerciseId,
+        sets,
+      })),
+    ).toEqual([
       {
         exerciseId: 'push_up',
         sets: [
@@ -673,7 +706,8 @@ describe('SessionLoggingView', () => {
     await fireEvent.press(screen.getByTestId('session-log-update-push_up'));
 
     expect(onUpdate).toHaveBeenCalledTimes(1);
-    expect(onUpdate).toHaveBeenCalledWith('log-1', [
+    expect(onUpdate.mock.calls[0][0]).toEqual(savedLog);
+    expect(onUpdate.mock.calls[0][1]).toEqual([
       { setNumber: 1, value: 15, effort: null },
       { setNumber: 2, value: 11, effort: 2 },
       { setNumber: 3, value: 16, effort: null },
@@ -745,6 +779,6 @@ describe('SessionLoggingView', () => {
     await fireEvent.press(screen.getByTestId('session-log-delete-push_up'));
 
     expect(onDelete).toHaveBeenCalledTimes(1);
-    expect(onDelete).toHaveBeenCalledWith('log-1');
+    expect(onDelete).toHaveBeenCalledWith(savedLog);
   });
 });

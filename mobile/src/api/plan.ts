@@ -17,6 +17,7 @@ export type PlanSessionItem = {
   repsMax: number | null;
   holdSecondsMin: number | null;
   holdSecondsMax: number | null;
+  note?: string | null;
 };
 
 /** Sesión del plan: el día que ocupa y sus filas. */
@@ -39,6 +40,7 @@ export type PlanMicrocycle = {
 export type Plan = {
   skillId: string;
   trainingDays: number;
+  mesocycleId?: string | null;
   /** Fecha en la que arranca el mesociclo (su primer día de entrenamiento). */
   startDate: string;
   /** Etapa actual del skill objetivo, con su criterio para avanzar. */

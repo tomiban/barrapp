@@ -21,6 +21,7 @@ type FakeRow = {
   exercise_name: string;
   metric: string | null;
   mesocycle_id: string | null;
+  microcycle_number: number | null;
   session_day: number;
   sets: string;
   updated_at: string;
@@ -28,7 +29,7 @@ type FakeRow = {
 
 /**
  * Base de datos de prueba en memoria: imita el contrato observable de la tabla `session_log_outbox`
- * (una fila por ejercicio y día, la última escritura gana, ordenada por fecha de actualización)
+ * (una fila por ejercicio y sesión, la última escritura gana, ordenada por fecha de actualización)
  * sin recurrir a SQLite nativo. Igual que el fake de `planStore.test.ts`.
  */
 function createInMemoryOutboxTable() {
@@ -43,6 +44,7 @@ function createInMemoryOutboxTable() {
           exercise_name,
           metric,
           mesocycle_id,
+          microcycle_number,
           session_day,
           sets,
           updated_at,
@@ -52,16 +54,18 @@ function createInMemoryOutboxTable() {
           string,
           string | null,
           string | null,
+          number | null,
           number,
           string,
           string,
         ];
-        rows.set(`${exercise_id}:${session_day}`, {
+        rows.set(`${exercise_id}:${mesocycle_id}:${microcycle_number}:${session_day}`, {
           client_id,
           exercise_id,
           exercise_name,
           metric,
           mesocycle_id,
+          microcycle_number,
           session_day,
           sets,
           updated_at,
@@ -81,13 +85,31 @@ function createInMemoryOutboxTable() {
     },
     async getFirstAsync<T>(source: string, ...params: unknown[]): Promise<T | null> {
       if (source.includes('SELECT client_id')) {
-        const [exercise_id, session_day] = params as [string, number];
-        const row = rows.get(`${exercise_id}:${session_day}`);
+        const [exercise_id, mesocycle_id, microcycle_number, session_day] = params as [
+          string,
+          string | null,
+          number | null,
+          number,
+        ];
+        const row = rows.get(`${exercise_id}:${mesocycle_id}:${microcycle_number}:${session_day}`);
         return (row ? { client_id: row.client_id } : null) as T | null;
       }
       throw new Error(`getFirstAsync no esperado: ${source}`);
     },
-    async getAllAsync<T>(_source: string): Promise<T[]> {
+    async getAllAsync<T>(source: string): Promise<T[]> {
+      if (source.includes('PRAGMA table_info')) {
+        return [
+          'client_id',
+          'exercise_id',
+          'exercise_name',
+          'metric',
+          'mesocycle_id',
+          'microcycle_number',
+          'session_day',
+          'sets',
+          'updated_at',
+        ].map((name) => ({ name })) as T[];
+      }
       const sorted = [...rows.values()].sort((a, b) => a.updated_at.localeCompare(b.updated_at));
       return sorted as T[];
     },
@@ -144,6 +166,7 @@ describe('sessionLogOutbox', () => {
           exerciseName: 'Flexiones',
           metric: 'reps',
           mesocycleId: null,
+          microcycleNumber: null,
           sessionDay: 2,
           sets: [
             { setNumber: 1, value: 10, effort: null },
@@ -198,6 +221,7 @@ describe('sessionLogOutbox', () => {
           exerciseName: 'Flexiones',
           metric: 'reps',
           mesocycleId: null,
+          microcycleNumber: null,
           sessionDay: 2,
           sets: [
             { setNumber: 1, value: 10, effort: 2 },
@@ -280,8 +304,9 @@ describe('sessionLogOutbox', () => {
       expect(openDatabaseAsyncMock).toHaveBeenCalledWith('barrapp.db');
       const schema = db.execAsync.mock.calls[0][0] as string;
       expect(schema).toContain('CREATE TABLE IF NOT EXISTS session_log_outbox');
-      expect(schema).toContain('session_log_outbox_business_key');
-      expect(schema).toContain('(exercise_id, session_day)');
+      const indexes = db.execAsync.mock.calls[1][0] as string;
+      expect(indexes).toContain('session_log_outbox_business_key');
+      expect(indexes).toContain('(exercise_id, mesocycle_id, microcycle_number, session_day)');
 
       await outbox.enqueue(PUSH_UP_INPUT);
       await expect(outbox.listPending()).resolves.toHaveLength(1);

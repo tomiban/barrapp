@@ -3,10 +3,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { messageOf } from '@/api/messageOf';
 import { fetchPlan, type Plan, type PlanSessionItem } from '@/api/plan';
 import {
-  deleteSessionLog,
+  deleteSessionLogItem,
   fetchSessionLogs,
-  registerSessionLog,
-  updateSessionLog,
+  registerSessionLogItem,
+  updateSessionLogItem,
+  type RegisterSessionLogItemInput,
   type SessionLog,
   type SessionLogMetric,
 } from '@/api/sessionLogs';
@@ -68,17 +69,82 @@ function metricOf(item: PlanSessionItem): SessionLogMetric {
   return item.holdSecondsMin !== null || item.holdSecondsMax !== null ? 'seconds' : 'reps';
 }
 
-/** Busca el ítem del plan de un ejercicio en una sesión concreta (para dar nombre y unidad a la cola). */
-function findPlanItem(plan: Plan, day: number, exerciseId: string): PlanSessionItem | undefined {
+/** Rebuilds legacy queue entries only when their original mesocycle is still active. */
+function legacyRequestFor(
+  plan: Plan,
+  entry: {
+    mesocycleId: string | null;
+    sessionDay: number;
+    exerciseId: string;
+    sets: SessionLogSetPayload[];
+    clientId: string;
+  },
+): RegisterSessionLogItemInput | null {
+  if (!plan.mesocycleId || entry.mesocycleId !== plan.mesocycleId) {
+    return null;
+  }
+
+  const candidates: RegisterSessionLogItemInput[] = [];
   for (const microcycle of plan.microcycles) {
     for (const session of microcycle.sessions) {
-      if (session.day !== day) {
+      if (session.day !== entry.sessionDay) {
         continue;
       }
-      return session.items.find((item) => item.exerciseId === exerciseId);
+      const item = session.items.find((candidate) => candidate.exerciseId === entry.exerciseId);
+      if (!item || !session.date) {
+        continue;
+      }
+      const request = registrationFor(
+        plan,
+        { day: entry.sessionDay, microcycleNumber: microcycle.number, date: session.date },
+        { exerciseId: entry.exerciseId, item, sets: entry.sets },
+        entry.clientId,
+      );
+      if (request) {
+        candidates.push(request);
+      }
     }
   }
-  return undefined;
+
+  return candidates.length === 1 ? candidates[0] : null;
+}
+
+function registrationFor(
+  plan: Plan,
+  session: { day: number; microcycleNumber: number; date: string | null },
+  exercise: ExerciseSetsPayload,
+  clientId?: string,
+): RegisterSessionLogItemInput | null {
+  if (!plan.mesocycleId || !session.date) {
+    return null;
+  }
+  return {
+    session: {
+      kind: 'mesocycle',
+      date: session.date,
+      mesocycleId: plan.mesocycleId,
+      microcycleNumber: session.microcycleNumber,
+      sessionDay: session.day,
+    },
+    item: {
+      exerciseId: exercise.item.exerciseId,
+      role: exercise.item.role,
+      pattern: exercise.item.pattern,
+      prescribedSets: exercise.item.sets,
+      repsMin: exercise.item.repsMin,
+      repsMax: exercise.item.repsMax,
+      holdSecondsMin: exercise.item.holdSecondsMin,
+      holdSecondsMax: exercise.item.holdSecondsMax,
+      note: exercise.item.note ?? null,
+      sets: exercise.sets.map((set) => ({
+        setNumber: set.setNumber,
+        value: set.value,
+        actualRir: set.effort,
+        loadKg: null,
+      })),
+    },
+    clientId,
+  };
 }
 
 /**
@@ -117,7 +183,12 @@ export default function TrainScreen() {
 
         // «Al recuperar la conexión» (heurística práctica): al cargar, si la cola no está vacía, se sube.
         if (pending.length > 0) {
-          const result = await syncPendingSessionLogs(outbox, registerSessionLog);
+          const result = await syncPendingSessionLogs(outbox, registerSessionLogItem, (entry) =>
+            legacyRequestFor(planResult.plan, {
+              ...entry,
+              sets: entry.sets.map((set) => ({ ...set, effort: set.effort })),
+            }),
+          );
           if (result.synced > 0) {
             const freshLogs = await fetchLogsOrEmpty(signal);
             const freshPending = await outbox.listPending();
@@ -167,46 +238,48 @@ export default function TrainScreen() {
   }, []);
 
   const handleSave = useCallback(
-    async (day: number, exercises: ExerciseSetsPayload[]) => {
+    async (
+      session: { day: number; microcycleNumber: number; date: string | null },
+      exercises: ExerciseSetsPayload[],
+    ) => {
       setSaving(true);
       setFeedback(null);
       try {
         const plan = state.status === 'ready' ? state.plan : null;
+        if (!plan) {
+          throw new Error('No hay un plan disponible para registrar la sesión.');
+        }
         const outbox = await getSessionLogOutbox();
-        let queuedCount = 0;
 
         for (const exercise of exercises) {
-          try {
-            await registerSessionLog({
-              exerciseId: exercise.exerciseId,
-              sessionDay: day,
-              sets: exercise.sets,
-            });
-          } catch {
-            // Sin conexión (o el guardado no llegó): se encola para subirlo al recuperar la red.
-            queuedCount += 1;
-            const item = plan ? findPlanItem(plan, day, exercise.exerciseId) : undefined;
-            await outbox.enqueue({
-              exerciseId: exercise.exerciseId,
-              exerciseName: item?.exerciseName ?? exercise.exerciseId,
-              metric: item ? metricOf(item) : null,
-              sessionDay: day,
-              sets: exercise.sets.map((set) => ({
-                setNumber: set.setNumber,
-                value: set.value,
-                effort: set.effort ?? null,
-              })),
-            });
-          }
+          const request = registrationFor(plan, session, exercise);
+          await outbox.enqueue({
+            exerciseId: exercise.exerciseId,
+            exerciseName: exercise.item.exerciseName,
+            metric: metricOf(exercise.item),
+            mesocycleId: plan.mesocycleId,
+            microcycleNumber: session.microcycleNumber,
+            sessionDay: session.day,
+            sets: exercise.sets.map((set) => ({
+              setNumber: set.setNumber,
+              value: set.value,
+              effort: set.effort ?? null,
+            })),
+            ...(request ? { request } : {}),
+          });
         }
 
-        // El propio guardado aprovecha para subir la cola pendiente: sin duplicados.
-        await syncPendingSessionLogs(outbox, registerSessionLog);
+        const result = await syncPendingSessionLogs(outbox, registerSessionLogItem, (entry) =>
+          legacyRequestFor(plan, {
+            ...entry,
+            sets: entry.sets.map((set) => ({ ...set, effort: set.effort })),
+          }),
+        );
         await refreshLogs();
         setFeedback({
           role: 'confirmed',
           message:
-            queuedCount > 0
+            result.remaining > 0
               ? 'Guardado sin conexión. Se subirá al recuperar la red.'
               : 'Registro de la sesión guardado.',
         });
@@ -219,13 +292,24 @@ export default function TrainScreen() {
     [refreshLogs, state],
   );
 
-  /** Edita un registro confirmado vía `PUT /session-logs/{id}` y recarga los registros. */
   const handleUpdate = useCallback(
-    async (logId: string, sets: SessionLogSetPayload[]) => {
+    async (log: SessionLog, sets: SessionLogSetPayload[]) => {
       setSaving(true);
       setFeedback(null);
       try {
-        await updateSessionLog(logId, { sets });
+        if (!log.sessionLogId) {
+          throw new Error('No se pudo identificar la sesión del registro.');
+        }
+        await updateSessionLogItem(
+          log.sessionLogId,
+          log.id,
+          sets.map((set) => ({
+            setNumber: set.setNumber,
+            value: set.value,
+            actualRir: set.effort,
+            loadKg: null,
+          })),
+        );
         await refreshLogs();
         setFeedback({ role: 'confirmed', message: 'Registro actualizado.' });
       } catch (error) {
@@ -237,13 +321,16 @@ export default function TrainScreen() {
     [refreshLogs],
   );
 
-  /** Elimina un registro confirmado vía `DELETE /session-logs/{id}` y recarga los registros. */
+  /** Elimina un ítem confirmado y recarga los registros. */
   const handleDelete = useCallback(
-    async (logId: string) => {
+    async (log: SessionLog) => {
       setSaving(true);
       setFeedback(null);
       try {
-        await deleteSessionLog(logId);
+        if (!log.sessionLogId) {
+          throw new Error('No se pudo identificar la sesión del registro.');
+        }
+        await deleteSessionLogItem(log.sessionLogId, log.id);
         await refreshLogs();
         setFeedback({ role: 'confirmed', message: 'Registro borrado.' });
       } catch (error) {

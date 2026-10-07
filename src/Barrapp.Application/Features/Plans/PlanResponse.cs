@@ -52,4 +52,5 @@ public sealed record PlanResponse(
     int TrainingDays,
     SkillStageResponse SkillStage,
     IReadOnlyList<MicrocycleResponse> Microcycles,
-    DateOnly StartDate);
+    DateOnly StartDate,
+    Guid? MesocycleId);

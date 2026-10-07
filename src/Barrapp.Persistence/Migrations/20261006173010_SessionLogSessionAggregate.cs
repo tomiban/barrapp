@@ -13,19 +13,34 @@ namespace Barrapp.Persistence.Migrations
     /// <c>Effort</c>— y el lastre. Sin claves foráneas al plan.
     /// </summary>
     /// <remarks>
-    /// Es un <b>rework</b> del registro, no un añadido, y el MVP no tiene datos que migrar: las
-    /// tablas anteriores se recrean en lugar de renombrar columnas que ya no significan lo mismo.
+    /// Es un <b>rework</b> del registro. El esquema anterior no contiene la clave ni la foto
+    /// necesarias para convertir fielmente cada fila en un ítem agregado, así que se archiva
+    /// intacto y se crea el esquema nuevo. El archivo permite restaurar el contrato anterior.
     /// </remarks>
     public partial class SessionLogSessionAggregate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "SessionLogSets");
+            migrationBuilder.DropIndex(
+                name: "IX_SessionLogs_UserId",
+                table: "SessionLogs");
 
-            migrationBuilder.DropTable(
-                name: "SessionLogs");
+            migrationBuilder.DropIndex(
+                name: "IX_SessionLogs_MesocycleId",
+                table: "SessionLogs");
+
+            migrationBuilder.DropIndex(
+                name: "IX_SessionLogs_UserId_ClientId",
+                table: "SessionLogs");
+
+            migrationBuilder.RenameTable(
+                name: "SessionLogs",
+                newName: "LegacySessionLogs");
+
+            migrationBuilder.RenameTable(
+                name: "SessionLogSets",
+                newName: "LegacySessionLogSets");
 
             migrationBuilder.CreateTable(
                 name: "SessionLogs",
@@ -147,6 +162,19 @@ namespace Barrapp.Persistence.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(
+                "INSERT INTO LegacySessionLogs (Id, UserId, ExerciseId, MesocycleId, SessionDay, RecordedAtUtc, ClientId) " +
+                "SELECT item.Id, session.UserId, item.ExerciseId, session.MesocycleId, " +
+                "COALESCE(session.SessionDay, 1), session.RecordedAtUtc, item.ClientId " +
+                "FROM SessionLogItems AS item " +
+                "INNER JOIN SessionLogs AS session ON session.Id = item.SessionLogId;");
+
+            migrationBuilder.Sql(
+                "INSERT INTO LegacySessionLogSets (SessionLogId, SetNumber, Value, Effort) " +
+                "SELECT item.Id, workoutSet.SetNumber, workoutSet.Value, workoutSet.ActualRir " +
+                "FROM SessionLogSets AS workoutSet " +
+                "INNER JOIN SessionLogItems AS item ON item.Id = workoutSet.SessionLogItemId;");
+
             migrationBuilder.DropTable(
                 name: "SessionLogSets");
 
@@ -155,6 +183,31 @@ namespace Barrapp.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "SessionLogs");
+
+            migrationBuilder.RenameTable(
+                name: "LegacySessionLogSets",
+                newName: "SessionLogSets");
+
+            migrationBuilder.RenameTable(
+                name: "LegacySessionLogs",
+                newName: "SessionLogs");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SessionLogs_UserId",
+                table: "SessionLogs",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SessionLogs_MesocycleId",
+                table: "SessionLogs",
+                column: "MesocycleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SessionLogs_UserId_ClientId",
+                table: "SessionLogs",
+                columns: new[] { "UserId", "ClientId" },
+                unique: true,
+                filter: "ClientId IS NOT NULL");
         }
     }
 }

@@ -74,6 +74,6 @@ internal sealed class GeneratePlanCommandHandler(
         repository.Add(mesocycle.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(PlanMappings.ToResponse(generation.Value, catalog));
+        return Result.Success(PlanMappings.ToResponse(generation.Value, catalog, mesocycle.Value.Id));
     }
 }

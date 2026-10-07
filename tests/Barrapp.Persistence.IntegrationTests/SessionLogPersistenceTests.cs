@@ -114,9 +114,10 @@ public sealed class SessionLogPersistenceTests : IDisposable
         var loaded = Assert.Single(await ReadLogsAsync());
 
         Assert.Equal(2, loaded.Items.Count);
-        Assert.Equal([1, 2], loaded.Items.Select(item => item.Position));
-        Assert.Equal([10], loaded.Items.ElementAt(0).Sets.Select(set => set.Value));
-        Assert.Equal([5, 6], loaded.Items.ElementAt(1).Sets.Select(set => set.Value));
+        var orderedItems = loaded.Items.OrderBy(item => item.Position).ToList();
+        Assert.Equal([1, 2], orderedItems.Select(item => item.Position));
+        Assert.Equal([10], orderedItems.ElementAt(0).Sets.Select(set => set.Value));
+        Assert.Equal([5, 6], orderedItems.ElementAt(1).Sets.Select(set => set.Value));
     }
 
     [Fact]
@@ -132,9 +133,10 @@ public sealed class SessionLogPersistenceTests : IDisposable
         var reloaded = await ReadLogsAsync();
 
         Assert.Equal(2, reloaded.Count);
-        Assert.Equal([1, 2], reloaded.Select(log => log.MicrocycleNumber));
-        Assert.Equal([10], reloaded.ElementAt(0).Items.Single().Sets.Select(set => set.Value));
-        Assert.Equal([14], reloaded.ElementAt(1).Items.Single().Sets.Select(set => set.Value));
+        var ordered = reloaded.OrderBy(log => log.MicrocycleNumber).ToList();
+        Assert.Equal([1, 2], ordered.Select(log => log.MicrocycleNumber));
+        Assert.Equal([10], ordered.ElementAt(0).Items.Single().Sets.Select(set => set.Value));
+        Assert.Equal([14], ordered.ElementAt(1).Items.Single().Sets.Select(set => set.Value));
     }
 
     [Fact]

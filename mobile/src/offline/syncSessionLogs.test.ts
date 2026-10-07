@@ -1,6 +1,40 @@
-import type { RegisterSessionLogInput, SessionLog } from '@/api/sessionLogs';
+import type { RegisterSessionLogItemInput, SessionLogSession } from '@/api/sessionLogs';
 import type { PendingSessionLog } from './sessionLogOutbox';
 import { syncPendingSessionLogs } from './syncSessionLogs';
+
+function request(
+  exerciseId: string,
+  clientId: string,
+  sets: PendingSessionLog['sets'],
+): RegisterSessionLogItemInput {
+  return {
+    session: {
+      kind: 'mesocycle',
+      date: '2026-10-05',
+      mesocycleId: 'meso-1',
+      microcycleNumber: 1,
+      sessionDay: 2,
+    },
+    item: {
+      exerciseId,
+      role: 'strength',
+      pattern: 'push',
+      prescribedSets: sets.length,
+      repsMin: 8,
+      repsMax: 12,
+      holdSecondsMin: null,
+      holdSecondsMax: null,
+      note: null,
+      sets: sets.map((set) => ({
+        setNumber: set.setNumber,
+        value: set.value,
+        actualRir: set.effort,
+        loadKg: null,
+      })),
+    },
+    clientId,
+  };
+}
 
 /** Registro de ejemplo pendiente de subir (ancla `push_up`, día 2). */
 const PENDING_PUSH_UP: PendingSessionLog = {
@@ -15,6 +49,10 @@ const PENDING_PUSH_UP: PendingSessionLog = {
     { setNumber: 2, value: 11, effort: null },
   ],
   updatedAt: '2026-10-05T10:00:00.000Z',
+  request: request('push_up', 'client-1', [
+    { setNumber: 1, value: 10, effort: null },
+    { setNumber: 2, value: 11, effort: null },
+  ]),
 };
 
 /** Segundo registro pendiente (ancla `pull_up`, mismo día). */
@@ -27,18 +65,21 @@ const PENDING_PULL_UP: PendingSessionLog = {
   sessionDay: 2,
   sets: [{ setNumber: 1, value: 5, effort: null }],
   updatedAt: '2026-10-05T10:01:00.000Z',
+  request: request('pull_up', 'client-2', [{ setNumber: 1, value: 5, effort: null }]),
 };
 
 /** Confirmación que el servidor devuelve tras un alta correcta. */
-const SAVED_LOG: SessionLog = {
-  id: 'log-1',
-  exerciseId: 'push_up',
-  exerciseName: 'Flexiones',
-  metric: 'reps',
-  mesocycleId: null,
+const SAVED_LOG: SessionLogSession = {
+  id: 'session-1',
+  kind: 'mesocycle',
+  sessionDate: '2026-10-05',
+  mesocycleId: 'meso-1',
+  microcycleNumber: 1,
   sessionDay: 2,
   recordedAtUtc: '2026-10-05T18:30:00Z',
-  sets: PENDING_PUSH_UP.sets,
+  completedAtUtc: null,
+  completed: false,
+  items: [],
 };
 
 /** Outbox de prueba: pendientes configurables; `remove` registra los ids retirados. */
@@ -54,11 +95,11 @@ function createOutboxStub(pending: PendingSessionLog[] = []) {
 }
 
 function createRegisterStub(failureOn?: string[]) {
-  const calls: RegisterSessionLogInput[] = [];
+  const calls: RegisterSessionLogItemInput[] = [];
   return {
     calls,
-    register: jest.fn(async (input: RegisterSessionLogInput): Promise<SessionLog> => {
-      if (failureOn?.includes(input.exerciseId)) {
+    register: jest.fn(async (input: RegisterSessionLogItemInput): Promise<SessionLogSession> => {
+      if (failureOn?.includes(input.item.exerciseId)) {
         throw new Error('Network request failed');
       }
       calls.push(input);
@@ -76,21 +117,12 @@ describe('syncPendingSessionLogs', () => {
 
     expect(calls).toEqual([
       {
+        session: PENDING_PULL_UP.request?.session,
+        item: PENDING_PULL_UP.request?.item,
         clientId: 'client-2',
-        exerciseId: 'pull_up',
-        mesocycleId: null,
-        sessionDay: 2,
-        sets: [{ setNumber: 1, value: 5, effort: null }],
       },
       {
-        clientId: 'client-1',
-        exerciseId: 'push_up',
-        mesocycleId: null,
-        sessionDay: 2,
-        sets: [
-          { setNumber: 1, value: 10, effort: null },
-          { setNumber: 2, value: 11, effort: null },
-        ],
+        ...PENDING_PUSH_UP.request,
       },
     ]);
     expect(outbox.remove).toHaveBeenCalledWith('client-2');
@@ -105,6 +137,10 @@ describe('syncPendingSessionLogs', () => {
         { setNumber: 1, value: 10, effort: 2 },
         { setNumber: 2, value: 11, effort: 2 },
       ],
+      request: request('push_up', 'client-1', [
+        { setNumber: 1, value: 10, effort: 2 },
+        { setNumber: 2, value: 11, effort: 2 },
+      ]),
     };
     const outbox = createOutboxStub([pendingWithEffort]);
     const { register, calls } = createRegisterStub();
@@ -113,14 +149,7 @@ describe('syncPendingSessionLogs', () => {
 
     expect(calls).toEqual([
       {
-        clientId: 'client-1',
-        exerciseId: 'push_up',
-        mesocycleId: null,
-        sessionDay: 2,
-        sets: [
-          { setNumber: 1, value: 10, effort: 2 },
-          { setNumber: 2, value: 11, effort: 2 },
-        ],
+        ...pendingWithEffort.request,
       },
     ]);
     expect(outbox.remove).toHaveBeenCalledWith('client-1');

@@ -244,11 +244,11 @@ public sealed class CloseMesocyclePersistenceTests : IDisposable
     {
         var log = SessionLog.Create(
             SingleUser.Id,
-            SessionLogKind.Mesocycle,
+            mesocycleId is null ? SessionLogKind.Suelta : SessionLogKind.Mesocycle,
             DateOnly.FromDateTime(recordedAtUtc.UtcDateTime),
             mesocycleId,
-            microcycleNumber: 1,
-            sessionDay: 1,
+            microcycleNumber: mesocycleId is null ? null : 1,
+            sessionDay: mesocycleId is null ? null : 1,
             recordedAtUtc).Value;
         log.UpsertItem(new SessionLogItemInput(
             exerciseId,

@@ -70,6 +70,7 @@ internal sealed class CloseMesocycleCommandHandler(
         // historial, que ordena en memoria).
         var candidates = await dbContext.SessionLogs
             .AsNoTracking()
+            .Include(log => log.Items)
             .Where(log => log.UserId == SingleUser.Id
                 && (log.MesocycleId == mesocycle.Id || log.MesocycleId == null))
             .ToListAsync(cancellationToken);
