@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Barrapp.Application.Abstractions;
 
 namespace Barrapp.Application.Features.SessionLogs;
@@ -16,7 +17,12 @@ public sealed record SessionLogSetResponse(
     int Value,
     string Metric,
     int? ActualRir,
-    double? LoadKg);
+    double? LoadKg)
+{
+    /// <summary>Compatibilidad con el contrato previo del cliente.</summary>
+    [JsonIgnore]
+    public int? Effort => ActualRir;
+}
 
 /// <summary>
 /// Objetivo prescrito de un ítem, congelado al registrar (ADR-0014): lo que el plan pedía para ese
@@ -93,6 +99,22 @@ public sealed record SessionLogResponse(
     DateTimeOffset? CompletedAtUtc,
     IReadOnlyList<SessionLogItemResponse> Items)
 {
+    /// <summary>Compatibilidad con el contrato previo: el primer ejercicio registrado.</summary>
+    [JsonIgnore]
+    public string ExerciseId => Items.FirstOrDefault()?.ExerciseId ?? string.Empty;
+
+    /// <summary>Compatibilidad con el contrato previo: nombre del primer ejercicio.</summary>
+    [JsonIgnore]
+    public string ExerciseName => Items.FirstOrDefault()?.ExerciseName ?? string.Empty;
+
+    /// <summary>Compatibilidad con el contrato previo: unidad del primer ítem.</summary>
+    [JsonIgnore]
+    public string Metric => Items.FirstOrDefault()?.Metric ?? string.Empty;
+
+    /// <summary>Compatibilidad con el contrato previo: series del primer ítem.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<SessionLogSetResponse> Sets => Items.FirstOrDefault()?.Sets ?? Array.Empty<SessionLogSetResponse>();
+
     /// <summary>Si la sesión está marcada como completada (spec 0001, US-23).</summary>
     public bool Completed => CompletedAtUtc is not null;
 }
