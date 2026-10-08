@@ -1,16 +1,17 @@
 import type { Href } from 'expo-router';
 import { TabList, TabSlot, Tabs, TabTrigger } from 'expo-router/ui';
-import { Pressable, View, type PressableProps } from 'react-native';
+import type { LucideIcon } from 'lucide-react-native';
+import { Pressable, type PressableProps } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 
-import { baseIcons, Icon, type IconName } from '../Icon';
+import { Icon } from '../Icon';
 import { Text } from '../Text';
 import { cn } from '../utils/cn';
 import { SafeAreaView } from './SafeAreaView';
 
 /**
  * Definición de una pestaña: nombre lógico, ruta de Expo Router, etiqueta e
- * icono; `featured` destaca la pestaña central (la `Entreno` del mockup).
+ * icono. `prominent` marca la pestaña central destacada del diseño (Entreno).
  */
 export type TabDefinition = {
   /** Nombre único de la pestaña (clave del trigger). */
@@ -19,77 +20,85 @@ export type TabDefinition = {
   href: Href;
   /** Etiqueta visible; el estado nunca se comunica sólo por color. */
   label: string;
-  /** Icono del set base dibujado sobre la etiqueta. */
-  icon: IconName;
-  /** Si es `true`, el icono se pinta sobre una baldosa `primary` (pestaña destacada). */
-  featured?: boolean;
+  /** Icono del set de Lucide que acompaña a la etiqueta. */
+  icon: LucideIcon;
+  /**
+   * Pestaña central destacada: celda rellena en `primary`/`on-primary`, siempre
+   * visible como acción principal (la `Entreno` del diseño).
+   */
+  prominent?: boolean;
 };
 
 /**
- * Props de `TabBarItem`: las de un `Pressable` (sin `children`) más la
- * etiqueta, el icono y el destaque.
+ * Props de `TabBarItem`: las de un `Pressable` (sin `children`) más la etiqueta,
+ * el icono y el estado.
  *
  * `isFocused` lo inyecta `TabTrigger asChild`; en uso directo es opcional.
  */
 export type TabBarItemProps = Omit<PressableProps, 'children'> & {
   /** Texto de la pestaña. */
   label: string;
-  /** Icono del set base (`baseIcons`) dibujado sobre la etiqueta. */
-  icon: IconName;
+  /** Icono de Lucide, encima de la etiqueta. */
+  icon: LucideIcon;
   /** Estado activo. Se refleja en `accessibilityState.selected` y en el color. */
   isFocused?: boolean;
-  /** Pestaña destacada del diseño: baldosa `primary` alrededor del icono. */
-  featured?: boolean;
+  /** Pestaña central destacada: celda rellena en `primary`/`on-primary`. */
+  prominent?: boolean;
   /** Utilities del botón; se fusionan con `cn()` (gana la última). */
   className?: string;
 };
 
 /**
- * Pestaña individual del design system: botón con `accessibilityRole="tab"`,
- * `accessibilityLabel` explícito y estado `selected`. Activa, su icono y su
- * etiqueta van en `primary`; inactiva, en `surface-muted`/`text-muted` (roles
- * semánticos de la spec 0002). La pestaña `featured` mantiene su baldosa
- * amarilla también inactiva, igual que en el mockup.
- *
- * El icono es decorativo (lo anuncia la etiqueta): se oculta del lector de
- * pantalla con `accessibilityElementsHidden`.
+ * Pestaña individual del design system: botón con `accessibilityRole="tab"` y
+ * estado `selected` explícito. Icono sobre etiqueta; la activa se pinta en
+ * `primary` y la inactiva en `text-muted` (roles semánticos de la spec 0002,
+ * estado nunca solo por color). La pestaña `prominent` es una celda rellena en
+ * `primary` con contenido `on-primary`, la acción central del diseño.
  */
 export function TabBarItem({
   label,
   icon,
   isFocused = false,
-  featured = false,
+  prominent = false,
   className,
   ...rest
 }: TabBarItemProps) {
-  const iconColorVariable = featured
-    ? '--color-on-primary'
+  const [primary, muted, onPrimary] = useCSSVariable([
+    '--color-primary',
+    '--color-text-muted',
+    '--color-on-primary',
+  ]);
+
+  const iconColor = prominent
+    ? typeof onPrimary === 'string'
+      ? onPrimary
+      : undefined
     : isFocused
-      ? '--color-primary'
-      : '--color-text-muted';
-  const iconColor = useCSSVariable(iconColorVariable);
+      ? typeof primary === 'string'
+        ? primary
+        : undefined
+      : typeof muted === 'string'
+        ? muted
+        : undefined;
 
   return (
     <Pressable
       {...rest}
       accessibilityRole="tab"
-      accessibilityLabel={label}
       accessibilityState={{ selected: isFocused }}
-      className={cn('flex-1 items-center justify-center gap-xs py-sm', className)}
+      className={cn(
+        'flex-1 items-center justify-center gap-xs py-sm',
+        prominent ? 'mx-xs rounded-lg bg-primary' : undefined,
+        className,
+      )}
     >
-      <View
-        testID="tab-item-icon"
-        className={cn('items-center justify-center rounded-base p-xs', featured && 'bg-primary')}
-      >
-        <Icon
-          icon={baseIcons[icon]}
-          size={20}
-          color={typeof iconColor === 'string' ? iconColor : undefined}
-        />
-      </View>
+      <Icon icon={icon} size={22} color={iconColor} />
       <Text
         variant="labelTechnical"
-        className={cn('text-center', isFocused ? 'text-primary' : 'text-text-muted')}
+        className={cn(
+          'text-center',
+          prominent ? 'text-on-primary' : isFocused ? 'text-primary' : 'text-text-muted',
+        )}
       >
         {label}
       </Text>
@@ -106,21 +115,18 @@ export type TabBarProps = {
 };
 
 /**
- * Barra de pestañas inferior del design system (spec 0002, ticket #45,
- * rediseño de 5 pestañas en #82).
+ * Barra de pestañas inferior del design system (spec 0002, tickets #45 y #82).
  *
  * Es el navegador custom completo sobre `expo-router/ui`: `Tabs` provee el
  * contexto, `TabSlot` renderiza la ruta activa y `TabList`/`TabTrigger` la
  * franja de pestañas. La franja es una capa `surface` con hairline superior y
- * respeta el inset inferior con `SafeAreaView`, **sin sombras**. Cada pestaña
- * pinta su icono sobre la etiqueta; la activa va en `primary` y la
- * `featured` (la central del mockup) sobre su baldosa amarilla.
+ * respeta el inset inferior con `SafeAreaView`, **sin sombras**.
  *
  * ```tsx
  * <TabBar
  *   tabs={[
- *     { name: 'index', href: '/', label: 'Inicio', icon: 'house' },
- *     { name: 'entreno', href: '/entreno', label: 'Entreno', icon: 'zap', featured: true },
+ *     { name: 'index', href: '/', label: 'Inicio', icon: LayoutGrid },
+ *     { name: 'entreno', href: '/entreno', label: 'Entreno', icon: Zap, prominent: true },
  *   ]}
  * />
  * ```
@@ -133,7 +139,7 @@ export function TabBar({ tabs }: TabBarProps) {
         <SafeAreaView edges={['bottom']} className="flex-row border-t border-border bg-surface">
           {tabs.map((tab) => (
             <TabTrigger key={tab.name} name={tab.name} href={tab.href} asChild>
-              <TabBarItem label={tab.label} icon={tab.icon} featured={tab.featured} />
+              <TabBarItem label={tab.label} icon={tab.icon} prominent={tab.prominent} />
             </TabTrigger>
           ))}
         </SafeAreaView>

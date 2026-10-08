@@ -106,7 +106,7 @@ Envuelve un icono de Lucide con los defaults del DS.
 - `icon`: componente de `lucide-react-native` (o `baseIcons.<nombre>`).
 - `size` (24), `strokeWidth` (2), `color` (por defecto token `text`).
 - `baseIcons` reúne el set base con nombres semánticos (`timer`, `dumbbell`,
-  `house`, `layers`, `zap`, `user`…).
+  `play`, `cloudOff`…).
 
 ### Button
 
@@ -211,23 +211,23 @@ Encabezado de sección con hairline y contador/slot opcionales. `label`, `count?
 ### Screen / Header
 
 Chasis de pantalla: `Screen` envuelve `SafeAreaView` (`canvas`, márgenes de
-página) y un `header` opcional; `Header` es título `headlineSm` + `section?`
-(patrón `BARRAS / <SECCIÓN>` del mockup, anunciado como una sola cabecera) +
-slots `leading`/`trailing` y hairline inferior.
+página) y un `header` opcional; `Header` es título `headlineSm` + slot `kicker`
+opcional (`labelTechnical`, para el patrón `BARRAS / <SECCIÓN>`) + slots
+`leading`/`trailing` y hairline inferior.
 
-### AppHeader
+### Avatar
 
-Cabecera de la app (spec 0003): `Header` con la marca `BARRAS` y la `section`
-recibida. El slot `trailing` lleva por defecto el **avatar** que abre Perfil
-(`showAvatar?`, `onAvatarPress?`), y `showBack?` añade el control de volver de
-las pantallas apiladas (Perfil, detalle de mesociclo…).
+`Avatar` es el control del atleta en la cabecera: celda cuadrada `primary` con
+glifo `on-primary`, tamaño táctil secundario y sin sombras. Es presentacional y
+acepta `accessibilityLabel` (default «Perfil»); la app lo enlaza a Perfil con
+`ProfileAvatar` (`src/features/navigation/`).
 
 ### TabBar
 
-Navegador inferior custom sobre `expo-router/ui`.
-`tabs: { name, href, label, icon, featured? }[]`; `TabBarItem` pinta el icono
-del set base sobre la etiqueta: activa en `primary`, inactiva en `text-muted`,
-y `featured` (la pestaña central, `Entreno`) sobre su baldosa `primary`.
+Navegador inferior custom sobre `expo-router/ui`. `tabs: { name, href, label,
+icon, prominent? }[]`; `TabBarItem` es el botón (icono sobre etiqueta). La
+pestaña activa se pinta en `primary` sin relleno; la `prominent` (la central del
+diseño, Entreno) es una celda rellena en `primary`/`on-primary`.
 
 ### BottomSheet
 

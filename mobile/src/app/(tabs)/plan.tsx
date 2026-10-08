@@ -8,13 +8,14 @@ import { Banner, Loading } from '@/design-system/Feedback';
 import { CloudOff } from '@/design-system/Icon';
 import { Stack } from '@/design-system/layout';
 import { SectionHeader } from '@/design-system/ListRow';
-import { AppHeader, Screen } from '@/design-system/Navigation';
+import { Screen } from '@/design-system/Navigation';
 import { StageAdvanceAction, type StageAdvanceState } from '@/features/plan/StageAdvanceAction';
 import {
   CloseMesocycleAction,
   type CloseMesocycleState,
 } from '@/features/plan/CloseMesocycleAction';
 import { MesocycleHistory } from '@/features/history/MesocycleHistory';
+import { AppHeader } from '@/features/navigation';
 import { PlanView } from '@/features/plan/PlanView';
 import { openPlanStore } from '@/offline/planStore';
 import { readPlan, type PlanReadResult } from '@/offline/readPlan';

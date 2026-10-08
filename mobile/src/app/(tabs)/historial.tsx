@@ -1,25 +1,21 @@
-import { MesocycleHistory } from '@/features/history/MesocycleHistory';
-import { SoloSessionHistory } from '@/features/suelta/SoloSessionHistory';
-import { SectionHeader } from '@/design-system/ListRow';
-import { Stack } from '@/design-system/layout';
-import { AppHeader, Screen } from '@/design-system/Navigation';
+import { EmptyState } from '@/design-system/Feedback';
+import { Screen } from '@/design-system/Navigation';
+import { AppHeader } from '@/features/navigation';
 
 /**
- * Pantalla Historial (#82): cabecera `BARRAS / HISTORIAL` y las listas que ya
- * existen —mesociclos pasados y sesiones sueltas— como base del rediseño
- * completo (filtros por fecha y por tipo, edición y borrado de registros) del
- * ticket #87.
+ * Pantalla **Historial** (spec 0003, ticket #82): placeholder del shell.
+ *
+ * La lista de sesiones por fecha con filtros (Todas · Mesociclo · Suelta) se
+ * construye en su ticket (#87); aquí solo se reserva la ruta.
  */
 export default function HistoryScreen() {
   return (
-    <Screen testID="history-screen" header={<AppHeader section="Historial" />} scrollable>
-      <Stack gap="sm">
-        <SectionHeader label="Mesociclos" testID="history-mesocycles-header" />
-        <MesocycleHistory />
-
-        <SectionHeader label="Sesiones sueltas" testID="history-solo-header" />
-        <SoloSessionHistory />
-      </Stack>
+    <Screen testID="history-screen" header={<AppHeader section="Historial" />}>
+      <EmptyState
+        title="Historial"
+        description="Aquí vivirá el registro de sesiones, agrupado por semana."
+        testID="history-placeholder"
+      />
     </Screen>
   );
 }

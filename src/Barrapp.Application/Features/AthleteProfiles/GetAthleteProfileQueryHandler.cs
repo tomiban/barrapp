@@ -28,6 +28,11 @@ internal sealed class GetAthleteProfileQueryHandler(IApplicationDbContext dbCont
                     .AsQueryable()
                     .OrderBy(MaximumResponses.OrderByCode)
                     .Select(MaximumResponses.Selector)
+                    .ToList(),
+                profile.TrainingWeekdays
+                    .AsQueryable()
+                    .OrderBy(weekday => (int)weekday.Day)
+                    .Select(weekday => WeekdayCode.ToCode(weekday.Day))
                     .ToList()))
             .FirstOrDefaultAsync(cancellationToken);
 

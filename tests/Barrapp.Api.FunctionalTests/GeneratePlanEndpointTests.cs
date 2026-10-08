@@ -22,6 +22,69 @@ namespace Barrapp.Api.FunctionalTests;
 public sealed class GeneratePlanEndpointTests
 {
     [Fact]
+    public async Task Post_plan_with_a_start_date_starts_on_the_first_training_day_on_or_after_it()
+    {
+        using var factory = new BarrappApiFactory();
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            PlanTestData.Profile(3, ["tuesday", "thursday", "saturday"]));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        // Lunes 2 de marzo de 2026: el primer día de entrenamiento en o después es el martes 3.
+        using var response = await client.PostAsJsonAsync("/plan", new { startDate = "2026-03-02" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+        Assert.Equal(new DateOnly(2026, 3, 3), plan!.StartDate);
+        Assert.Equal(
+            [new DateOnly(2026, 3, 3), new DateOnly(2026, 3, 5), new DateOnly(2026, 3, 7)],
+            plan.Microcycles[0].Sessions.Select(session => session.Date));
+    }
+
+    [Fact]
+    public async Task Post_plan_persists_the_start_date_of_the_mesocycle()
+    {
+        using var factory = new BarrappApiFactory();
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            PlanTestData.Profile(3, ["tuesday", "thursday", "saturday"]));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+        await client.PostAsJsonAsync("/plan", new { startDate = "2026-03-02" });
+
+        using var response = await client.GetAsync("/plan");
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+
+        Assert.NotNull(plan);
+        Assert.Equal(new DateOnly(2026, 3, 3), plan!.StartDate);
+    }
+
+    [Fact]
+    public async Task Post_plan_without_a_start_date_starts_the_mesocycle_today()
+    {
+        using var factory = new BarrappApiFactory();
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            PlanTestData.Profile(3, ["tuesday", "thursday", "saturday"]));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.PostAsync("/plan", content: null);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        Assert.InRange(plan!.StartDate, today, today.AddDays(6));
+        Assert.All(
+            plan.Microcycles.SelectMany(microcycle => microcycle.Sessions),
+            session => Assert.NotNull(session.Date));
+    }
+
+    [Fact]
     public async Task Post_plan_without_a_profile_returns_404_with_a_spanish_detail()
     {
         using var factory = new BarrappApiFactory();
@@ -95,7 +158,8 @@ public sealed class GeneratePlanEndpointTests
                     new MaximumResponse("push_up", 20),
                     new MaximumResponse("pull_up", 5),
                     new MaximumResponse("squat", 20),
-                ]));
+                ],
+                ["monday", "wednesday", "friday"]));
 
         var served = await (await client.GetAsync("/plan")).Content.ReadFromJsonAsync<PlanResponse>();
 
@@ -130,6 +194,8 @@ public sealed class GeneratePlanEndpointTests
             .Where(mesocycle => mesocycle.Status == MesocycleStatus.Active)
             .ToListAsync();
         Assert.Single(actives);
+        Assert.NotNull(plan.MesocycleId);
+        Assert.Equal(actives[0].Id, plan.MesocycleId);
     }
 
     /// <summary>Los records no comparan colecciones estructuralmente; JSON sí.</summary>

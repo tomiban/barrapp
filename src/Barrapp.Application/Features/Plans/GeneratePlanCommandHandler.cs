@@ -16,7 +16,8 @@ internal sealed class GeneratePlanCommandHandler(
     IApplicationDbContext dbContext,
     IKnowledgeBase catalog,
     IMesocycleRepository repository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    TimeProvider timeProvider)
     : ICommandHandler<GeneratePlanCommand, PlanResponse>
 {
     public async Task<Result<PlanResponse>> Handle(
@@ -45,8 +46,10 @@ internal sealed class GeneratePlanCommandHandler(
                 candidate => candidate.UserId == SingleUser.Id && candidate.SkillId == objective.SkillId,
                 cancellationToken);
 
-        // Sin progreso guardado, el motor practica la primera etapa de la escalera.
-        var generation = PlanGenerator.Generate(profile, objective, progress?.StageOrder, catalog);
+        // Sin progreso guardado, el motor practica la primera etapa de la escalera. La fecha de inicio la
+        // elige el atleta en el onboarding; si no la indica, el mesociclo arranca hoy (#94).
+        var startDate = request.StartDate ?? DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
+        var generation = PlanGenerator.Generate(profile, objective, progress?.StageOrder, startDate, catalog);
         if (generation.IsFailure)
         {
             return Result.Failure<PlanResponse>(generation.Error);
@@ -59,7 +62,10 @@ internal sealed class GeneratePlanCommandHandler(
             repository.Remove(active);
         }
 
-        var mesocycle = Mesocycle.Create(SingleUser.Id, generation.Value, DateTimeOffset.UtcNow);
+        // La fecha de inicio del calendario (el primer día de entrenamiento) vive en el snapshot, junto al
+        // plan; StartedAtUtc sigue siendo el momento en que se generó el mesociclo, que es la
+        // ventana que usa el cierre para ajustar los máximos (#24).
+        var mesocycle = Mesocycle.Create(SingleUser.Id, generation.Value, timeProvider.GetUtcNow());
         if (mesocycle.IsFailure)
         {
             return Result.Failure<PlanResponse>(mesocycle.Error);
@@ -68,6 +74,6 @@ internal sealed class GeneratePlanCommandHandler(
         repository.Add(mesocycle.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(PlanMappings.ToResponse(generation.Value, catalog));
+        return Result.Success(PlanMappings.ToResponse(generation.Value, catalog, mesocycle.Value.Id));
     }
 }

@@ -2,12 +2,13 @@ import { useState } from 'react';
 
 import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
 import { Stack } from '@/design-system/layout';
-import { AppHeader, Screen } from '@/design-system/Navigation';
+import { Screen } from '@/design-system/Navigation';
 import { ExercisesView } from '@/features/library/ExercisesView';
 import { RoutinesView } from '@/features/library/RoutinesView';
 import { SkillsView } from '@/features/library/SkillsView';
+import { AppHeader } from '@/features/navigation';
 
-/** Segmentos del hub Skills, en el orden del mockup. `Escaleras` es el principal. */
+/** Secciones del hub Skills. */
 type SkillsSection = 'ladders' | 'exercises' | 'routines';
 
 const SECTION_OPTIONS: readonly SegmentedOption<SkillsSection>[] = [
@@ -17,13 +18,11 @@ const SECTION_OPTIONS: readonly SegmentedOption<SkillsSection>[] = [
 ];
 
 /**
- * Pantalla Skills (#82): un hub con tres segmentos —**Escaleras** (el
- * principal, con las escaleras de progresión), **Ejercicios** y **Rutinas**—
- * sobre el catálogo que antes vivía en la pantalla Biblioteca.
+ * Pantalla **Skills** (spec 0003, ticket #82): hub con tres segmentos.
  *
- * Las tres vistas son hermanas en `@/features/library/`; cada una lee su
- * endpoint del catálogo y sustituye a la anterior sin tocar el resto de la
- * pantalla.
+ * *Escaleras* es el principal (la escalera de progresión de cada skill); los
+ * segmentos *Ejercicios* y *Rutinas* son el catálogo que antes vivía en la
+ * Biblioteca. La antigua pestaña «Biblioteca» se renombra a «Skills».
  */
 export default function SkillsScreen() {
   const [section, setSection] = useState<SkillsSection>('ladders');
@@ -35,7 +34,7 @@ export default function SkillsScreen() {
           options={SECTION_OPTIONS}
           value={section}
           onChange={setSection}
-          label="Segmento de skills"
+          label="Sección de Skills"
           testID="skills-section"
         />
 

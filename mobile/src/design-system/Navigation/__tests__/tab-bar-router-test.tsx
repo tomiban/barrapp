@@ -1,59 +1,64 @@
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { Text } from 'react-native';
+import { fireEvent, renderRouter, waitFor } from 'expo-router/testing-library';
 
-import { TabBar, type TabDefinition } from '../TabBar';
+import TabsLayout, { TABS } from '@/app/(tabs)/_layout';
 
 /**
- * `TabBar` a nivel de router (ticket #45): comprueba que las pestañas se
+ * `TabBar` a nivel de router (tickets #45 y #82): comprueba que las pestañas se
  * resuelven contra las rutas reales de `expo-router/ui` y que el estado activo
- * sigue a la ruta. `renderRouter` aísla un mini-árbol de rutas con nuestro
- * layout para no depender del root layout de fuentes de la app.
+ * sigue a la ruta. `renderRouter` aísla un mini-árbol de rutas con el layout
+ * real de `(tabs)` para no depender del root layout de fuentes de la app.
  *
- * El shell de #82 usa el mismo patrón que la app: iconos en todas las
- * pestañas y la central (`Entreno`) destacada. Como `renderRouter` conserva el
- * estado del router entre tests, el test que **pulsa** va el último.
+ * Las rutas son dobles rotulados: al pulsar una pestaña, el contenido de la
+ * ruta destino aparece en el `TabSlot`, que es la costura observable.
  */
-const TABS: readonly TabDefinition[] = [
-  { name: 'index', href: '/', label: 'Inicio', icon: 'house' },
-  { name: 'entreno', href: '/entreno', label: 'Entreno', icon: 'zap', featured: true },
-  { name: 'plan', href: '/plan', label: 'Plan', icon: 'calendar' },
-];
-
-function TabsLayout() {
-  return <TabBar tabs={TABS} />;
+function RouteStub({ label }: { label: string }) {
+  return <Text testID={`route-${label}`}>{label}</Text>;
 }
 
-const Home = () => null;
-const Train = () => null;
-const Plan = () => null;
+function routes() {
+  return {
+    _layout: TabsLayout,
+    index: () => <RouteStub label="inicio" />,
+    plan: () => <RouteStub label="plan" />,
+    entreno: () => <RouteStub label="entreno" />,
+    skills: () => <RouteStub label="skills" />,
+    historial: () => <RouteStub label="historial" />,
+  };
+}
 
 describe('TabBar (integración con Expo Router)', () => {
-  it('muestra las pestañas, sus iconos y la baldosa de la destacada', async () => {
-    await renderRouter(
-      { _layout: TabsLayout, index: Home, entreno: Train, plan: Plan },
-      { initialUrl: '/' },
-    );
-
-    expect(screen.getByRole('tab', { name: 'Inicio', selected: true })).toBeOnTheScreen();
-    expect(screen.getByRole('tab', { name: 'Entreno', selected: false })).toBeOnTheScreen();
-    expect(screen.getByRole('tab', { name: 'Plan', selected: false })).toBeOnTheScreen();
-    const icons = screen.getAllByTestId('tab-item-icon');
-    expect(icons).toHaveLength(TABS.length);
-    // La destacada lleva su baldosa `primary` aunque no esté activa.
-    expect(icons[1]).toHaveProp('className', expect.stringContaining('bg-primary'));
-    expect(icons[0].props.className).not.toContain('bg-primary');
+  it('define las cinco pestañas en el orden del diseño, con Entreno destacada', () => {
+    expect(TABS.map((tab) => tab.label)).toEqual([
+      'Inicio',
+      'Plan',
+      'Entreno',
+      'Skills',
+      'Historial',
+    ]);
+    expect(TABS.filter((tab) => tab.prominent).map((tab) => tab.label)).toEqual(['Entreno']);
   });
 
-  it('cambia la pestaña activa al pulsar la otra', async () => {
-    await renderRouter(
-      { _layout: TabsLayout, index: Home, entreno: Train, plan: Plan },
-      { initialUrl: '/' },
-    );
+  it('muestra las pestañas y marca la ruta activa', async () => {
+    const { getByRole, getByTestId } = await renderRouter(routes(), { initialUrl: '/' });
 
-    fireEvent.press(screen.getByRole('tab', { name: 'Plan' }));
+    expect(getByTestId('route-inicio')).toBeOnTheScreen();
+    expect(getByRole('tab', { name: 'Inicio', selected: true })).toBeOnTheScreen();
+    expect(getByRole('tab', { name: 'Plan', selected: false })).toBeOnTheScreen();
+    expect(getByRole('tab', { name: 'Entreno', selected: false })).toBeOnTheScreen();
+    expect(getByRole('tab', { name: 'Skills', selected: false })).toBeOnTheScreen();
+    expect(getByRole('tab', { name: 'Historial', selected: false })).toBeOnTheScreen();
+  });
+
+  it('cambia la pestaña activa al pulsar otra', async () => {
+    const { getByRole, getByTestId } = await renderRouter(routes(), { initialUrl: '/' });
+
+    fireEvent.press(getByRole('tab', { name: 'Historial' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: 'Plan', selected: true })).toBeOnTheScreen();
-      expect(screen.getByRole('tab', { name: 'Inicio', selected: false })).toBeOnTheScreen();
+      expect(getByTestId('route-historial')).toBeOnTheScreen();
+      expect(getByRole('tab', { name: 'Historial', selected: true })).toBeOnTheScreen();
+      expect(getByRole('tab', { name: 'Inicio', selected: false })).toBeOnTheScreen();
     });
   });
 });

@@ -2,13 +2,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import SkillsScreen from '../src/app/(tabs)/skills';
 
-/**
- * Pantalla Skills (#82): hub con los segmentos **Escaleras · Ejercicios ·
- * Rutinas** (el catálogo que vivía en Biblioteca), con Escaleras como segmento
- * principal por defecto. El contenido de cada segmento es el de
- * `src/features/library/`; aquí se cubre la costura de la pantalla.
- */
-
 /** Respuesta mínima con la forma que consume el módulo de API. */
 function jsonResponse(status: number, body: unknown): Response {
   return {
@@ -238,10 +231,9 @@ const ROUTINES = [
 
 /**
  * Mock de `fetch` que reparte por ruta: skills devuelve la escalera, routines los programas
- * generales, progress la etapa actual por skill y el resto, el catálogo de ejercicios. El
- * handler opcional `exercises` deja inyectar fallos puntuales del catálogo.
+ * generales, progress la etapa actual por skill y el resto, el catálogo de ejercicios.
  */
-function routeFetch(exercises?: () => Promise<Response>): jest.Mock {
+function routeFetch(): jest.Mock {
   return jest.fn((input: unknown) => {
     const url = String(input);
     if (url.includes('/catalog/progress')) {
@@ -253,36 +245,9 @@ function routeFetch(exercises?: () => Promise<Response>): jest.Mock {
     if (url.includes('/catalog/routines')) {
       return Promise.resolve(jsonResponse(200, ROUTINES));
     }
-    if (exercises) {
-      return exercises();
-    }
     return Promise.resolve(jsonResponse(200, CATALOG));
   });
 }
-
-describe('SkillsScreen · hub', () => {
-  const originalFetch = global.fetch;
-
-  afterEach(() => {
-    global.fetch = originalFetch;
-    jest.restoreAllMocks();
-  });
-
-  it('opens on Escaleras with the BARRAS / Skills header and the three segments in order', async () => {
-    global.fetch = routeFetch() as unknown as typeof fetch;
-
-    await render(<SkillsScreen />);
-
-    expect(screen.getByRole('header', { name: 'BARRAS / Skills' })).toBeOnTheScreen();
-    expect(screen.getAllByRole('radio').map((option) => option.props.accessibilityLabel)).toEqual([
-      'Escaleras',
-      'Ejercicios',
-      'Rutinas',
-    ]);
-    // Escaleras es el segmento principal: se muestra por defecto.
-    await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
-  });
-});
 
 describe('SkillsScreen · Ejercicios', () => {
   const originalFetch = global.fetch;
@@ -293,12 +258,10 @@ describe('SkillsScreen · Ejercicios', () => {
   });
 
   it('renders the catalog grouped by pattern, including cardio', async () => {
-    const fetchMock = routeFetch();
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse(200, CATALOG));
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await render(<SkillsScreen />);
-    await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
-
     await fireEvent.press(screen.getByTestId('skills-section-exercises'));
 
     await waitFor(() => expect(screen.getByText('Empuje')).toBeOnTheScreen());
@@ -313,14 +276,11 @@ describe('SkillsScreen · Ejercicios', () => {
     );
   });
 
-  it('switches from Escaleras to Ejercicios and Rutinas', async () => {
+  it('shows the ladder by default and switches to the Rutinas view', async () => {
     global.fetch = routeFetch() as unknown as typeof fetch;
 
     await render(<SkillsScreen />);
     await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
-
-    await fireEvent.press(screen.getByTestId('skills-section-exercises'));
-    await waitFor(() => expect(screen.getByText('Flexiones')).toBeOnTheScreen());
 
     await fireEvent.press(screen.getByTestId('skills-section-routines'));
     await waitFor(() =>
@@ -329,30 +289,34 @@ describe('SkillsScreen · Ejercicios', () => {
   });
 
   it('shows the API problem detail and retries on failure', async () => {
-    // El fallo se inyecta sólo en el catálogo que pide la vista de Ejercicios:
-    // Escaleras (segmento por defecto) también resuelve nombres del catálogo.
-    let failing = false;
-    const fetchMock = routeFetch(() =>
-      Promise.resolve(
-        failing ? jsonResponse(500, { detail: 'El catálogo falló.' }) : jsonResponse(200, CATALOG),
-      ),
-    );
+    let skillCalls = 0;
+    const fetchMock = jest.fn((input: unknown) => {
+      const url = String(input);
+      if (url.includes('/catalog/skills')) {
+        skillCalls += 1;
+        return Promise.resolve(
+          skillCalls === 1
+            ? jsonResponse(500, { detail: 'El catálogo falló.' })
+            : jsonResponse(200, SKILLS),
+        );
+      }
+      if (url.includes('/catalog/routines')) {
+        return Promise.resolve(jsonResponse(200, ROUTINES));
+      }
+      return Promise.resolve(jsonResponse(200, CATALOG));
+    });
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await render(<SkillsScreen />);
-    await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
 
-    failing = true;
-    await fireEvent.press(screen.getByTestId('skills-section-exercises'));
     await waitFor(() => expect(screen.getByText('El catálogo falló.')).toBeOnTheScreen());
 
-    failing = false;
-    await fireEvent.press(screen.getByTestId('library-exercises-retry'));
-    await waitFor(() => expect(screen.getByText('Flexiones')).toBeOnTheScreen());
+    await fireEvent.press(screen.getByTestId('library-skills-retry'));
+    await waitFor(() => expect(screen.getByText('Planche')).toBeOnTheScreen());
   });
 });
 
-describe('SkillsScreen · Escaleras', () => {
+describe('SkillsScreen · Skills', () => {
   const originalFetch = global.fetch;
 
   afterEach(() => {
@@ -365,7 +329,6 @@ describe('SkillsScreen · Escaleras', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await render(<SkillsScreen />);
-
     await waitFor(() => expect(screen.getByText('Planche')).toBeOnTheScreen());
 
     // Escalera: movimiento y criterio por etapa.
@@ -449,7 +412,7 @@ describe('SkillsScreen · Rutinas', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await render(<SkillsScreen />);
-    await waitFor(() => expect(screen.getByText('Planche')).toBeOnTheScreen());
+    await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
 
     await fireEvent.press(screen.getByTestId('skills-section-routines'));
 

@@ -1,22 +1,21 @@
 using Barrapp.Application.Abstractions;
 using Barrapp.Application.Common;
 using Barrapp.Domain.Common;
+using Barrapp.Domain.Sessions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Barrapp.Application.Features.SessionLogs;
 
 /// <summary>
-/// Lista los registros de sesión del atleta y resuelve el nombre y la unidad del ejercicio contra
-/// el catálogo, igual que el plan (ADR-0012).
+/// Lista los registros de sesión del atleta con sus ítems y su foto (ADR-0014), de la fecha más
+/// reciente a la más antigua: es el Historial (spec 0003, pantalla 6), que agrupa por semana y filtra
+/// por tipo de sesión. Sin registros todavía, devuelve una lista vacía.
 /// </summary>
 /// <remarks>
-/// Excepción pragmática documentada a «las queries proyectan directo a DTO»: las series son una
-/// colección owned del agregado y SQLite no permite proyectarlas a un DTO plano sin partir la
-/// consulta, así que se lee el árbol entero (registro + series) y se mapea en memoria con
-/// <see cref="SessionLogResponses"/>, el mismo patrón que ya usan el plan y el historial
-/// (ADR-0012 y ADR-0013).
+/// No consulta el catálogo: cada ítem lleva su propia foto (nombre, papel, unidad y objetivo), así
+/// que el historial se lee sin regenerar el plan y aunque la base de conocimiento haya cambiado.
 /// </remarks>
-internal sealed class GetSessionLogsQueryHandler(IApplicationDbContext dbContext, IKnowledgeBase knowledgeBase)
+internal sealed class GetSessionLogsQueryHandler(IApplicationDbContext dbContext)
     : IQueryHandler<GetSessionLogsQuery, IReadOnlyList<SessionLogResponse>>
 {
     public async Task<Result<IReadOnlyList<SessionLogResponse>>> Handle(
@@ -25,13 +24,16 @@ internal sealed class GetSessionLogsQueryHandler(IApplicationDbContext dbContext
     {
         var logs = await dbContext.SessionLogs
             .AsNoTracking()
+            .Include(log => log.Items)
             .Where(log => log.UserId == SingleUser.Id)
-            .OrderBy(log => log.SessionDay)
-            .ThenBy(log => log.ExerciseId)
             .ToListAsync(cancellationToken);
 
+        // SQLite no ordena por DateOnly en SQL; se ordena en memoria (misma convención que el resto
+        // de lecturas del repo).
         return logs
-            .Select(log => SessionLogResponses.From(log, knowledgeBase))
+            .OrderByDescending(log => log.SessionDate)
+            .ThenByDescending(log => log.RecordedAtUtc)
+            .Select(SessionLogResponses.From)
             .ToList();
     }
 }

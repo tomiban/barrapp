@@ -1,22 +1,27 @@
+import { baseIcons } from '@/design-system/Icon';
 import { TabBar, type TabDefinition } from '@/design-system/Navigation';
 
 /**
- * Pestañas de la app (#82): `index` (Inicio) apunta a `/`, `plan` a `/plan`,
- * `entreno` a `/entreno`, `skills` a `/skills` y `historial` a `/historial`,
- * en el orden del mockup. `Entreno` es la pestaña central/destacada.
+ * Pestañas de la app (spec 0003, ticket #82): Inicio · Plan · Entreno · Skills ·
+ * Historial, con `Entreno` como pestaña central destacada. Perfil ya no es
+ * pestaña: se abre desde el avatar de la cabecera (`ProfileAvatar`).
  *
- * **Perfil ya no es pestaña**: se abre desde el avatar de la cabecera
- * (`AppHeader`) como pantalla apilada en `/profile`. Los nombres son únicos y
- * las rutas existen en este mismo grupo `(tabs)`, que es lo que exige
- * `TabTrigger` dentro de un `TabList`. El showcase del design system es una
- * ruta de desarrollo en `/showcase`, fuera del grupo.
+ * `index` es Inicio (ruta `/`) y los demás nombres coinciden con sus archivos
+ * en este grupo `(tabs)`, que es lo que exige `TabTrigger` dentro de un
+ * `TabList`. El showcase del design system vive fuera del grupo, en `/showcase`.
  */
-const TABS: readonly TabDefinition[] = [
-  { name: 'index', href: '/', label: 'Inicio', icon: 'house' },
-  { name: 'plan', href: '/plan', label: 'Plan', icon: 'calendar' },
-  { name: 'entreno', href: '/entreno', label: 'Entreno', icon: 'zap', featured: true },
-  { name: 'skills', href: '/skills', label: 'Skills', icon: 'layers' },
-  { name: 'historial', href: '/historial', label: 'Historial', icon: 'scrollText' },
+export const TABS: readonly TabDefinition[] = [
+  { name: 'index', href: '/', label: 'Inicio', icon: baseIcons.layoutGrid },
+  { name: 'plan', href: '/plan', label: 'Plan', icon: baseIcons.calendarRange },
+  {
+    name: 'entreno',
+    href: '/entreno',
+    label: 'Entreno',
+    icon: baseIcons.zap,
+    prominent: true,
+  },
+  { name: 'skills', href: '/skills', label: 'Skills', icon: baseIcons.trendingUp },
+  { name: 'historial', href: '/historial', label: 'Historial', icon: baseIcons.history },
 ];
 
 /**

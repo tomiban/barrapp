@@ -34,6 +34,19 @@ public static class DomainErrors
             "athlete_profile.training_days_out_of_range",
             "Los días de entrenamiento deben estar entre 3 y 5.");
 
+        /// <summary>El mismo día de la semana está repetido entre los días de entrenamiento.</summary>
+        public static readonly Error DuplicateTrainingWeekday = Error.Validation(
+            "athlete_profile.duplicate_training_weekday",
+            "No puedes repetir un día de la semana entre los días de entrenamiento.");
+
+        /// <summary>
+        /// Los días de la semana elegidos no son tantos como la frecuencia declarada: el número de
+        /// días de entrenamiento es cuántos días de la semana elige el atleta.
+        /// </summary>
+        public static readonly Error TrainingWeekdaysMismatch = Error.Validation(
+            "athlete_profile.training_weekdays_mismatch",
+            "El número de días de la semana debe coincidir con los días de entrenamiento.");
+
         /// <summary>El máximo de un ejercicio no puede ser negativo (0 sí vale).</summary>
         public static readonly Error MaximumMustBeNonNegative = Error.Validation(
             "athlete_profile.maximum_must_be_non_negative",
@@ -149,15 +162,65 @@ public static class DomainErrors
             "session_log.value_must_be_non_negative",
             "El valor real de una serie no puede ser negativo.");
 
-        /// <summary>El esfuerzo real (RIR/RPE) escapa del rango admitido (0–10).</summary>
-        public static readonly Error EffortOutOfRange = Error.Validation(
-            "session_log.effort_out_of_range",
-            "El esfuerzo (RIR/RPE) debe estar entre 0 y 10.");
+        /// <summary>El RIR real escapa del rango admitido (0–10).</summary>
+        public static readonly Error ActualRirOutOfRange = Error.Validation(
+            "session_log.actual_rir_out_of_range",
+            "El RIR real debe estar entre 0 y 10.");
+
+        /// <summary>El lastre de una serie no puede ser negativo.</summary>
+        public static readonly Error LoadMustBeNonNegative = Error.Validation(
+            "session_log.load_must_be_non_negative",
+            "El lastre no puede ser negativo.");
 
         /// <summary>El día de la sesión no puede ser menor que 1.</summary>
         public static readonly Error SessionDayOutOfRange = Error.Validation(
             "session_log.session_day_out_of_range",
             "El día de la sesión debe ser mayor o igual que 1.");
+
+        /// <summary>El microciclo de la sesión está fuera del rango 1–4.</summary>
+        public static readonly Error MicrocycleOutOfRange = Error.Validation(
+            "session_log.microcycle_out_of_range",
+            "El microciclo debe estar entre 1 y 4.");
+
+        /// <summary>Una sesión del mesociclo necesita su mesociclo, su microciclo y su día.</summary>
+        public static readonly Error MesocycleKeyRequired = Error.Validation(
+            "session_log.mesocycle_key_required",
+            "Una sesión del mesociclo necesita su mesociclo, su microciclo y su día.");
+
+        /// <summary>Una sesión suelta no lleva mesociclo, microciclo ni día.</summary>
+        public static readonly Error SueltaKeyNotAllowed = Error.Validation(
+            "session_log.suelta_key_not_allowed",
+            "Una sesión suelta no lleva mesociclo, microciclo ni día.");
+
+        /// <summary>El origen de la sesión no corresponde a <c>mesocycle</c> ni a <c>suelta</c>.</summary>
+        public static readonly Error KindOutOfRange = Error.Validation(
+            "session_log.kind_out_of_range",
+            "El tipo de sesión debe ser «mesocycle» o «suelta».");
+
+        /// <summary>El papel de la fila no corresponde a <c>skill</c>, <c>strength</c> ni a <c>core</c>.</summary>
+        public static readonly Error RoleOutOfRange = Error.Validation(
+            "session_log.role_out_of_range",
+            "El papel del ejercicio debe ser «skill», «strength» o «core».");
+
+        /// <summary>El ítem registrado no trae ejercicio ni nombre.</summary>
+        public static readonly Error ExerciseRequired = Error.Validation(
+            "session_log.exercise_required",
+            "Debes indicar el ejercicio registrado.");
+
+        /// <summary>El objetivo del ítem registrado no declara sus series.</summary>
+        public static readonly Error PrescribedSetsOutOfRange = Error.Validation(
+            "session_log.prescribed_sets_out_of_range",
+            "El objetivo del ejercicio debe declarar al menos una serie.");
+
+        /// <summary>Un rango de la prescripción queda declarado a medias (solo mínimo o solo máximo).</summary>
+        public static readonly Error PrescriptionRangeIncomplete = Error.Validation(
+            "session_log.prescription_range_incomplete",
+            "El objetivo del ejercicio debe declarar el mínimo y el máximo del rango.");
+
+        /// <summary>El mínimo de un rango de la prescripción es mayor que su máximo.</summary>
+        public static readonly Error PrescriptionRangeInverted = Error.Validation(
+            "session_log.prescription_range_inverted",
+            "El mínimo del rango del objetivo no puede ser mayor que su máximo.");
 
         /// <summary>El ejercicio indicado no existe en el catálogo.</summary>
         public static readonly Error UnknownExercise = Error.Validation(
@@ -168,6 +231,11 @@ public static class DomainErrors
         public static readonly Error NotFound = Error.NotFound(
             "session_log.not_found",
             "El registro de sesión indicado no existe.");
+
+        /// <summary>El ítem indicado no pertenece a esa sesión.</summary>
+        public static readonly Error ItemNotFound = Error.NotFound(
+            "session_log.item_not_found",
+            "El ejercicio indicado no está registrado en esa sesión.");
     }
 
     /// <summary>Errores de la sesión suelta (#28) y su historial (#29).</summary>

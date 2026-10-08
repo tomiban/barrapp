@@ -1,6 +1,6 @@
-export { AppHeader, type AppHeaderProps } from './AppHeader';
 export { Header, type HeaderProps } from './Header';
 export { Screen, type ScreenProps } from './Screen';
+export { Avatar, type AvatarProps } from './Avatar';
 export {
   TabBar,
   TabBarItem,

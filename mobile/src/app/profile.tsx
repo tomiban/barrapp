@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { router } from 'expo-router';
+import { Pressable } from 'react-native';
+
 import {
   BASIC_EXERCISES,
   EXERCISE_PATTERN_LABELS,
@@ -18,11 +21,13 @@ import { messageOf } from '@/api/messageOf';
 import { Button } from '@/design-system/Button';
 import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
 import { Banner, Loading } from '@/design-system/Feedback';
+import { ArrowLeft, Icon } from '@/design-system/Icon';
 import { Box, Stack } from '@/design-system/layout';
-import { AppHeader, Screen } from '@/design-system/Navigation';
+import { Screen } from '@/design-system/Navigation';
 import { StatusBadge } from '@/design-system/StatusBadge';
 import { Text } from '@/design-system/Text';
 import { TextField } from '@/design-system/TextField';
+import { AppHeader } from '@/features/navigation';
 import { ObjectiveSection } from '@/features/profile/ObjectiveSection';
 
 type LoadState = 'loading' | 'ready' | 'error';
@@ -173,14 +178,39 @@ export default function ProfileScreen() {
     }
   }, [applyProfile, armSpan, height, inseam, maximumDrafts, trainingDays, weight]);
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
+
   return (
     <Screen
       testID="profile-screen"
-      header={<AppHeader section="Perfil" showBack />}
+      header={
+        <AppHeader
+          section="Perfil"
+          leading={
+            <Pressable
+              onPress={goBack}
+              accessibilityRole="button"
+              accessibilityLabel="Volver"
+              testID="profile-back"
+            >
+              <Icon icon={ArrowLeft} size={24} />
+            </Pressable>
+          }
+        />
+      }
       scrollable
-      edges={['top', 'left', 'right', 'bottom']}
     >
       <Stack gap="md">
+        <Text variant="labelTechnical" className="text-text-muted">
+          BARRAPP · PERFIL DEL ATLETA
+        </Text>
+
         {loadState === 'loading' ? (
           <Loading label="Leyendo el perfil…" testID="profile-loading" />
         ) : null}

@@ -28,7 +28,13 @@ public sealed record SessionItemResponse(
 /// <summary>Sesión del mesociclo tal y como la consume la app.</summary>
 /// <param name="Day">Día dentro del microciclo (empieza en 1).</param>
 /// <param name="Items">Filas de la sesión, en orden.</param>
-public sealed record SessionResponse(int Day, IReadOnlyList<SessionItemResponse> Items);
+/// <param name="Weekday">Día de la semana en el que se entrena (<c>monday</c>…<c>sunday</c>).</param>
+/// <param name="Date">Fecha en la que se entrena la sesión.</param>
+public sealed record SessionResponse(
+    int Day,
+    IReadOnlyList<SessionItemResponse> Items,
+    string? Weekday,
+    DateOnly? Date);
 
 /// <summary>Semana del mesociclo tal y como la consume la app.</summary>
 /// <param name="Number">Número de la semana (1–4).</param>
@@ -40,8 +46,11 @@ public sealed record MicrocycleResponse(int Number, IReadOnlyList<SessionRespons
 /// <param name="TrainingDays">Días de entrenamiento por semana.</param>
 /// <param name="SkillStage">Etapa actual del skill objetivo, con su criterio de avance.</param>
 /// <param name="Microcycles">Semanas del mesociclo.</param>
+/// <param name="StartDate">Fecha en la que arranca el mesociclo.</param>
 public sealed record PlanResponse(
     string SkillId,
     int TrainingDays,
     SkillStageResponse SkillStage,
-    IReadOnlyList<MicrocycleResponse> Microcycles);
+    IReadOnlyList<MicrocycleResponse> Microcycles,
+    DateOnly StartDate,
+    Guid? MesocycleId);

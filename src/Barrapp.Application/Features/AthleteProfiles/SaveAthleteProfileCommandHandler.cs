@@ -18,6 +18,16 @@ internal sealed class SaveAthleteProfileCommandHandler(
         SaveAthleteProfileCommand request,
         CancellationToken cancellationToken)
     {
+        // Los códigos del cable los valida el pipeline; aquí solo se traducen al día del dominio.
+        IReadOnlyList<DayOfWeek>? weekdays = null;
+        if (request.TrainingWeekdays is not null)
+        {
+            weekdays = request.TrainingWeekdays
+                .Select(WeekdayCode.ToWeekday)
+                .Select(weekday => weekday!.Value)
+                .ToList();
+        }
+
         var profile = await repository.GetByUserIdAsync(SingleUser.Id, cancellationToken);
 
         if (profile is null)
@@ -29,7 +39,8 @@ internal sealed class SaveAthleteProfileCommandHandler(
                 request.ArmSpanCentimeters,
                 request.InseamCentimeters,
                 request.TrainingDays,
-                request.Maximums);
+                request.Maximums,
+                weekdays);
 
             if (creation.IsFailure)
             {
@@ -47,7 +58,8 @@ internal sealed class SaveAthleteProfileCommandHandler(
                 request.ArmSpanCentimeters,
                 request.InseamCentimeters,
                 request.TrainingDays,
-                request.Maximums);
+                request.Maximums,
+                weekdays);
             if (update.IsFailure)
             {
                 return Result.Failure<AthleteProfileResponse>(update.Error);
@@ -62,6 +74,7 @@ internal sealed class SaveAthleteProfileCommandHandler(
             profile.ArmSpanCentimeters,
             profile.InseamCentimeters,
             profile.TrainingDays,
-            MaximumResponses.From(profile.Maximums));
+            MaximumResponses.From(profile.Maximums),
+            profile.TrainingDaysInOrder().Select(WeekdayCode.ToCode).ToList());
     }
 }

@@ -15,10 +15,16 @@ public sealed record MaximumResponse(string ExerciseCode, int Repetitions);
 /// <param name="InseamCentimeters">Entrepierna del atleta en centímetros.</param>
 /// <param name="TrainingDays">Días de entrenamiento por semana (3–5).</param>
 /// <param name="Maximums">Máximo por cada ejercicio básico; 0 vale (regresión).</param>
+/// <param name="TrainingWeekdays">
+/// Días de la semana que entrena, de lunes a domingo (#94), como códigos en minúsculas
+/// (<c>monday</c>…<c>sunday</c>). Siempre viene informado: si el atleta no eligió, son los días por
+/// defecto de su frecuencia.
+/// </param>
 public sealed record AthleteProfileResponse(
     double WeightKilograms,
     double HeightCentimeters,
     double ArmSpanCentimeters,
     double InseamCentimeters,
     int TrainingDays,
-    IReadOnlyList<MaximumResponse> Maximums);
+    IReadOnlyList<MaximumResponse> Maximums,
+    IReadOnlyList<string> TrainingWeekdays);

@@ -1,5 +1,6 @@
 using Barrapp.Domain.Common;
 using Barrapp.Domain.Knowledge;
+using Barrapp.Domain.Planning;
 using Barrapp.Domain.Sessions;
 using Barrapp.Domain.SkillProgress;
 
@@ -15,6 +16,7 @@ namespace Barrapp.Domain.UnitTests;
 public sealed class SkillStageAdvancerTests
 {
     private static readonly Guid UserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid MesocycleId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     private const string StageExercise = "handstand-wall-support";
     private const string OtherExercise = "push_up";
@@ -220,6 +222,10 @@ public sealed class SkillStageAdvancerTests
             .ToList(),
     };
 
+    /// <summary>
+    /// Sesión registrada del mesociclo con un único ítem (foto por ítem, ADR-0014). El microciclo
+    /// se deduce del día para que cada sesión tenga su propia clave.
+    /// </summary>
     private static SessionLog Log(
         int sessionDay,
         DateTimeOffset recordedAt,
@@ -231,11 +237,37 @@ public sealed class SkillStageAdvancerTests
         DateTimeOffset recordedAt,
         string exerciseId,
         params (int Set, int Value)[] sets) =>
-        SessionLog.Create(
+        Log(microcycleNumber: 1, sessionDay, recordedAt, exerciseId, sets);
+
+    private static SessionLog Log(
+        int microcycleNumber,
+        int sessionDay,
+        DateTimeOffset recordedAt,
+        string exerciseId,
+        params (int Set, int Value)[] sets)
+    {
+        var log = SessionLog.Create(
             UserId,
-            exerciseId,
-            mesocycleId: null,
+            SessionLogKind.Mesocycle,
+            DateOnly.FromDateTime(recordedAt.UtcDateTime),
+            MesocycleId,
+            microcycleNumber,
             sessionDay,
-            recordedAt,
-            sets.Select(set => new SessionLogSetInput(set.Set, set.Value, null)).ToList()).Value;
+            recordedAt).Value;
+        var item = log.UpsertItem(new SessionLogItemInput(
+            exerciseId,
+            "Ejercicio",
+            SessionItemRole.Skill,
+            ExerciseGroup.Push,
+            Metric.Seconds,
+            sets.Length,
+            null,
+            null,
+            sets.Length == 0 ? null : 10,
+            sets.Length == 0 ? null : 40,
+            null,
+            sets.Select(set => new SessionLogSetInput(set.Set, set.Value)).ToList())).Value;
+
+        return log;
+    }
 }

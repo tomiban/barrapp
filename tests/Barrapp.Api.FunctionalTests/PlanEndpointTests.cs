@@ -15,6 +15,52 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
     : IClassFixture<BarrappApiFactory>
 {
     [Fact]
+    public async Task Get_plan_places_each_session_on_the_training_weekday_the_athlete_chose()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            PlanTestData.Profile(3, ["tuesday", "thursday", "saturday"]));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.GetAsync("/plan");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+        Assert.Equal(
+            ["tuesday", "thursday", "saturday"],
+            plan!.Microcycles[0].Sessions.Select(session => session.Weekday));
+        Assert.All(plan.Microcycles, microcycle =>
+            Assert.Equal(
+                ["tuesday", "thursday", "saturday"],
+                microcycle.Sessions.Select(session => session.Weekday)));
+    }
+
+    [Fact]
+    public async Task Get_plan_dates_the_sessions_in_order_seven_days_apart()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            PlanTestData.Profile(3, ["tuesday", "thursday", "saturday"]));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.GetAsync("/plan");
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+
+        Assert.NotNull(plan);
+        var firstWeek = plan!.Microcycles[0].Sessions.Select(session => session.Date!.Value).ToList();
+        var secondWeek = plan.Microcycles[1].Sessions.Select(session => session.Date!.Value).ToList();
+
+        // Fechas ascendentes y la segunda semana exactamente siete días después de la primera.
+        Assert.Equal(firstWeek.OrderBy(date => date), firstWeek);
+        Assert.Equal(
+            firstWeek.Select(date => date.AddDays(7)),
+            secondWeek);
+    }
+
+    [Fact]
     public async Task Get_plan_for_a_three_day_profile_returns_four_weeks_with_three_sessions()
     {
         using var client = factory.CreateClient();
@@ -120,7 +166,8 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
                     new MaximumResponse("push_up", 10),
                     new MaximumResponse("pull_up", 5),
                     new MaximumResponse("squat", 20),
-                ]));
+                ],
+                ["monday", "wednesday", "friday"]));
         await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
 
         using var response = await client.GetAsync("/plan");
@@ -291,15 +338,33 @@ public sealed class PlanWithoutProgressEndpointTests(BarrappApiFactory factory)
 /// <summary>Datos compartidos por los tests de plan.</summary>
 internal static class PlanTestData
 {
-    public static AthleteProfileResponse Profile(int trainingDays) => new(
-        78,
-        180,
-        180,
-        85,
-        trainingDays,
-        [
-            new MaximumResponse("push_up", 10),
-            new MaximumResponse("pull_up", 5),
-            new MaximumResponse("squat", 20),
-        ]);
+    /// <summary>
+    /// Días por defecto de cada frecuencia, los mismos que usa el dominio cuando el request no los
+    /// trae. Es el escenario mayoritario de los tests de plan.
+    /// </summary>
+    public static IReadOnlyList<string> DefaultWeekdays(int trainingDays) => trainingDays switch
+    {
+        3 => ["monday", "wednesday", "friday"],
+        4 => ["monday", "tuesday", "thursday", "friday"],
+        5 => ["monday", "tuesday", "wednesday", "thursday", "friday"],
+
+        // Frecuencia fuera de rango: los días son irrelevantes porque el request ya se rechaza por
+        // la frecuencia, y este helper se usa justo para construir esos casos.
+        _ => [],
+    };
+
+    public static AthleteProfileResponse Profile(
+        int trainingDays,
+        IReadOnlyList<string>? trainingWeekdays = null) => new(
+            78,
+            180,
+            180,
+            85,
+            trainingDays,
+            [
+                new MaximumResponse("push_up", 10),
+                new MaximumResponse("pull_up", 5),
+                new MaximumResponse("squat", 20),
+            ],
+            trainingWeekdays ?? DefaultWeekdays(trainingDays));
 }

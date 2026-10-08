@@ -36,6 +36,45 @@ export type Maximum = {
   repetitions: number;
 };
 
+/** Código estable de un día de la semana, como lo intercambia el API. */
+export type TrainingWeekdayCode =
+  'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+
+/** Los siete días de la semana, de lunes a domingo. */
+export const TRAINING_WEEKDAYS: readonly TrainingWeekdayCode[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+];
+
+/** Nombre para la UI de cada día de la semana. */
+export const WEEKDAY_LABELS: Record<TrainingWeekdayCode, string> = {
+  monday: 'Lunes',
+  tuesday: 'Martes',
+  wednesday: 'Miércoles',
+  thursday: 'Jueves',
+  friday: 'Viernes',
+  saturday: 'Sábado',
+  sunday: 'Domingo',
+};
+
+/**
+ * Días por defecto de cada frecuencia (3–5), los mismos que usa el API cuando el atleta todavía no
+ * ha elegido cuáles, para que «hoy» sea siempre un día real de entrenamiento.
+ */
+export const DEFAULT_TRAINING_WEEKDAYS: Readonly<Record<number, readonly TrainingWeekdayCode[]>> = {
+  3: ['monday', 'wednesday', 'friday'],
+  4: ['monday', 'tuesday', 'thursday', 'friday'],
+  5: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+};
+
+/** Días de entrenamiento que puede tener un perfil: 3–5 días de la semana. */
+export type TrainingWeekdaySelection = TrainingWeekdayCode[];
+
 /** Perfil del atleta: peso y medidas en cm, días de entrenamiento y máximos. */
 export type AthleteProfile = {
   weightKilograms: number;
@@ -43,6 +82,11 @@ export type AthleteProfile = {
   armSpanCentimeters: number;
   inseamCentimeters: number;
   trainingDays: number;
+  /**
+   * Días de la semana que entrena. Si no se envían, el API usa los días por defecto de la
+   * frecuencia (ver `DEFAULT_TRAINING_WEEKDAYS`).
+   */
+  trainingWeekdays?: TrainingWeekdaySelection;
   maximums: Maximum[];
 };
 

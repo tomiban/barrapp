@@ -14,10 +14,16 @@ namespace Barrapp.Application.Features.AthleteProfiles;
 /// <param name="InseamCentimeters">Entrepierna del atleta en centímetros.</param>
 /// <param name="TrainingDays">Días de entrenamiento por semana (3–5).</param>
 /// <param name="Maximums">Máximo por cada ejercicio básico; 0 vale (regresión).</param>
+/// <param name="TrainingWeekdays">
+/// Días de la semana que entrena (#94), como códigos en minúsculas (<c>monday</c>…<c>sunday</c>). Si
+/// no se indican, el perfil usa los días por defecto de su frecuencia; si se indican, tienen que ser
+/// tantos como <paramref name="TrainingDays"/>.
+/// </param>
 public sealed record SaveAthleteProfileCommand(
     double WeightKilograms,
     double HeightCentimeters,
     double ArmSpanCentimeters,
     double InseamCentimeters,
     int TrainingDays,
-    IReadOnlyList<MaximumInput> Maximums) : ICommand<AthleteProfileResponse>;
+    IReadOnlyList<MaximumInput> Maximums,
+    IReadOnlyList<string>? TrainingWeekdays = null) : ICommand<AthleteProfileResponse>;

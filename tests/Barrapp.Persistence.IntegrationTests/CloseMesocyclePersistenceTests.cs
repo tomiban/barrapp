@@ -4,6 +4,7 @@ using Barrapp.Application.Common;
 using Barrapp.Application.Features.Plans;
 using Barrapp.Domain.Athlete;
 using Barrapp.Domain.Common;
+using Barrapp.Domain.Knowledge;
 using Barrapp.Domain.Objectives;
 using Barrapp.Domain.Planning;
 using Barrapp.Domain.Sessions;
@@ -14,6 +15,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+
+
 
 namespace Barrapp.Persistence.IntegrationTests;
 
@@ -26,6 +29,9 @@ namespace Barrapp.Persistence.IntegrationTests;
 /// </summary>
 public sealed class CloseMesocyclePersistenceTests : IDisposable
 {
+    /// <summary>Lunes de referencia para el calendario del mesociclo (#94).</summary>
+    private static readonly DateOnly StartDate = new(2026, 3, 2);
+
     private readonly SqliteConnection _connection;
     private readonly ApplicationDbContext _dbContext;
 
@@ -227,18 +233,39 @@ public sealed class CloseMesocyclePersistenceTests : IDisposable
         return mesocycle;
     }
 
+    /// <summary>
+    /// Sesión registrada con un único ítem (foto por ítem, ADR-0014): el ejercicio con sus series.
+    /// </summary>
     private static SessionLog Log(
         string exerciseId,
         Guid? mesocycleId,
         DateTimeOffset recordedAtUtc,
-        params (int Set, int Value)[] sets) =>
-        SessionLog.Create(
+        params (int Set, int Value)[] sets)
+    {
+        var log = SessionLog.Create(
             SingleUser.Id,
-            exerciseId,
+            mesocycleId is null ? SessionLogKind.Suelta : SessionLogKind.Mesocycle,
+            DateOnly.FromDateTime(recordedAtUtc.UtcDateTime),
             mesocycleId,
-            sessionDay: 1,
-            recordedAtUtc,
-            sets.Select(set => new SessionLogSetInput(set.Set, set.Value)).ToList()).Value;
+            microcycleNumber: mesocycleId is null ? null : 1,
+            sessionDay: mesocycleId is null ? null : 1,
+            recordedAtUtc).Value;
+        log.UpsertItem(new SessionLogItemInput(
+            exerciseId,
+            exerciseId,
+            SessionItemRole.Strength,
+            ExerciseGroup.Push,
+            Metric.Reps,
+            sets.Length,
+            1,
+            20,
+            null,
+            null,
+            null,
+            sets.Select(set => new SessionLogSetInput(set.Set, set.Value)).ToList()));
+
+        return log;
+    }
 
     private static Plan BuildPlan()
     {
@@ -260,7 +287,7 @@ public sealed class CloseMesocyclePersistenceTests : IDisposable
 
         var objective = Objective.Create(SingleUser.Id, "planche", catalog).Value;
 
-        return PlanGenerator.Generate(profile, objective, stageOrder: 1, catalog).Value;
+        return PlanGenerator.Generate(profile, objective, stageOrder: 1, StartDate, catalog).Value;
     }
 
     private static ServiceProvider CreateServices(ApplicationDbContext dbContext)

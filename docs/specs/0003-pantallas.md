@@ -98,7 +98,7 @@ Ninguna pantalla de arriba funciona contra el API actual sin estos trabajos:
 
 1. **Motor — deload**: la semana 4 debe ser descarga (~50 % de volumen, RIR 4), hoy pendiente en `RirWave.cs` (US16).
 2. **Motor — regresión**: máximo `0`/`1` debe producir una regresión, no un ejercicio neutral, hoy pendiente en `StrengthLoad.cs` (US20).
-3. **Registro set a set**: persistencia + API del `SessionLog`, anclado al plan en lectura por clave de sesión determinista + foto por ítem (ADR-0013). Cabecera (fecha, mesociclo/microciclo/día, tipo *mesociclo*/*suelta*, completada) y una fila por serie (valor, unidad, RIR real, lastre), editable y borrable.
+3. **Registro set a set**: persistencia + API del `SessionLog`, anclado al plan en lectura por clave de sesión determinista + foto por ítem (ADR-0014). Cabecera (fecha, mesociclo/microciclo/día, tipo *mesociclo*/*suelta*, completada) y una fila por serie (valor, unidad, RIR real, lastre), editable y borrable.
 4. **Sesión suelta**: `GenerarSesionSuelta(perfil, objetivo, parámetros)` en el motor + persistencia de la sesión suelta.
 5. **Calendario**: **Día de entrenamiento** elegido por el atleta y **fecha de inicio** del mesociclo, para que «hoy» sea real.
 6. **Descanso**: exponer en el `SessionItem` el descanso de la rutina que lo generó (con valor por defecto por papel).
@@ -127,5 +127,5 @@ Métricas derivadas de los registros:
 ## Further Notes
 
 - **Vocabulario**: este rediseño añadió a `GLOSSARY.md` **Lastre**, **Adherencia**, **Volumen semanal** y **Día de entrenamiento**, y corrigió **Registro** (RIR real y lastre, sin RPE).
-- **ADR**: `docs/adr/0013-anclaje-de-registros-a-plan-en-lectura.md`.
+- **ADR**: `docs/adr/0014-anclaje-de-registros-a-plan-en-lectura.md`.
 - **Tickets**: UI en M9 #82–#90; cimientos en M10 (#91 deload y regresión · #92 registro set a set · #93 sesión suelta · #94 calendario · #95 descanso · #96 métricas). Los de UI quedan **bloqueados** por el cimiento que los alimenta y por el bug #80 (pantallas en blanco); las dependencias están como `blocked_by` nativo en GitHub.
