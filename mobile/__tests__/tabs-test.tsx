@@ -4,8 +4,9 @@ import TabsLayout from '../src/app/(tabs)/_layout';
 import ShowcaseRoute from '../src/app/showcase';
 
 /**
- * Pestañas de la app (spec 0003, ticket #82): Inicio · Plan · Entreno · Skills ·
- * Historial, con Perfil fuera de la barra (se abre desde el avatar).
+ * Pestañas de la app (spec 0003, ticket #82): Inicio · Plan · GO (ruta
+ * `entreno`) · Skills · Historial, con Perfil fuera de la barra (se abre desde
+ * el avatar).
  *
  * `Showcase` deja de ser pestaña pero se conserva como ruta de desarrollo en
  * `/showcase`, fuera del grupo `(tabs)`. `renderRouter` aísla un mini-árbol con
@@ -41,7 +42,7 @@ describe('app tabs', () => {
 
     expect(screen.getByRole('tab', { name: 'Inicio', selected: true })).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Plan', selected: false })).toBeOnTheScreen();
-    expect(screen.getByRole('tab', { name: 'Entreno', selected: false })).toBeOnTheScreen();
+    expect(screen.getByRole('tab', { name: 'GO', selected: false })).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Skills', selected: false })).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Historial', selected: false })).toBeOnTheScreen();
     expect(screen.queryByRole('tab', { name: 'Perfil' })).toBeNull();

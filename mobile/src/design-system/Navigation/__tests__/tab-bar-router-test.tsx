@@ -28,15 +28,9 @@ function routes() {
 }
 
 describe('TabBar (integración con Expo Router)', () => {
-  it('define las cinco pestañas en el orden del diseño, con Entreno destacada', () => {
-    expect(TABS.map((tab) => tab.label)).toEqual([
-      'Inicio',
-      'Plan',
-      'Entreno',
-      'Skills',
-      'Historial',
-    ]);
-    expect(TABS.filter((tab) => tab.prominent).map((tab) => tab.label)).toEqual(['Entreno']);
+  it('define las cinco pestañas en el orden del diseño, con GO destacada', () => {
+    expect(TABS.map((tab) => tab.label)).toEqual(['Inicio', 'Plan', 'GO', 'Skills', 'Historial']);
+    expect(TABS.filter((tab) => tab.prominent).map((tab) => tab.label)).toEqual(['GO']);
   });
 
   it('muestra las pestañas y marca la ruta activa', async () => {
@@ -45,7 +39,7 @@ describe('TabBar (integración con Expo Router)', () => {
     expect(getByTestId('route-inicio')).toBeOnTheScreen();
     expect(getByRole('tab', { name: 'Inicio', selected: true })).toBeOnTheScreen();
     expect(getByRole('tab', { name: 'Plan', selected: false })).toBeOnTheScreen();
-    expect(getByRole('tab', { name: 'Entreno', selected: false })).toBeOnTheScreen();
+    expect(getByRole('tab', { name: 'GO', selected: false })).toBeOnTheScreen();
     expect(getByRole('tab', { name: 'Skills', selected: false })).toBeOnTheScreen();
     expect(getByRole('tab', { name: 'Historial', selected: false })).toBeOnTheScreen();
   });
