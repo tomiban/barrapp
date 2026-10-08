@@ -21,7 +21,7 @@ type LoadState =
  * agrupada por patrón (Empuje, Tirón, Pierna, Core, Cardio). Solo lectura.
  *
  * Es una vista hermana de `SkillsView` (#8) y `RoutinesView` (#67): comparten el
- * `SegmentedControl` de `biblioteca.tsx` pero viven en su propio módulo para no pisarse.
+ * `SegmentedControl` de `skills.tsx` pero viven en su propio módulo para no pisarse.
  */
 export function ExercisesView() {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
