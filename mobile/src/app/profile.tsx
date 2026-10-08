@@ -19,7 +19,7 @@ import { Button } from '@/design-system/Button';
 import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { Box, Stack } from '@/design-system/layout';
-import { Header, Screen } from '@/design-system/Navigation';
+import { AppHeader, Screen } from '@/design-system/Navigation';
 import { StatusBadge } from '@/design-system/StatusBadge';
 import { Text } from '@/design-system/Text';
 import { TextField } from '@/design-system/TextField';
@@ -174,12 +174,13 @@ export default function ProfileScreen() {
   }, [applyProfile, armSpan, height, inseam, maximumDrafts, trainingDays, weight]);
 
   return (
-    <Screen testID="profile-screen" header={<Header title="Perfil" />} scrollable>
+    <Screen
+      testID="profile-screen"
+      header={<AppHeader section="Perfil" showBack />}
+      scrollable
+      edges={['top', 'left', 'right', 'bottom']}
+    >
       <Stack gap="md">
-        <Text variant="labelTechnical" className="text-text-muted">
-          BARRAPP · PERFIL DEL ATLETA
-        </Text>
-
         {loadState === 'loading' ? (
           <Loading label="Leyendo el perfil…" testID="profile-loading" />
         ) : null}

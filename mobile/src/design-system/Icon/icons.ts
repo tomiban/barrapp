@@ -9,16 +9,21 @@ import {
   CircleCheck,
   CloudOff,
   Dumbbell,
+  House,
   Info,
+  Layers,
   Minus,
   Pause,
   Play,
   Plus,
   RotateCcw,
+  ScrollText,
   Settings,
   Timer,
   TrendingUp,
+  User,
   X,
+  Zap,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
@@ -33,16 +38,21 @@ export {
   CircleCheck,
   CloudOff,
   Dumbbell,
+  House,
   Info,
+  Layers,
   Minus,
   Pause,
   Play,
   Plus,
   RotateCcw,
+  ScrollText,
   Settings,
   Timer,
   TrendingUp,
+  User,
   X,
+  Zap,
 };
 
 /**
@@ -61,14 +71,22 @@ export const baseIcons = {
   circleCheck: CircleCheck,
   cloudOff: CloudOff,
   dumbbell: Dumbbell,
+  house: House,
   info: Info,
+  layers: Layers,
   minus: Minus,
   pause: Pause,
   play: Play,
   plus: Plus,
   rotateCcw: RotateCcw,
+  scrollText: ScrollText,
   settings: Settings,
   timer: Timer,
   trendingUp: TrendingUp,
+  user: User,
   x: X,
+  zap: Zap,
 } satisfies Record<string, LucideIcon>;
+
+/** Nombre semántico de un icono del set base, p. ej. `house` o `zap`. */
+export type IconName = keyof typeof baseIcons;

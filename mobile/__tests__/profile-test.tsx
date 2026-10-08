@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
-import ProfileScreen from '../src/app/(tabs)/profile';
+import ProfileScreen from '../src/app/profile';
 
 /** Respuesta mínima con la forma que consume el módulo de API. */
 function jsonResponse(status: number, body: unknown): Response {

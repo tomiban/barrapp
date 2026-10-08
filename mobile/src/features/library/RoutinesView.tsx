@@ -82,7 +82,7 @@ function RoutineBlockView({
  * los ejercicios de cada fila). Solo lectura.
  *
  * Es hermana de `ExercisesView` (#7) y `SkillsView` (#8): comparten el `SegmentedControl` de
- * `biblioteca.tsx` pero viven en su propio módulo. El endpoint referencia los ejercicios por id;
+ * `skills.tsx` pero viven en su propio módulo. El endpoint referencia los ejercicios por id;
  * para mostrar el nombre se combinan el catálogo de ejercicios con los nombres de etapa de los
  * skills (los movimientos de skill no viajan en `/catalog/exercises`).
  */
