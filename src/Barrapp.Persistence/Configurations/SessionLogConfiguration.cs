@@ -16,10 +16,9 @@ namespace Barrapp.Persistence.Configurations;
 /// clave foránea del registro es la del usuario y la de sus ítems.
 /// </para>
 /// <para>
-/// La clave de sesión determinista (tipo, mesociclo, microciclo y día) es única por atleta para las
-/// sesiones de mesociclo —el índice filtrado solo las cubre—, de modo que la misma sesión no se
-/// registre dos veces por la misma vía. Las sesiones sueltas no la usan: su identidad es la que les
-/// da el cliente (#93).
+/// La clave de sesión determinista (fecha, mesociclo, microciclo y día) es única por atleta según
+/// el tipo: cada índice filtrado cubre su tipo —mesociclo o suelta—, de modo que la misma sesión no
+/// se registre dos veces por la misma vía (ADR-0014).
 /// </para>
 /// <para>
 /// Idempotencia de la outbox offline (ADR-0003): un ítem tiene a lo sumo un <c>ClientId</c>, con un
@@ -52,11 +51,16 @@ internal sealed class SessionLogConfiguration : IEntityTypeConfiguration<Session
         // El cierre del mesociclo y el ajuste de máximos leen por mesociclo; no escanean la tabla.
         builder.HasIndex(log => log.MesocycleId);
 
-        // Clave de sesión determinista: una sesión de mesociclo por (atleta, mesociclo, microciclo,
-        // día). El filtro deja fuera las sueltas, que no llevan esa clave (#93).
-        builder.HasIndex(log => new { log.UserId, log.Kind, log.MesocycleId, log.MicrocycleNumber, log.SessionDay })
+        // Clave de sesión determinista (ADR-0014): la fecha entra en la clave, así que una sesión de
+        // mesociclo es única por (atleta, tipo, fecha, mesociclo, microciclo y día) y una suelta por
+        // (atleta, tipo, fecha). Los índices filtrados dejan cada unicidad solo a su tipo.
+        builder.HasIndex(log => new { log.UserId, log.Kind, log.SessionDate, log.MesocycleId, log.MicrocycleNumber, log.SessionDay })
             .IsUnique()
             .HasFilter($"\"Kind\" = {(int)SessionLogKind.Mesocycle}");
+
+        builder.HasIndex(log => new { log.UserId, log.Kind, log.SessionDate })
+            .IsUnique()
+            .HasFilter($"\"Kind\" = {(int)SessionLogKind.Suelta}");
 
         // Los ítems son parte del registro: tabla propia, una fila por ejercicio en la sesión.
         builder.HasMany(log => log.Items)

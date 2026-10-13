@@ -10,7 +10,7 @@ namespace Barrapp.Domain.Sessions;
 /// <remarks>
 /// De una sesión de mesociclo la clave es (atleta, mesociclo, microciclo y día) más la fecha; de una
 /// sesión suelta es (atleta, tipo suelta, fecha). La fecha entra en la clave para que dos registros
-/// hechos el mismo día de sesión en semanas distintas —o dos sueltas del mismo día— no se mezclen.
+/// hechos el mismo día de sesión en semanas distintas —o dos sueltas de días distintos— no se mezclen.
 /// </remarks>
 /// <param name="UserId">Atleta al que pertenece el registro.</param>
 /// <param name="Kind">Origen de la sesión: del mesociclo o suelta.</param>

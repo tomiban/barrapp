@@ -92,7 +92,8 @@ internal static class SessionLogEndpoints
 
                     if (string.IsNullOrWhiteSpace(body.ExerciseId))
                     {
-                        return Results.BadRequest();
+                        return Result.Failure<SessionLogResponse>(
+                            DomainErrors.SessionLog.ExerciseRequired).Error.ToProblemDetails();
                     }
 
                     var resultLegacy = await sender.Send(

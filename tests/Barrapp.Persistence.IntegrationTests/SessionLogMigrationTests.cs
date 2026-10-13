@@ -34,11 +34,29 @@ public sealed class SessionLogMigrationTests : IDisposable
             "INSERT INTO SessionLogSets (SessionLogId, SetNumber, Value, Effort) " +
             "VALUES ('11111111-1111-1111-1111-111111111111', 1, 10, 2);");
 
+        // Esquema del agregado: dos sesiones sueltas del mismo día todavía caben (el índice único
+        // de sueltas llega con la última migración).
+        await _dbContext.Database.MigrateAsync(AggregateMigration);
+        await _dbContext.Database.ExecuteSqlRawAsync(
+            "INSERT INTO SessionLogs (Id, UserId, Kind, SessionDate, MesocycleId, MicrocycleNumber, SessionDay, RecordedAtUtc, CompletedAtUtc) " +
+            "VALUES ('55555555-5555-5555-5555-555555555555', '00000000-0000-0000-0000-000000000001', 1, '2026-10-07', NULL, NULL, NULL, '2026-10-07T08:00:00+00:00', NULL);");
+        await _dbContext.Database.ExecuteSqlRawAsync(
+            "INSERT INTO SessionLogs (Id, UserId, Kind, SessionDate, MesocycleId, MicrocycleNumber, SessionDay, RecordedAtUtc, CompletedAtUtc) " +
+            "VALUES ('66666666-6666-6666-6666-666666666666', '00000000-0000-0000-0000-000000000001', 1, '2026-10-07', NULL, NULL, NULL, '2026-10-07T18:00:00+00:00', NULL);");
+
         await _dbContext.Database.MigrateAsync();
 
         Assert.Equal(1, await CountAsync("LegacySessionLogs"));
         Assert.Equal(1, await CountAsync("LegacySessionLogSets"));
-        Assert.Equal(0, await CountAsync("SessionLogs"));
+        Assert.Equal(1, await CountAsync("SessionLogs"));
+
+        // La deduplicación de la migración se queda con la suelta más reciente del día (ADR-0014:
+        // la fecha es la identidad de una sesión suelta) antes de imponer la unicidad.
+        Assert.Equal(1, await CountAsync("SueltaSessionLogs"));
+        Assert.Equal(
+            "66666666-6666-6666-6666-666666666666",
+            await _dbContext.Database.SqlQueryRaw<string>(
+                "SELECT Id AS Value FROM SessionLogs WHERE Kind = 1").SingleAsync());
 
         await _dbContext.Database.ExecuteSqlRawAsync(
             "INSERT INTO SessionLogs (Id, UserId, Kind, SessionDate, MesocycleId, MicrocycleNumber, SessionDay, RecordedAtUtc, CompletedAtUtc) " +
@@ -65,6 +83,7 @@ public sealed class SessionLogMigrationTests : IDisposable
         "LegacySessionLogs" => _dbContext.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM LegacySessionLogs").SingleAsync(),
         "LegacySessionLogSets" => _dbContext.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM LegacySessionLogSets").SingleAsync(),
         "SessionLogs" => _dbContext.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM SessionLogs").SingleAsync(),
+        "SueltaSessionLogs" => _dbContext.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM SessionLogs WHERE Kind = 1").SingleAsync(),
         "SessionLogSets" => _dbContext.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM SessionLogSets").SingleAsync(),
         _ => throw new ArgumentOutOfRangeException(nameof(tableName)),
     };

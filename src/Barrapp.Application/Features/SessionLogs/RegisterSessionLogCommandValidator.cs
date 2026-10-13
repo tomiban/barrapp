@@ -1,4 +1,3 @@
-using Barrapp.Application.Abstractions;
 using Barrapp.Domain.Sessions;
 using FluentValidation;
 
@@ -6,13 +5,15 @@ namespace Barrapp.Application.Features.SessionLogs;
 
 /// <summary>
 /// Valida la forma de la entrada en el pipeline, antes de que llegue al handler: la cabecera lleva
-/// su clave de sesión según su tipo, el ejercicio existe en el catálogo y hay al menos una serie.
-/// Las reglas por serie (número ≥ 1, valor ≥ 0, RIR real 0–10, lastre ≥ 0 y consecutividad) viven
-/// solo en el dominio (<see cref="SessionLogItem"/>), como con los máximos del perfil.
+/// su clave de sesión según su tipo, el ejercicio no está vacío y hay al menos una serie. Que el
+/// ejercicio exista en el catálogo lo decide el handler, que necesita el catálogo de todas formas
+/// para montar la foto (<see cref="RegisterSessionLogCommandHandler"/>). Las reglas por serie
+/// (número ≥ 1, valor ≥ 0, RIR real 0–10, lastre ≥ 0 y consecutividad) viven solo en el dominio
+/// (<see cref="SessionLogItem"/>), como con los máximos del perfil.
 /// </summary>
 internal sealed class RegisterSessionLogCommandValidator : AbstractValidator<RegisterSessionLogCommand>
 {
-    public RegisterSessionLogCommandValidator(IKnowledgeBase knowledgeBase)
+    public RegisterSessionLogCommandValidator()
     {
         When(command => command.Session.Kind == SessionLogKind.Mesocycle, () =>
         {
@@ -51,10 +52,6 @@ internal sealed class RegisterSessionLogCommandValidator : AbstractValidator<Reg
         RuleFor(command => command.Item.ExerciseId)
             .NotEmpty()
             .WithMessage("Debes indicar el ejercicio registrado.");
-
-        RuleFor(command => command.Item.ExerciseId)
-            .Must(exerciseId => knowledgeBase.FindExercise(exerciseId) is not null)
-            .WithMessage("El ejercicio indicado no existe en el catálogo.");
 
         RuleFor(command => command.Item.PrescribedSets)
             .GreaterThanOrEqualTo(1)
