@@ -33,7 +33,8 @@ internal sealed class GetAthleteProfileQueryHandler(IApplicationDbContext dbCont
                     .AsQueryable()
                     .OrderBy(weekday => (int)weekday.Day)
                     .Select(weekday => WeekdayCode.ToCode(weekday.Day))
-                    .ToList()))
+                    .ToList(),
+                profile.StartDate))
             .FirstOrDefaultAsync(cancellationToken);
 
         return response is null

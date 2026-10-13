@@ -85,6 +85,40 @@ public sealed class AthleteProfilePersistenceTests : IDisposable
     }
 
     [Fact]
+    public async Task The_start_date_round_trips_through_sqlite()
+    {
+        var profile = AthleteProfile.Create(
+            SingleUser.Id,
+            78.5,
+            181,
+            180,
+            85,
+            3,
+            Maximums(),
+            startDate: new DateOnly(2026, 10, 20)).Value;
+        _dbContext.AthleteProfiles.Add(profile);
+        await _dbContext.SaveChangesAsync();
+
+        var reloaded = await ReadProfileAsync();
+
+        Assert.NotNull(reloaded);
+        Assert.Equal(new DateOnly(2026, 10, 20), reloaded!.StartDate);
+    }
+
+    [Fact]
+    public async Task A_profile_without_a_start_date_reads_back_as_unanchored()
+    {
+        var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 180, 85, 3, Maximums()).Value;
+        _dbContext.AthleteProfiles.Add(profile);
+        await _dbContext.SaveChangesAsync();
+
+        var reloaded = await ReadProfileAsync();
+
+        Assert.NotNull(reloaded);
+        Assert.Null(reloaded!.StartDate);
+    }
+
+    [Fact]
     public async Task A_new_profile_is_written_and_read_back_with_the_same_maximums()
     {
         var profile = AthleteProfile.Create(SingleUser.Id, 78.5, 181, 180, 85, 4, Maximums(pushUp: 12, pullUp: 3, squat: 20)).Value;

@@ -24,6 +24,10 @@ internal sealed class AthleteProfileConfiguration : IEntityTypeConfiguration<Ath
         builder.Property(profile => profile.InseamCentimeters).IsRequired();
         builder.Property(profile => profile.TrainingDays).IsRequired();
 
+        // La fecha de inicio del calendario (#94): la elige el atleta y puede no existir todavía
+        // (null = sin elegir, el mesociclo arranca hoy al generarse).
+        builder.Property(profile => profile.StartDate);
+
         builder.HasIndex(profile => profile.UserId).IsUnique();
 
         // Los máximos son parte del agregado: viven en su propia tabla, con una fila por

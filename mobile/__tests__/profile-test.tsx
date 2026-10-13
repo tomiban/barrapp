@@ -117,7 +117,7 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Flexión 10 · Dominada 0 · Sentadilla 20')).toBeOnTheScreen();
   });
 
-  it('saves the selected training days and shows them in the summary', async () => {
+  it('saves the selected training weekdays and start date and shows them in the summary', async () => {
     let saved: unknown = null;
     const fetchMock = jest.fn((_input: RequestInfo | URL, init?: RequestInit) => {
       if (init?.method === 'PUT') {
@@ -133,13 +133,20 @@ describe('ProfileScreen', () => {
 
     await fillMeasurements('30', '120', '180', '85');
     await fillMaximums('12', '3', '0');
-    await fireEvent.press(screen.getByTestId('profile-training-days-5'));
+
+    // La selección inicial son lunes, miércoles y viernes; se añaden martes y jueves (5 días).
+    await fireEvent.press(screen.getByTestId('profile-weekday-tuesday'));
+    await fireEvent.press(screen.getByTestId('profile-weekday-thursday'));
+    await fireEvent.changeText(screen.getByTestId('profile-start-date'), '2026-10-20');
     await fireEvent.press(screen.getByTestId('profile-save'));
 
     await waitFor(() =>
       expect(
         screen.getByText('30 kg · 120 cm · Envergadura 180 cm · Entrepierna 85 cm · 5 días/semana'),
       ).toBeOnTheScreen(),
+    );
+    expect(screen.getByTestId('profile-persisted-calendar')).toHaveTextContent(
+      'Lunes · Martes · Miércoles · Jueves · Viernes · Inicio 2026-10-20',
     );
     expect(screen.getByText('Flexión 12 · Dominada 3 · Sentadilla 0')).toBeOnTheScreen();
     expect(saved).toEqual({
@@ -148,12 +155,74 @@ describe('ProfileScreen', () => {
       armSpanCentimeters: 180,
       inseamCentimeters: 85,
       trainingDays: 5,
+      trainingWeekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
       maximums: [
         { exerciseCode: 'push_up', repetitions: 12 },
         { exerciseCode: 'pull_up', repetitions: 3 },
         { exerciseCode: 'squat', repetitions: 0 },
       ],
+      startDate: '2026-10-20',
     });
+  });
+
+  it('sends no start date when the athlete leaves the field empty (mesociclo arranca hoy)', async () => {
+    let saved: { startDate?: string | null } | null = null;
+    const fetchMock = jest.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        saved = JSON.parse(String(init.body));
+        return Promise.resolve(jsonResponse(200, saved));
+      }
+      return Promise.resolve(saved ? jsonResponse(200, saved) : jsonResponse(404, {}));
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await render(<ProfileScreen />);
+    await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
+
+    await fillMeasurements();
+    await fillMaximums();
+    await fireEvent.press(screen.getByTestId('profile-save'));
+
+    await waitFor(() => expect(saved).not.toBeNull());
+    expect(saved!.startDate).toBeNull();
+  });
+
+  it('rejects a start date that is not a real calendar date without calling the API', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse(404, {}));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await render(<ProfileScreen />);
+    await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
+
+    await fillMeasurements();
+    await fillMaximums();
+    await fireEvent.changeText(screen.getByTestId('profile-start-date'), '2026-02-30');
+    await fireEvent.press(screen.getByTestId('profile-save'));
+
+    await waitFor(() =>
+      expect(screen.getByText('Introduce la fecha de inicio como AAAA-MM-DD.')).toBeOnTheScreen(),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects saving with fewer than three training weekdays', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse(404, {}));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await render(<ProfileScreen />);
+    await waitFor(() => expect(screen.getByTestId('profile-save')).toBeOnTheScreen());
+
+    await fillMeasurements();
+    await fillMaximums();
+
+    // La selección inicial (lunes, miércoles, viernes) baja a dos días.
+    await fireEvent.press(screen.getByTestId('profile-weekday-monday'));
+    await fireEvent.press(screen.getByTestId('profile-save'));
+
+    await waitFor(() =>
+      expect(screen.getByText('Elige entre 3 y 5 días de entrenamiento.')).toBeOnTheScreen(),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('shows the API problem detail when the server rejects the save', async () => {

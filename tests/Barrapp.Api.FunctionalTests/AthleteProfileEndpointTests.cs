@@ -22,7 +22,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         IReadOnlyList<MaximumResponse>? maximums = null,
         double armSpanCentimeters = 180,
         double inseamCentimeters = 85,
-        IReadOnlyList<string>? trainingWeekdays = null) =>
+        IReadOnlyList<string>? trainingWeekdays = null,
+        DateOnly? startDate = null) =>
         new(
             weightKilograms,
             heightCentimeters,
@@ -30,7 +31,8 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
             inseamCentimeters,
             trainingDays,
             maximums ?? Maximums(),
-            trainingWeekdays ?? PlanTestData.DefaultWeekdays(trainingDays));
+            trainingWeekdays ?? PlanTestData.DefaultWeekdays(trainingDays),
+            startDate);
 
     [Fact]
     public async Task Put_profile_with_training_weekdays_then_get_profile_returns_them()
@@ -96,6 +98,7 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         Assert.Equal(180, saved.ArmSpanCentimeters);
         Assert.Equal(85, saved.InseamCentimeters);
         Assert.Equal(4, saved.TrainingDays);
+        Assert.Null(saved.StartDate);
 
         using var getResponse = await client.GetAsync("/profile");
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
@@ -107,10 +110,44 @@ public sealed class AthleteProfileEndpointTests(BarrappApiFactory factory)
         Assert.Equal(180, loaded.ArmSpanCentimeters);
         Assert.Equal(85, loaded.InseamCentimeters);
         Assert.Equal(4, loaded.TrainingDays);
+        Assert.Null(loaded.StartDate);
         Assert.Equal(3, loaded.Maximums.Count);
         Assert.Equal(10, loaded.Maximums.Single(maximum => maximum.ExerciseCode == "push_up").Repetitions);
         Assert.Equal(0, loaded.Maximums.Single(maximum => maximum.ExerciseCode == "pull_up").Repetitions);
         Assert.Equal(20, loaded.Maximums.Single(maximum => maximum.ExerciseCode == "squat").Repetitions);
+    }
+
+    [Fact]
+    public async Task Put_profile_with_a_start_date_then_get_profile_returns_it()
+    {
+        using var client = factory.CreateClient();
+        var payload = Profile(78.5, 181, 3, startDate: new DateOnly(2026, 10, 20));
+
+        using var putResponse = await client.PutAsJsonAsync("/profile", payload);
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+
+        var saved = await putResponse.Content.ReadFromJsonAsync<AthleteProfileResponse>();
+        Assert.NotNull(saved);
+        Assert.Equal(new DateOnly(2026, 10, 20), saved!.StartDate);
+
+        using var getResponse = await client.GetAsync("/profile");
+        var loaded = await getResponse.Content.ReadFromJsonAsync<AthleteProfileResponse>();
+        Assert.NotNull(loaded);
+        Assert.Equal(new DateOnly(2026, 10, 20), loaded!.StartDate);
+    }
+
+    [Fact]
+    public async Task Get_profile_travels_the_start_date_as_a_iso_date()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            Profile(78.5, 181, 3, startDate: new DateOnly(2026, 10, 20)));
+
+        using var response = await client.GetAsync("/profile");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Contains("\"startDate\":\"2026-10-20\"", body, StringComparison.Ordinal);
     }
 
     [Fact]

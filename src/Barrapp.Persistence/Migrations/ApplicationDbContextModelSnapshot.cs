@@ -32,6 +32,9 @@ namespace Barrapp.Persistence.Migrations
                     b.Property<double>("InseamCentimeters")
                         .HasColumnType("REAL");
 
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("TrainingDays")
                         .HasColumnType("INTEGER");
 

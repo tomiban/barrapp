@@ -47,8 +47,10 @@ internal sealed class GeneratePlanCommandHandler(
                 cancellationToken);
 
         // Sin progreso guardado, el motor practica la primera etapa de la escalera. La fecha de inicio la
-        // elige el atleta en el onboarding; si no la indica, el mesociclo arranca hoy (#94).
-        var startDate = request.StartDate ?? DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
+        // elige el atleta en el perfil/onboarding (#94); si no la indica, el mesociclo arranca hoy.
+        var startDate = request.StartDate
+            ?? profile.StartDate
+            ?? DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
         var generation = PlanGenerator.Generate(profile, objective, progress?.StageOrder, startDate, catalog);
         if (generation.IsFailure)
         {

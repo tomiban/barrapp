@@ -40,7 +40,8 @@ internal sealed class SaveAthleteProfileCommandHandler(
                 request.InseamCentimeters,
                 request.TrainingDays,
                 request.Maximums,
-                weekdays);
+                weekdays,
+                request.StartDate);
 
             if (creation.IsFailure)
             {
@@ -59,7 +60,8 @@ internal sealed class SaveAthleteProfileCommandHandler(
                 request.InseamCentimeters,
                 request.TrainingDays,
                 request.Maximums,
-                weekdays);
+                weekdays,
+                request.StartDate);
             if (update.IsFailure)
             {
                 return Result.Failure<AthleteProfileResponse>(update.Error);
@@ -75,6 +77,7 @@ internal sealed class SaveAthleteProfileCommandHandler(
             profile.InseamCentimeters,
             profile.TrainingDays,
             MaximumResponses.From(profile.Maximums),
-            profile.TrainingDaysInOrder().Select(WeekdayCode.ToCode).ToList());
+            profile.TrainingDaysInOrder().Select(WeekdayCode.ToCode).ToList(),
+            profile.StartDate);
     }
 }
