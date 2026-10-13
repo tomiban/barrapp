@@ -129,3 +129,7 @@ _Avoid_: nivel, avance
 **Registro**:
 Anotación de lo realmente ejecutado en una sesión, serie a serie: reps en ejercicios de fuerza y segundos en holds, con el RIR real y el lastre opcionales.
 _Avoid_: log, tracking
+
+**Historial**:
+Archivo de los *registros* de lo realmente ejecutado, agrupado por semana y filtrable por tipo de sesión; las *sesiones sueltas* aparecen marcadas como *extra* y no cuentan en la *adherencia*.
+_Avoid_: log, tracker, registros

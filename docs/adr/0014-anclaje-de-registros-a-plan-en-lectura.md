@@ -14,3 +14,4 @@ El plan se genera **en el lado de lectura** y no se persiste (`docs/adr/0012-gen
 - *Adherencia* y *Volumen semanal ejecutado* se derivan de los registros, no del plan.
 - Cambiar la base de conocimiento **no** reescribe el pasado.
 - La sesión suelta se guarda con la misma forma (clave de sesión con tipo *suelta*), sin mesociclo asociado.
+- La **fecha** forma parte de la clave: la unicidad la garantiza un índice único filtrado por tipo —mesociclo por (atleta, tipo, fecha, mesociclo, microciclo y día), suelta por (atleta, tipo, fecha)—, de modo que el índice respeta la clave completa y la misma sesión nunca se registra dos veces.

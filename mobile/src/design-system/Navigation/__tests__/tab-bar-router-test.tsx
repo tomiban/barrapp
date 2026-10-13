@@ -1,4 +1,4 @@
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { fireEvent, renderRouter, waitFor } from 'expo-router/testing-library';
 
 import TabsLayout, { TABS } from '@/app/(tabs)/_layout';
@@ -28,15 +28,9 @@ function routes() {
 }
 
 describe('TabBar (integración con Expo Router)', () => {
-  it('define las cinco pestañas en el orden del diseño, con Entreno destacada', () => {
-    expect(TABS.map((tab) => tab.label)).toEqual([
-      'Inicio',
-      'Plan',
-      'Entreno',
-      'Skills',
-      'Historial',
-    ]);
-    expect(TABS.filter((tab) => tab.prominent).map((tab) => tab.label)).toEqual(['Entreno']);
+  it('define las cinco pestañas en el orden del diseño, con GO destacada', () => {
+    expect(TABS.map((tab) => tab.label)).toEqual(['Inicio', 'Plan', 'GO', 'Skills', 'Historial']);
+    expect(TABS.filter((tab) => tab.prominent).map((tab) => tab.label)).toEqual(['GO']);
   });
 
   it('muestra las pestañas y marca la ruta activa', async () => {
@@ -45,9 +39,29 @@ describe('TabBar (integración con Expo Router)', () => {
     expect(getByTestId('route-inicio')).toBeOnTheScreen();
     expect(getByRole('tab', { name: 'Inicio', selected: true })).toBeOnTheScreen();
     expect(getByRole('tab', { name: 'Plan', selected: false })).toBeOnTheScreen();
-    expect(getByRole('tab', { name: 'Entreno', selected: false })).toBeOnTheScreen();
+    expect(getByRole('tab', { name: 'GO', selected: false })).toBeOnTheScreen();
     expect(getByRole('tab', { name: 'Skills', selected: false })).toBeOnTheScreen();
     expect(getByRole('tab', { name: 'Historial', selected: false })).toBeOnTheScreen();
+  });
+
+  // Regresión: `TabTrigger` (expo-router/ui) inyecta `flexDirection: 'row'` +
+  // `justifyContent: 'space-between'` vía Slot de Radix, y ese estilo inline
+  // gana al `className` de Uniwind. Las celdas se disponían en fila: iconos
+  // junto a las etiquetas y textos largos recortados en el borde derecho.
+  //
+  // Se assertion sobre el `style` (detalle de implementación) porque en Jest no
+  // hay layout real: es la única costura observable del apilado sin abrir un
+  // emulador. Si el fix cambia de estrategia, actualizar este contrato.
+  it('stacks the icon above the label with a column layout', async () => {
+    const { getByRole } = await renderRouter(routes(), { initialUrl: '/' });
+
+    for (const name of ['Inicio', 'Plan', 'GO', 'Skills', 'Historial']) {
+      const tab = getByRole('tab', { name });
+      expect(StyleSheet.flatten(tab.props.style)).toMatchObject({
+        flexDirection: 'column',
+        justifyContent: 'center',
+      });
+    }
   });
 
   it('cambia la pestaña activa al pulsar otra', async () => {

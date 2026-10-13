@@ -40,7 +40,8 @@ internal static class PlanEndpoints
             .WithName("GeneratePlan")
             .WithTags("Plan")
             .WithSummary("Genera el mesociclo con el motor y lo persiste como el activo del atleta.")
-            .WithDescription("La fecha de inicio es opcional: sin ella el mesociclo arranca hoy.")
+            .WithDescription(
+                "La fecha de inicio es opcional: sin ella se usa la del perfil y, si el atleta no eligió, hoy.")
             .Produces<PlanResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest);
@@ -98,9 +99,9 @@ internal static class PlanEndpoints
 
     /// <summary>
     /// Cuerpo opcional de <c>POST /plan</c>: la fecha en la que el atleta quiere arrancar el
-    /// mesociclo (#94). El mesociclo arranca en el primer día de entrenamiento en o después de ella,
-    /// y si no se envía arranca hoy.
+    /// mesociclo (#94). El mesociclo arranca en el primer día de entrenamiento en o después de ella;
+    /// sin fecha en el cuerpo se usa la del perfil y, si el atleta no eligió ninguna, hoy.
     /// </summary>
-    /// <param name="StartDate">Fecha de inicio elegida; <c>null</c> para hoy.</param>
+    /// <param name="StartDate">Fecha de inicio elegida; <c>null</c> para la del perfil o «hoy».</param>
     private sealed record GeneratePlanBody(DateOnly? StartDate);
 }

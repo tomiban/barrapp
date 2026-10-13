@@ -7,7 +7,8 @@ namespace Barrapp.Domain.Athlete;
 /// básico. Guarda <b>peso</b> (kg), <b>altura</b> (cm), <b>envergadura</b> (cm),
 /// <b>entrepierna</b> (cm), los <b>días de la semana</b> que entrena (3–5, ver
 /// <see cref="TrainingWeekday"/>) y el <see cref="Maximum"/> de cada ejercicio de
-/// <see cref="BasicExercises"/>.
+/// <see cref="BasicExercises"/>. Guarda también la <b>fecha de inicio</b> elegida para arrancar
+/// el mesociclo (#94).
 /// </summary>
 /// <remarks>
 /// El estado solo cambia por sus métodos (<see cref="Create"/>, <see cref="Update"/>), que
@@ -58,7 +59,8 @@ public sealed class AthleteProfile
         double armSpanCentimeters,
         double inseamCentimeters,
         int trainingDays,
-        IReadOnlyList<DayOfWeek> trainingWeekdays)
+        IReadOnlyList<DayOfWeek> trainingWeekdays,
+        DateOnly? startDate)
     {
         Id = id;
         UserId = userId;
@@ -67,6 +69,7 @@ public sealed class AthleteProfile
         ArmSpanCentimeters = armSpanCentimeters;
         InseamCentimeters = inseamCentimeters;
         TrainingDays = trainingDays;
+        StartDate = startDate;
         _trainingWeekdays.AddRange(trainingWeekdays.Select(day => new TrainingWeekday(day)));
     }
 
@@ -109,6 +112,13 @@ public sealed class AthleteProfile
     public IReadOnlyList<DayOfWeek> TrainingDaysInOrder() =>
         _trainingWeekdays.OrderBy(weekday => (int)weekday.Day).Select(weekday => weekday.Day).ToList();
 
+    /// <summary>
+    /// Fecha en la que el atleta quiere arrancar el mesociclo (#94); <c>null</c> si todavía no eligió
+    /// una. El motor ancla el calendario en el primer día de entrenamiento en o después de esta
+    /// fecha; sin fecha elegida, es la aplicación la que decide arrancar hoy.
+    /// </summary>
+    public DateOnly? StartDate { get; private set; }
+
     /// <summary>Máximo por cada ejercicio básico; uno por ejercicio, siempre completo.</summary>
     public IReadOnlyCollection<Maximum> Maximums => _maximums;
 
@@ -127,7 +137,8 @@ public sealed class AthleteProfile
     /// altura (120–220 cm), la envergadura (100–250 cm), la entrepierna (50–130 cm) o los
     /// días de entrenamiento (3–5) están fuera de rango, o si los máximos no cubren
     /// exactamente los ejercicios básicos (falta alguno, hay repetidos, un código
-    /// desconocido o unas repeticiones negativas).
+    /// desconocido o unas repeticiones negativas). La <paramref name="startDate"/> se guarda
+    /// tal como la elige el atleta (#94): <c>null</c> significa «sin elegir, arranca hoy».
     /// </summary>
     public static Result<AthleteProfile> Create(
         Guid userId,
@@ -137,7 +148,8 @@ public sealed class AthleteProfile
         double inseamCentimeters,
         int trainingDays,
         IReadOnlyCollection<MaximumInput> maximums,
-        IReadOnlyCollection<DayOfWeek>? trainingWeekdays = null)
+        IReadOnlyCollection<DayOfWeek>? trainingWeekdays = null,
+        DateOnly? startDate = null)
     {
         var validation = ValidateProfile(
             weightKilograms,
@@ -170,7 +182,8 @@ public sealed class AthleteProfile
             armSpanCentimeters,
             inseamCentimeters,
             trainingDays,
-            weekdayValidation.Value);
+            weekdayValidation.Value,
+            startDate);
         profile._maximums.AddRange(maximumValidation.Value);
 
         return profile;
@@ -188,7 +201,8 @@ public sealed class AthleteProfile
         double inseamCentimeters,
         int trainingDays,
         IReadOnlyCollection<MaximumInput> maximums,
-        IReadOnlyCollection<DayOfWeek>? trainingWeekdays = null)
+        IReadOnlyCollection<DayOfWeek>? trainingWeekdays = null,
+        DateOnly? startDate = null)
     {
         var validation = ValidateProfile(
             weightKilograms,
@@ -218,6 +232,7 @@ public sealed class AthleteProfile
         ArmSpanCentimeters = armSpanCentimeters;
         InseamCentimeters = inseamCentimeters;
         TrainingDays = trainingDays;
+        StartDate = startDate;
         _trainingWeekdays.Clear();
         _trainingWeekdays.AddRange(weekdayValidation.Value.Select(day => new TrainingWeekday(day)));
         ApplyMaximums(maximumValidation.Value);

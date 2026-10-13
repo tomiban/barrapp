@@ -1,7 +1,7 @@
 import type { Href } from 'expo-router';
 import { TabList, TabSlot, Tabs, TabTrigger } from 'expo-router/ui';
 import type { LucideIcon } from 'lucide-react-native';
-import { Pressable, type PressableProps } from 'react-native';
+import { Pressable, type PressableProps, type ViewStyle } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 
 import { Icon } from '../Icon';
@@ -30,6 +30,23 @@ export type TabDefinition = {
 };
 
 /**
+ * Apilado de la celda de pestaña: icono sobre la etiqueta, centrado (mockup de
+ * Stitch: `flex flex-col items-center justify-center`).
+ *
+ * **Por qué va como estilo inline** (excepción al `className` de Uniwind):
+ * `TabTrigger asChild` (expo-router/ui) pasa por el Slot de Radix un `style`
+ * con `flexDirection: 'row'` y `justifyContent: 'space-between'` que, al ser
+ * inline, gana sobre el `className`. Sin este apilado forzado al final del
+ * array, las celdas se disponían en fila: iconos junto a las etiquetas y
+ * textos largos recortados en el borde (test de regresión en
+ * `tab-bar-router-test.tsx`).
+ */
+const TAB_CELL_STACK: ViewStyle = {
+  flexDirection: 'column',
+  justifyContent: 'center',
+};
+
+/**
  * Props de `TabBarItem`: las de un `Pressable` (sin `children`) más la etiqueta,
  * el icono y el estado.
  *
@@ -54,6 +71,10 @@ export type TabBarItemProps = Omit<PressableProps, 'children'> & {
  * `primary` y la inactiva en `text-muted` (roles semánticos de la spec 0002,
  * estado nunca solo por color). La pestaña `prominent` es una celda rellena en
  * `primary` con contenido `on-primary`, la acción central del diseño.
+ *
+ * El apilado vertical es **contrato del componente** (ver `TAB_CELL_STACK`): un
+ * `style` del consumidor se fusiona, pero `flexDirection`/`justifyContent`
+ * siempre los gana la celda.
  */
 export function TabBarItem({
   label,
@@ -61,6 +82,7 @@ export function TabBarItem({
   isFocused = false,
   prominent = false,
   className,
+  style,
   ...rest
 }: TabBarItemProps) {
   const [primary, muted, onPrimary] = useCSSVariable([
@@ -86,8 +108,18 @@ export function TabBarItem({
       {...rest}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
+      // `TAB_CELL_STACK` va el último del array: es lo que neutraliza el
+      // `flexDirection: 'row'` que `TabTrigger` inyecta vía Slot de Radix
+      // (ver JSDoc de la constante).
+      style={
+        typeof style === 'function'
+          ? (state) => [style(state), TAB_CELL_STACK]
+          : [style, TAB_CELL_STACK]
+      }
       className={cn(
-        'flex-1 items-center justify-center gap-xs py-sm',
+        // Sin `justify-center`: lo centraliza `TAB_CELL_STACK` (el `className`
+        // se sobreescribe con el estilo inline).
+        'flex-1 items-center gap-xs py-sm',
         prominent ? 'mx-xs rounded-lg bg-primary' : undefined,
         className,
       )}

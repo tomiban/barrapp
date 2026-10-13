@@ -32,6 +32,9 @@ namespace Barrapp.Persistence.Migrations
                     b.Property<double>("InseamCentimeters")
                         .HasColumnType("REAL");
 
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("TrainingDays")
                         .HasColumnType("INTEGER");
 
@@ -146,7 +149,11 @@ namespace Barrapp.Persistence.Migrations
 
                     b.HasIndex("UserId", "SessionDate");
 
-                    b.HasIndex("UserId", "Kind", "MesocycleId", "MicrocycleNumber", "SessionDay")
+                    b.HasIndex("UserId", "Kind", "SessionDate")
+                        .IsUnique()
+                        .HasFilter("\"Kind\" = 1");
+
+                    b.HasIndex("UserId", "Kind", "SessionDate", "MesocycleId", "MicrocycleNumber", "SessionDay")
                         .IsUnique()
                         .HasFilter("\"Kind\" = 0");
 

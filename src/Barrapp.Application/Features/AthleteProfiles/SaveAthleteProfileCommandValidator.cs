@@ -45,5 +45,9 @@ internal sealed class SaveAthleteProfileCommandValidator : AbstractValidator<Sav
                 || command.TrainingWeekdays.All(code => WeekdayCode.ToWeekday(code) is not null))
             .WithName("TrainingWeekdays")
             .WithMessage("Cada día de la semana debe ser un día válido (de monday a sunday).");
+
+        // La fecha de inicio (#94) no tiene regla de forma: <c>DateOnly</c> ya llega como una fecha
+        // real del calendario desde el JSON (o no bindea y el request ni llega), y <c>null</c> es
+        // «sin elegir», que el dominio y el motor conocen.
     }
 }
