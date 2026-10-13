@@ -16,6 +16,7 @@ namespace Barrapp.Domain.Sessions;
 /// <param name="RepsMax">Repeticiones máximas del rango.</param>
 /// <param name="HoldSecondsMin">Segundos mantenidos mínimos del rango.</param>
 /// <param name="HoldSecondsMax">Segundos mantenidos máximos del rango.</param>
+/// <param name="RestSeconds">Descanso entre series, en segundos, con el que se compuso la fila.</param>
 /// <param name="Note">Nota para la UI; <c>null</c> si no hay nada que explicar.</param>
 public sealed record SessionSueltaItemInput(
     string ExerciseId,
@@ -26,4 +27,5 @@ public sealed record SessionSueltaItemInput(
     int? RepsMax,
     int? HoldSecondsMin,
     int? HoldSecondsMax,
+    int RestSeconds,
     string? Note = null);

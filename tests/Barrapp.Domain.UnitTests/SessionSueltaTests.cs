@@ -153,7 +153,7 @@ public sealed class SessionSueltaTests
             ExerciseGroup.Push,
             skillId: null,
             new DateTimeOffset(2026, 10, 5, 18, 30, 0, TimeSpan.Zero),
-            [new SessionSueltaItemInput("push_up", SessionItemRole.Strength, ExerciseGroup.Push, 3, null, null, null, null)]);
+            [new SessionSueltaItemInput("push_up", SessionItemRole.Strength, ExerciseGroup.Push, 3, null, null, null, null, 120)]);
 
         Assert.True(created.IsFailure);
         Assert.Equal("session_suelta.item_requires_range", created.Error.Code);
@@ -170,10 +170,27 @@ public sealed class SessionSueltaTests
             ExerciseGroup.Push,
             skillId: null,
             new DateTimeOffset(2026, 10, 5, 18, 30, 0, TimeSpan.Zero),
-            [new SessionSueltaItemInput("", SessionItemRole.Strength, ExerciseGroup.Push, 3, 5, 8, null, null)]);
+            [new SessionSueltaItemInput("", SessionItemRole.Strength, ExerciseGroup.Push, 3, 5, 8, null, null, 120)]);
 
         Assert.True(created.IsFailure);
         Assert.Equal("session_suelta.item_exercise_required", created.Error.Code);
+    }
+
+    [Fact]
+    public void Create_with_an_item_with_a_negative_rest_fails()
+    {
+        var created = SessionSuelta.Create(
+            UserId,
+            30,
+            SoloSessionEnergy.Medium,
+            SoloSessionFocus.Pattern,
+            ExerciseGroup.Push,
+            skillId: null,
+            new DateTimeOffset(2026, 10, 5, 18, 30, 0, TimeSpan.Zero),
+            [new SessionSueltaItemInput("push_up", SessionItemRole.Strength, ExerciseGroup.Push, 3, 5, 8, null, null, -1)]);
+
+        Assert.True(created.IsFailure);
+        Assert.Equal("session_suelta.item_rest_seconds_must_be_non_negative", created.Error.Code);
     }
 
     [Fact]
@@ -219,7 +236,7 @@ public sealed class SessionSueltaTests
 
     private static IReadOnlyCollection<SessionSueltaItemInput> Items() =>
     [
-        new("push_up", SessionItemRole.Strength, ExerciseGroup.Push, 3, 5, 8, null, null),
-        new("hollow-body-hold", SessionItemRole.Core, null, 3, null, null, 20, 30),
+        new("push_up", SessionItemRole.Strength, ExerciseGroup.Push, 3, 5, 8, null, null, 120),
+        new("hollow-body-hold", SessionItemRole.Core, null, 3, null, null, 20, 30, 60),
     ];
 }

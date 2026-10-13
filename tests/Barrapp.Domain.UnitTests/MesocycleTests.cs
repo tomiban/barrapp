@@ -110,6 +110,40 @@ public sealed class MesocycleTests
     }
 
     [Fact]
+    public void Snapshot_preserves_the_rest_of_every_item()
+    {
+        var plan = PlanGenerator.Generate(BuildProfile(trainingDays: 3), BuildObjective(), 1, StartDate, Catalog()).Value;
+
+        var roundTripped = Mesocycle.Create(UserId, plan, StartedAtUtc).Value.Snapshot.ToPlan();
+
+        Assert.Equal(
+            plan.Microcycles.SelectMany(microcycle => microcycle.Sessions).SelectMany(session => session.Items)
+                .Select(item => item.RestSeconds),
+            roundTripped.Microcycles.SelectMany(microcycle => microcycle.Sessions).SelectMany(session => session.Items)
+                .Select(item => item.RestSeconds));
+    }
+
+    /// <summary>
+    /// Un snapshot guardado antes del #95 no trae descanso: al reconstruirlo se recupera el default
+    /// por papel, no un cero que rompería el cronómetro de la app.
+    /// </summary>
+    [Fact]
+    public void Snapshot_rest_falls_back_to_the_role_default_when_it_was_saved_without_it()
+    {
+        var legacyItem = new SnapshotSessionItem
+        {
+            ExerciseId = "push_up",
+            Role = SessionItemRole.Strength,
+            Pattern = ExerciseGroup.Push,
+            Sets = 3,
+            RepsMin = 5,
+            RepsMax = 8,
+        };
+
+        Assert.Equal(90, legacyItem.ToItem().RestSeconds);
+    }
+
+    [Fact]
     public void Close_marks_the_mesocycle_closed_with_a_timestamp()
     {
         var mesocycle = Mesocycle.Create(UserId, BuildPlan(), StartedAtUtc).Value;

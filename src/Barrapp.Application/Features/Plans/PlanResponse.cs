@@ -12,6 +12,7 @@ namespace Barrapp.Application.Features.Plans;
 /// <param name="RepsMax">Repeticiones máximas del rango; <c>null</c> si se mide en segundos.</param>
 /// <param name="HoldSecondsMin">Segundos mínimos del rango; <c>null</c> si se mide en repeticiones.</param>
 /// <param name="HoldSecondsMax">Segundos máximos del rango; <c>null</c> si se mide en repeticiones.</param>
+/// <param name="RestSeconds">Descanso entre series, en segundos; lo cronometra la app en «Sesión en curso».</param>
 /// <param name="Note">Nota de la fila para la UI (p. ej. el ritmo esperado por la palanca); <c>null</c> si no hay.</param>
 public sealed record SessionItemResponse(
     string ExerciseId,
@@ -23,6 +24,7 @@ public sealed record SessionItemResponse(
     int? RepsMax,
     int? HoldSecondsMin,
     int? HoldSecondsMax,
+    int RestSeconds,
     string? Note);
 
 /// <summary>Sesión del mesociclo tal y como la consume la app.</summary>

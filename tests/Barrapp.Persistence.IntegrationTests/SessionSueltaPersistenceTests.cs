@@ -67,8 +67,10 @@ public sealed class SessionSueltaPersistenceTests : IDisposable
         Assert.Equal(SessionItemRole.Strength, reloaded.Items.ElementAt(0).Role);
         Assert.Equal(ExerciseGroup.Push, reloaded.Items.ElementAt(0).Pattern);
         Assert.Equal(8, reloaded.Items.ElementAt(0).RepsMax);
+        Assert.Equal(120, reloaded.Items.ElementAt(0).RestSeconds);
         Assert.Equal("hollow-body-hold", reloaded.Items.ElementAt(1).ExerciseId);
         Assert.Equal(30, reloaded.Items.ElementAt(1).HoldSecondsMax);
+        Assert.Equal(60, reloaded.Items.ElementAt(1).RestSeconds);
     }
 
     [Fact]
@@ -122,8 +124,8 @@ public sealed class SessionSueltaPersistenceTests : IDisposable
 
     private static IReadOnlyCollection<SessionSueltaItemInput> Items() =>
     [
-        new("push_up", SessionItemRole.Strength, ExerciseGroup.Push, 3, 5, 8, null, null),
-        new("hollow-body-hold", SessionItemRole.Core, null, 3, null, null, 20, 30),
+        new("push_up", SessionItemRole.Strength, ExerciseGroup.Push, 3, 5, 8, null, null, 120),
+        new("hollow-body-hold", SessionItemRole.Core, null, 3, null, null, 20, 30, 60),
     ];
 
     private ApplicationDbContext CreateContext()

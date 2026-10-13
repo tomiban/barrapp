@@ -291,6 +291,11 @@ public static class DomainErrors
             "session_suelta.item_range_min_greater_than_max",
             "El mínimo de un rango de la sesión suelta no puede superar al máximo.");
 
+        /// <summary>Una fila del snapshot trae un descanso negativo.</summary>
+        public static readonly Error ItemRestSecondsMustBeNonNegative = Error.Validation(
+            "session_suelta.item_rest_seconds_must_be_non_negative",
+            "El descanso de cada fila de la sesión suelta no puede ser negativo.");
+
         /// <summary>La suelta ya estaba registrada y no se puede registrar dos veces.</summary>
         public static readonly Error AlreadyRecorded = Error.Conflict(
             "session_suelta.already_recorded",

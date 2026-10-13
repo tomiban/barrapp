@@ -167,6 +167,12 @@ public sealed class SnapshotSessionItem
     /// <summary>Segundos mantenidos máximos del rango; <c>null</c> cuando se mide en repeticiones.</summary>
     public int? HoldSecondsMax { get; init; }
 
+    /// <summary>
+    /// Descanso tras la serie, en segundos. <c>null</c> en los snapshots guardados antes del #95,
+    /// en cuyo caso <see cref="ToItem"/> recupera el default del papel de la fila.
+    /// </summary>
+    public int? RestSeconds { get; init; }
+
     /// <summary>Nota de la fila para la UI; <c>null</c> cuando no hay nada que explicar.</summary>
     public string? Note { get; init; }
 
@@ -180,6 +186,7 @@ public sealed class SnapshotSessionItem
         RepsMax = item.RepsMax,
         HoldSecondsMin = item.HoldSecondsMin,
         HoldSecondsMax = item.HoldSecondsMax,
+        RestSeconds = item.RestSeconds,
         Note = item.Note,
     };
 
@@ -192,5 +199,6 @@ public sealed class SnapshotSessionItem
         RepsMax,
         HoldSecondsMin,
         HoldSecondsMax,
+        RestSeconds ?? SessionItemRest.DefaultFor(Role),
         Note);
 }

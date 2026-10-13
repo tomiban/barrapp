@@ -11,7 +11,8 @@ namespace Barrapp.Domain.Planning;
 /// La construye el <see cref="PlanGenerator"/>; es inmutable. <see cref="Role"/> decide qué
 /// rangos llevan valor: <see cref="SessionItemRole.Strength"/> usa reps y
 /// <see cref="SessionItemRole.Skill"/>/<see cref="SessionItemRole.Core"/> pueden usar segundos
-/// (los skills de repeticiones, reps).
+/// (los skills de repeticiones, reps). El descanso (#95) es una sola fuente de verdad: el de la
+/// rutina que generó la fila o, en su defecto, el default del papel.
 /// </remarks>
 public sealed class SessionItem
 {
@@ -24,6 +25,7 @@ public sealed class SessionItem
         int? repsMax,
         int? holdSecondsMin,
         int? holdSecondsMax,
+        int restSeconds,
         string? note = null)
     {
         ExerciseId = exerciseId;
@@ -34,6 +36,7 @@ public sealed class SessionItem
         RepsMax = repsMax;
         HoldSecondsMin = holdSecondsMin;
         HoldSecondsMax = holdSecondsMax;
+        RestSeconds = restSeconds;
         Note = note;
     }
 
@@ -60,6 +63,13 @@ public sealed class SessionItem
 
     /// <summary>Segundos mantenidos máximos del rango; <c>null</c> cuando se mide en repeticiones.</summary>
     public int? HoldSecondsMax { get; }
+
+    /// <summary>
+    /// Descanso tras la serie (o tras el grupo de superserie), en segundos (#95). Es el descanso de
+    /// la rutina que la compuso o, si no vino de rutina, el default de su papel
+    /// (<see cref="SessionItemRest.DefaultFor"/>); nunca lo inventa la UI.
+    /// </summary>
+    public int RestSeconds { get; }
 
     /// <summary>
     /// Nota para la UI sobre la fila; <c>null</c> cuando no hay nada que explicar. Hoy solo la lleva

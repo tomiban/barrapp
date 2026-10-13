@@ -22,7 +22,9 @@ namespace Barrapp.Domain.Planning;
 /// criterio de etapa no cambia. La onda semanal de RIR (#12) sube el volumen en las semanas 2 y 3;
 /// la semana 4 es un <i>deload</i> (#13) con RIR 4 y ~50 % del volumen, bajando las series de
 /// fuerza y de core sin tocar el bloque de skill ni la anatomía de la sesión. Con un máximo de 0 o 1
-/// en algún patrón, el hueco de fuerza se cubre con la regresión del ejercicio (#17/#91).
+/// en algún patrón, el hueco de fuerza se cubre con la regresión del ejercicio (#17/#91). Cada
+/// fila lleva su descanso (#95); como el plan no se compone de rutinas, es el default de su papel
+/// (<see cref="SessionItemRest.DefaultFor"/>).
 /// </remarks>
 public static class PlanGenerator
 {
@@ -282,7 +284,8 @@ public static class PlanGenerator
                 reps.Min,
                 reps.Max,
                 null,
-                null));
+                null,
+                SessionItemRest.DefaultFor(SessionItemRole.Strength)));
         }
 
         items.Add(new SessionItem(
@@ -293,7 +296,8 @@ public static class PlanGenerator
             null,
             null,
             CoreHoldSecondsMin,
-            CoreHoldSecondsMax));
+            CoreHoldSecondsMax,
+            SessionItemRest.DefaultFor(SessionItemRole.Core)));
 
         return items;
     }
@@ -319,6 +323,7 @@ public static class PlanGenerator
             isHold ? null : stage.Criterion.Target,
             isHold ? stage.Criterion.Target : null,
             isHold ? stage.Criterion.Target : null,
+            SessionItemRest.DefaultFor(SessionItemRole.Skill),
             lever?.Note);
     }
 

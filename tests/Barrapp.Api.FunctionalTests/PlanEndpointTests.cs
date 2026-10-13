@@ -208,6 +208,34 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
         Assert.All(skillBlocks, block => Assert.Contains("lento", block.Note));
     }
 
+    /// <summary>
+    /// Cada fila del plan trae su descanso en segundos (#95); sin rutina de origen, el default por
+    /// papel (skill 120 s, fuerza 90 s, core 60 s).
+    /// </summary>
+    [Fact]
+    public async Task Get_plan_reports_the_rest_in_seconds_of_every_item()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.GetAsync("/plan");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+
+        var items = plan!.Microcycles
+            .SelectMany(microcycle => microcycle.Sessions)
+            .SelectMany(session => session.Items)
+            .ToList();
+        Assert.NotEmpty(items);
+
+        Assert.All(items.Where(item => item.Role == "skill"), item => Assert.Equal(120, item.RestSeconds));
+        Assert.All(items.Where(item => item.Role == "strength"), item => Assert.Equal(90, item.RestSeconds));
+        Assert.All(items.Where(item => item.Role == "core"), item => Assert.Equal(60, item.RestSeconds));
+    }
+
     [Fact]
     public async Task Get_plan_for_a_four_day_profile_alternates_upper_and_lower_sessions()
     {

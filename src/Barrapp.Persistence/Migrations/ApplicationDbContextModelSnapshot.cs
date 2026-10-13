@@ -452,6 +452,9 @@ namespace Barrapp.Persistence.Migrations
                             b1.Property<int?>("RepsMin")
                                 .HasColumnType("INTEGER");
 
+                            b1.Property<int>("RestSeconds")
+                                .HasColumnType("INTEGER");
+
                             b1.Property<int>("Role")
                                 .HasColumnType("INTEGER");
 

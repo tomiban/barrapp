@@ -89,6 +89,7 @@ internal sealed class GenerateSoloSessionCommandHandler(
                 item.RepsMax,
                 item.HoldSecondsMin,
                 item.HoldSecondsMax,
+                item.RestSeconds,
                 item.Note)).ToList());
         if (history.IsFailure)
         {
@@ -146,5 +147,6 @@ internal sealed class GenerateSoloSessionCommandHandler(
         item.RepsMax,
         item.HoldSecondsMin,
         item.HoldSecondsMax,
+        item.RestSeconds,
         item.Note);
 }

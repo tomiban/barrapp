@@ -87,5 +87,6 @@ internal static class SueltaResponses
         item.RepsMax,
         item.HoldSecondsMin,
         item.HoldSecondsMax,
+        item.RestSeconds,
         item.Note);
 }
