@@ -4,7 +4,7 @@ Guía para compilar e instalar la app en un iPhone y un Android usando **Expo Ap
 
 > El build en la nube **requiere credenciales** (cuenta Expo + Apple Developer / Google Play) y es un **paso de humano**. Este documento deja el proyecto configurado: a una persona solo le faltaría `login` + `eas build`.
 
-**Estado de la configuración** (verificado 13/10/2026, eas-cli 24.13.0): `eas.json`/`app.json` válidos, `expo-doctor` 21/21, `expo install --check` limpio, `EXPO_PUBLIC_API_URL` de `development`/`preview` verificada inline en el bundle Hermes con `expo export`, keystore local de Android generado (`android-keystore/barrapp.keystore`, git-ignored). **Ningún comando EAS corre sin sesión Expo** — ni siquiera `eas config` ni `eas build --local` — por lo que generar los binarios es el paso humano que falta (ver [receta](#receta-paso-a-paso-humano)).
+**Estado de la configuración** (verificado 13/10/2026, eas-cli 24.13.0): `eas.json`/`app.json` válidos, `expo-doctor` 21/21, `expo install --check` limpio, `EXPO_PUBLIC_API_URL` de `development`/`preview` verificada inline en el bundle Hermes con `expo export`, cleartext habilitado en el manifest de release (verificado con `expo prebuild`), keystore local de Android generado (`android-keystore/barrapp.keystore`, git-ignored). **Ningún comando EAS corre sin sesión Expo** — ni siquiera `eas config` ni `eas build --local` — por lo que generar los binarios es el paso humano que falta (ver [receta](#receta-paso-a-paso-humano)).
 
 ## Estado del proyecto
 
@@ -68,7 +68,11 @@ Notas sobre la configuración (verificado contra la documentación de SDK 57 / E
 - En un **build EAS instalado en dispositivo no hay dev server**: sin la variable la app cae a `http://localhost:5213`, que no es alcanzable desde el dispositivo.
 - Por lo tanto **todo build EAS instalable que deba hablar con el API necesita `EXPO_PUBLIC_API_URL` definida en tiempo de build**. La URL no es un secreto (viaja en el bundle).
 
-**Estado actual**: los perfiles `development` y `preview` de `eas.json` ya definen `env.EXPO_PUBLIC_API_URL` con la IP de la red local del portátil (`http://192.168.0.249:5213`, verificado inline en el bundle con `expo export`). ⚠️ Si la IP LAN del portátil cambia, actualizar el valor en `eas.json` antes de construir.
+**Estado actual**: los perfiles `development` y `preview` de `eas.json` ya definen `env.EXPO_PUBLIC_API_URL` con la IP de la red local del portátil (`http://192.168.0.249:5213`, verificado inline en el bundle con `expo export`). ⚠️ Si la IP LAN del portátil cambia, actualizar **los dos perfiles (`development` y `preview`) y el snippet de esta guía** antes de construir.
+
+**HTTP plano (cleartext)**: la URL de LAN es `http://`, y los builds de `preview`/`production` son de tipo _release_, donde **Android bloquea por defecto el tráfico cleartext** (verificado con `expo prebuild`: el manifest de debug lo permite, el de release no). Por eso `app.json` incluye el plugin `expo-build-properties` con `"android": { "usesCleartextTraffic": true }` (verificado: el manifest de release lo lleva). Cuando el API de producción esté en `https://`, conviene quitar ese flag.
+
+En iOS, `NSAllowsLocalNetworking` (ya en `app.json`) exime hosts sin calificar y `.local`, **no así una IP cruda**; si el build de iOS no llega al API de LAN por ATS, añadir `NSAppTransportSecurity > NSAllowsArbitraryLoads` (solo aceptable en builds de desarrollo/preview, Apple lo revisa en producción).
 
 Para `production` (o si preferís no versionar la URL), las opciones (la primera es la recomendada):
 
