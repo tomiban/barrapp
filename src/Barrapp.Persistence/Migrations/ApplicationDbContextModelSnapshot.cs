@@ -146,7 +146,11 @@ namespace Barrapp.Persistence.Migrations
 
                     b.HasIndex("UserId", "SessionDate");
 
-                    b.HasIndex("UserId", "Kind", "MesocycleId", "MicrocycleNumber", "SessionDay")
+                    b.HasIndex("UserId", "Kind", "SessionDate")
+                        .IsUnique()
+                        .HasFilter("\"Kind\" = 1");
+
+                    b.HasIndex("UserId", "Kind", "SessionDate", "MesocycleId", "MicrocycleNumber", "SessionDay")
                         .IsUnique()
                         .HasFilter("\"Kind\" = 0");
 
@@ -156,7 +160,6 @@ namespace Barrapp.Persistence.Migrations
             modelBuilder.Entity("Barrapp.Domain.Sessions.SessionLogItem", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ClientId")
@@ -385,7 +388,6 @@ namespace Barrapp.Persistence.Migrations
                                 .HasColumnType("TEXT");
 
                             b1.Property<int>("SetNumber")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("INTEGER");
 
                             b1.Property<int?>("ActualRir")

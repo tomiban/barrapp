@@ -148,13 +148,13 @@ public sealed class SessionLogPersistenceTests : IDisposable
         second.UpsertItem(Item("push_up", "Flexiones", sets: [Set(1, 12)]));
         _dbContext.SessionLogs.AddRange(first, second);
 
-        // El índice único filtrado (atleta, tipo, mesociclo, microciclo y día) WHERE Kind = mesociclo
-        // rechaza la segunda fila con la misma clave de sesión (ADR-0014).
+        // El índice único filtrado (atleta, tipo, fecha, mesociclo, microciclo y día) WHERE
+        // Kind = mesociclo rechaza la segunda fila con la misma clave de sesión (ADR-0014).
         await Assert.ThrowsAsync<DbUpdateException>(() => _dbContext.SaveChangesAsync());
     }
 
     [Fact]
-    public async Task Two_suelta_sessions_of_the_same_day_are_both_saved()
+    public async Task Two_suelta_sessions_of_the_same_day_violate_the_unique_filtered_index()
     {
         var first = Session(SessionDate, kind: SessionLogKind.Suelta, microcycleNumber: null, sessionDay: null);
         first.UpsertItem(Item("push_up", "Flexiones", sets: [Set(1, 10)]));
@@ -162,11 +162,32 @@ public sealed class SessionLogPersistenceTests : IDisposable
         second.UpsertItem(Item("push_up", "Flexiones", sets: [Set(1, 12)]));
         _dbContext.SessionLogs.AddRange(first, second);
 
+        // El índice único filtrado (atleta, tipo, fecha) WHERE Kind = suelta respeta la clave de
+        // sesión de ADR-0014: la fecha es la identidad de una sesión suelta, así que dos sueltas del
+        // mismo día son la misma sesión y no pueden duplicarse.
+        await Assert.ThrowsAsync<DbUpdateException>(() => _dbContext.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task The_same_session_day_on_different_dates_are_different_rows()
+    {
+        var first = Session(new DateOnly(2026, 10, 5));
+        first.UpsertItem(Item("push_up", "Flexiones", sets: [Set(1, 10)]));
+        var second = Session(new DateOnly(2026, 10, 12));
+        second.UpsertItem(Item("push_up", "Flexiones", sets: [Set(1, 14)]));
+        _dbContext.SessionLogs.AddRange(first, second);
+
+        // La fecha entra en la clave de sesión determinista (ADR-0014): el mismo día de sesión en
+        // dos fechas distintas son dos registros, y el índice único no las rechaza.
         await _dbContext.SaveChangesAsync();
 
         var reloaded = await ReadLogsAsync();
+
         Assert.Equal(2, reloaded.Count);
-        Assert.All(reloaded, log => Assert.Equal(SessionLogKind.Suelta, log.Kind));
+        var ordered = reloaded.OrderBy(log => log.SessionDate).ToList();
+        Assert.Equal([new DateOnly(2026, 10, 5), new DateOnly(2026, 10, 12)], ordered.Select(log => log.SessionDate));
+        Assert.Equal([10], ordered.ElementAt(0).Items.Single().Sets.Select(set => set.Value));
+        Assert.Equal([14], ordered.ElementAt(1).Items.Single().Sets.Select(set => set.Value));
     }
 
     [Fact]

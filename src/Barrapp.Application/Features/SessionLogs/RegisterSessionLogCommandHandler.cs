@@ -36,6 +36,12 @@ internal sealed class RegisterSessionLogCommandHandler(
             return Result.Failure<SessionLogResponse>(DomainErrors.SessionLog.MesocycleKeyRequired);
         }
 
+        var input = BuildInput(request);
+        if (input.IsFailure)
+        {
+            return Result.Failure<SessionLogResponse>(input.Error);
+        }
+
         // Idempotencia offline: el reintento del mismo clientId actualiza el ítem original, en la
         // sesión en la que se registró aunque la cabecera haya cambiado de clave.
         if (request.ClientId is { } clientId)
@@ -46,7 +52,7 @@ internal sealed class RegisterSessionLogCommandHandler(
                 var replaySession = await repository.GetByIdAsync(alreadyRegistered.SessionLogId, cancellationToken);
                 if (replaySession is not null)
                 {
-                    return await UpsertAsync(replaySession, request, cancellationToken);
+                    return await UpsertAsync(replaySession, input.Value, cancellationToken);
                 }
             }
         }
@@ -54,7 +60,7 @@ internal sealed class RegisterSessionLogCommandHandler(
         var existing = await repository.GetByKeyAsync(key, cancellationToken);
         if (existing is not null)
         {
-            return await UpsertAsync(existing, request, cancellationToken);
+            return await UpsertAsync(existing, input.Value, cancellationToken);
         }
 
         var creation = SessionLog.Create(
@@ -71,7 +77,7 @@ internal sealed class RegisterSessionLogCommandHandler(
         }
 
         var sessionLog = creation.Value;
-        var registered = sessionLog.UpsertItem(BuildInput(request));
+        var registered = sessionLog.UpsertItem(input.Value);
         if (registered.IsFailure)
         {
             return Result.Failure<SessionLogResponse>(registered.Error);
@@ -89,10 +95,10 @@ internal sealed class RegisterSessionLogCommandHandler(
     /// </summary>
     private async Task<Result<SessionLogResponse>> UpsertAsync(
         SessionLog session,
-        RegisterSessionLogCommand request,
+        SessionLogItemInput input,
         CancellationToken cancellationToken)
     {
-        var registered = session.UpsertItem(BuildInput(request));
+        var registered = session.UpsertItem(input);
         if (registered.IsFailure)
         {
             return Result.Failure<SessionLogResponse>(registered.Error);
@@ -124,18 +130,24 @@ internal sealed class RegisterSessionLogCommandHandler(
 
     /// <summary>
     /// Monta el ítem con su foto: el <b>nombre</b> y la <b>unidad</b> los deriva el servidor del tipo
-    /// ejercicio (nunca el cliente) y el resto de la foto —papel y objetivo— llega del plan.
+    /// ejercicio (nunca el cliente) y el resto de la foto —papel y objetivo— llega del plan. Falla
+    /// con <see cref="DomainErrors.SessionLog.UnknownExercise"/> si el ejercicio no está en el
+    /// catálogo: la foto nunca se congela con un nombre o una unidad inventados.
     /// </summary>
-    private SessionLogItemInput BuildInput(RegisterSessionLogCommand request)
+    private Result<SessionLogItemInput> BuildInput(RegisterSessionLogCommand request)
     {
         var exercise = knowledgeBase.FindExercise(request.Item.ExerciseId);
+        if (exercise is null)
+        {
+            return Result.Failure<SessionLogItemInput>(DomainErrors.SessionLog.UnknownExercise);
+        }
 
         return new SessionLogItemInput(
             request.Item.ExerciseId,
-            exercise?.Name ?? request.Item.ExerciseId,
+            exercise.Name,
             request.Item.Role,
             request.Item.Pattern,
-            exercise?.Metric ?? Metric.Reps,
+            exercise.Metric,
             request.Item.PrescribedSets,
             request.Item.RepsMin,
             request.Item.RepsMax,
