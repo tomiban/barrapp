@@ -115,6 +115,11 @@ public sealed class SessionSueltaItem
             return Result.Failure<SessionSueltaItem>(DomainErrors.SessionSuelta.ItemRangeMinGreaterThanMax);
         }
 
+        if (input.RestSeconds < 0)
+        {
+            return Result.Failure<SessionSueltaItem>(DomainErrors.SessionSuelta.ItemRestSecondsMustBeNonNegative);
+        }
+
         return new SessionSueltaItem(
             position,
             input.ExerciseId,

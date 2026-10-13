@@ -177,6 +177,23 @@ public sealed class SessionSueltaTests
     }
 
     [Fact]
+    public void Create_with_an_item_with_a_negative_rest_fails()
+    {
+        var created = SessionSuelta.Create(
+            UserId,
+            30,
+            SoloSessionEnergy.Medium,
+            SoloSessionFocus.Pattern,
+            ExerciseGroup.Push,
+            skillId: null,
+            new DateTimeOffset(2026, 10, 5, 18, 30, 0, TimeSpan.Zero),
+            [new SessionSueltaItemInput("push_up", SessionItemRole.Strength, ExerciseGroup.Push, 3, 5, 8, null, null, -1)]);
+
+        Assert.True(created.IsFailure);
+        Assert.Equal("session_suelta.item_rest_seconds_must_be_non_negative", created.Error.Code);
+    }
+
+    [Fact]
     public void Mark_recorded_changes_the_status_and_stamps_the_moment()
     {
         var suelta = SessionSuelta.Create(

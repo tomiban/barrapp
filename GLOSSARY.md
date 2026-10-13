@@ -69,7 +69,7 @@ Una semana dentro de un mesociclo.
 _Avoid_: semana
 
 **Deload**:
-Semana de descarga (la cuarta del mesociclo) con menor volumen o intensidad.
+Semana de descarga (la cuarta del mesociclo) con menor volumen o intensidad; no es un descanso entre series.
 _Avoid_: descanso, recuperación
 
 **Adherencia**:
