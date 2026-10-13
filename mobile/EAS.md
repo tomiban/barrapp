@@ -4,6 +4,8 @@ Guía para compilar e instalar la app en un iPhone y un Android usando **Expo Ap
 
 > El build en la nube **requiere credenciales** (cuenta Expo + Apple Developer / Google Play) y es un **paso de humano**. Este documento deja el proyecto configurado: a una persona solo le faltaría `login` + `eas build`.
 
+**Estado de la configuración** (verificado 13/10/2026, eas-cli 24.13.0): `eas.json`/`app.json` válidos, `expo-doctor` 21/21, `expo install --check` limpio, `EXPO_PUBLIC_API_URL` de `development`/`preview` verificada inline en el bundle Hermes con `expo export`, keystore local de Android generado (`android-keystore/barrapp.keystore`, git-ignored). **Ningún comando EAS corre sin sesión Expo** — ni siquiera `eas config` ni `eas build --local` — por lo que generar los binarios es el paso humano que falta (ver [receta](#receta-paso-a-paso-humano)).
+
 ## Estado del proyecto
 
 - **Expo SDK 57**. EAS CLI siempre como `npx eas-cli@latest <comando>` (ver [`mobile/AGENTS.md`](./AGENTS.md)).
@@ -31,12 +33,14 @@ Guía para compilar e instalar la app en un iPhone y un Android usando **Expo Ap
     "development": {
       "environment": "development",
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_API_URL": "http://192.168.0.249:5213" }
     },
     "preview": {
       "environment": "preview",
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_API_URL": "http://192.168.0.249:5213" }
     },
     "production": { "environment": "production", "autoIncrement": true }
   }
@@ -61,29 +65,26 @@ Notas sobre la configuración (verificado contra la documentación de SDK 57 / E
 `mobile/src/api/client.ts#getApiBaseUrl` ya lee `process.env.EXPO_PUBLIC_API_URL` (referencia **estática**, que Metro inline en el bundle al compilar).
 
 - En desarrollo con **Expo Go** no hace falta definirla: la app deduce el host del dev server y usa `http://<host>:5213`.
-- En un **build EAS instalado en el dispositivo no hay dev server**: sin la variable la app cae a `http://localhost:5213`, que no es alcanzable desde el dispositivo.
+- En un **build EAS instalado en dispositivo no hay dev server**: sin la variable la app cae a `http://localhost:5213`, que no es alcanzable desde el dispositivo.
 - Por lo tanto **todo build EAS instalable que deba hablar con el API necesita `EXPO_PUBLIC_API_URL` definida en tiempo de build**. La URL no es un secreto (viaja en el bundle).
 
-Opciones para definirla (la primera es la recomendada):
+**Estado actual**: los perfiles `development` y `preview` de `eas.json` ya definen `env.EXPO_PUBLIC_API_URL` con la IP de la red local del portátil (`http://192.168.0.249:5213`, verificado inline en el bundle con `expo export`). ⚠️ Si la IP LAN del portátil cambia, actualizar el valor en `eas.json` antes de construir.
+
+Para `production` (o si preferís no versionar la URL), las opciones (la primera es la recomendada):
 
 1. **Variables de entorno de EAS por entorno** (no se versionan; el perfil ya referencia el `environment`):
 
    ```sh
    npx eas-cli@latest env:set --name EXPO_PUBLIC_API_URL --value https://api.barrapp.example --environment production --visibility plaintext
-   npx eas-cli@latest env:set --name EXPO_PUBLIC_API_URL --value http://192.168.1.100:5213 --environment preview --visibility plaintext
    ```
 
    Para usarlas en local: `npx eas-cli@latest env:pull --environment development`.
 
-2. **Campo `env` en el perfil de `eas.json`** (valores públicos, versionados):
-
-   ```json
-   "preview": { "distribution": "internal", "env": { "EXPO_PUBLIC_API_URL": "http://192.168.1.100:5213" } }
-   ```
+2. **Campo `env` en el perfil de `eas.json`** (valores públicos, versionados): es lo usado hoy en `development`/`preview`.
 
 > Un archivo `.env.production` local **no llega al build**: `.env.*` está en `.gitignore` (solo se versionan los `.example`), y EAS sube al build los archivos no ignorados por Git. Para builds desde CI podés añadirlo con `!` vía un `.easignore`, pero para este proyecto bastan las opciones 1 y 2. Ver [`.env.production.example`](./.env.production.example) como referencia del valor a definir.
 
-> Verifica antes de construir que la URL sea alcanzable desde el dispositivo (en una red LAN, la IP del portátil donde corre el API, no `localhost`).
+> Verifica antes de construir que la URL sea alcanzable desde el dispositivo (en una red LAN, la IP del portátil donde corre el API, no `localhost`). El API debe estar corriendo: `dotnet run` en `src/Api` (escucha en `0.0.0.0:5213`, ver `docs/dev-setup.md`).
 
 ## Receta paso a paso (humano)
 
@@ -107,7 +108,10 @@ El primer `npx eas-cli@latest build ...` propone **crear el proyecto EAS** en tu
 ### 2. Lanzar el build
 
 ```sh
-# Una plataforma o ambas
+# Android sin subir a la nube (el más rápido; ver «Build local de Android»)
+npx eas-cli@latest build --local --platform android --profile preview
+
+# O en la nube: una plataforma o ambas
 npx eas-cli@latest build --profile development --platform all
 npx eas-cli@latest build --profile preview     --platform all
 npx eas-cli@latest build --profile production  --platform all
@@ -128,7 +132,22 @@ EAS te pedirá gestionar credenciales de firma (Android keystore / iOS provision
 
 1. Definí `EXPO_PUBLIC_API_URL` para el entorno `production` (ver [sección API](#url-del-api-por-entorno-expopublic_api_url), opción 1).
 2. Reconstruí (`eas build --profile production --platform all`).
-3. Verificá en la app que el plan/perfil cargan datos (la URL quedo inline en el bundle).
+3. Verificá en la app que el plan/perfil cargan datos (la URL quedó inline en el bundle).
+
+## Build local de Android (sin subir a la nube)
+
+`eas build --local` corre el mismo proceso de build que la nube en esta máquina (Linux + Android SDK/NDK, ya instalados ver `docs/dev-setup.md`). Produce el **.apk** en el directorio actual sin publicar nada en [expo.dev/builds](https://expo.dev/builds).
+
+```sh
+# desde mobile/ — sí o sí requiere sesión Expo (verificado con eas-cli 24.13.0)
+CI=1 npx eas-cli@latest build --local --platform android --profile preview
+```
+
+- **Requisito de sesión**: incluso el build local pide autenticación (`eas login` o `EXPO_TOKEN`); sin ella falla con _"An Expo user account is required to proceed"_.
+- **iOS no puede construirse en local** en Linux: requiere macOS + Xcode + fastlane. iOS siempre va por la nube.
+- **Firma**: por defecto los perfiles usan `credentialsSource: "remote"` (credenciales gestionadas por EAS). Esta máquina tiene además preparada una **firma local** como alternativa: keystore propio en `android-keystore/barrapp.keystore` (git-ignored, regenerable con `keytool -genkeypair -v -keystore android-keystore/barrapp.keystore -alias barrapp -keyalg RSA -keysize 2048 -validity 10000 -storetype JKS -storepass <pass> -keypass <pass> -dname "CN=com.barrapp.app"`) y `credentials.json` (git-ignored) apuntando a él. Para usarla hay que añadir `"credentialsSource": "local"` al perfil de `eas.json` (ver [local credentials](https://docs.expo.dev/app-signing/local-credentials.md)).
+- **`CI=1`** evita prompts interactivos de EAS CLI; sin stdin legible los comandos fallan igual que los `config`/`build` de arriba.
+- El perfil `preview` ya lleva `EXPO_PUBLIC_API_URL` con la IP LAN: el APK resultante habla con el API del portátil sin tocar nada (verificado con `expo export`).
 
 ## Notas y límites
 
@@ -141,6 +160,8 @@ EAS te pedirá gestionar credenciales de firma (Android keystore / iOS provision
 
 - [Configurar EAS Build con `eas.json`](https://docs.expo.dev/build/eas-json.md)
 - [Referencia del esquema de `eas.json`](https://docs.expo.dev/eas/json.md)
+- [Ejecutar EAS Build en local (`--local`)](https://docs.expo.dev/build-reference/local-builds.md)
+- [Firma local con `credentials.json`](https://docs.expo.dev/app-signing/local-credentials.md)
 - [Variables de entorno en EAS](https://docs.expo.dev/eas/environment-variables.md)
 - [Distribución interna](https://docs.expo.dev/build/internal-distribution.md)
 - [Gestión de versiones de la app](https://docs.expo.dev/build-reference/app-versions.md)
