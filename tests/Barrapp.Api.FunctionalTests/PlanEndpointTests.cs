@@ -38,6 +38,28 @@ public sealed class PlanEndpointTests(BarrappApiFactory factory)
     }
 
     [Fact]
+    public async Task Get_plan_starts_the_calendar_on_the_start_date_chose_in_the_profile()
+    {
+        using var client = factory.CreateClient();
+
+        // Lunes 2 de marzo de 2026 elegido en el perfil; el primer día de entrenamiento en o
+        // después es el martes 3, y ahí ancla el calendario sin regenerar ni «hoy» por medio.
+        await client.PutAsJsonAsync(
+            "/profile",
+            PlanTestData.Profile(3, ["tuesday", "thursday", "saturday"], startDate: new DateOnly(2026, 3, 2)));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.GetAsync("/plan");
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+
+        Assert.NotNull(plan);
+        Assert.Equal(new DateOnly(2026, 3, 3), plan!.StartDate);
+        Assert.Equal(
+            [new DateOnly(2026, 3, 3), new DateOnly(2026, 3, 5), new DateOnly(2026, 3, 7)],
+            plan.Microcycles[0].Sessions.Select(session => session.Date));
+    }
+
+    [Fact]
     public async Task Get_plan_dates_the_sessions_in_order_seven_days_apart()
     {
         using var client = factory.CreateClient();
@@ -355,7 +377,8 @@ internal static class PlanTestData
 
     public static AthleteProfileResponse Profile(
         int trainingDays,
-        IReadOnlyList<string>? trainingWeekdays = null) => new(
+        IReadOnlyList<string>? trainingWeekdays = null,
+        DateOnly? startDate = null) => new(
             78,
             180,
             180,
@@ -366,5 +389,6 @@ internal static class PlanTestData
                 new MaximumResponse("pull_up", 5),
                 new MaximumResponse("squat", 20),
             ],
-            trainingWeekdays ?? DefaultWeekdays(trainingDays));
+            trainingWeekdays ?? DefaultWeekdays(trainingDays),
+            startDate);
 }

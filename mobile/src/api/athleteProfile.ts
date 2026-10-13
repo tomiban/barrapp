@@ -88,6 +88,12 @@ export type AthleteProfile = {
    */
   trainingWeekdays?: TrainingWeekdaySelection;
   maximums: Maximum[];
+  /**
+   * Fecha en la que el atleta quiere arrancar el mesociclo, en `AAAA-MM-DD` (#94). `null` o
+   * ausente significa «sin elegir»: el calendario arranca hoy, en el primer día de entrenamiento
+   * en o después.
+   */
+  startDate?: string | null;
 };
 
 /**
@@ -113,6 +119,7 @@ export type AthleteProfileFieldErrors = {
   armSpan?: string;
   inseam?: string;
   trainingDays?: string;
+  startDate?: string;
 };
 
 /** Borrador del formulario de perfil: medidas, días de entrenamiento y errores por campo. */
@@ -183,6 +190,80 @@ function validateTrainingDays(trainingDays: number): { value: number | null; err
   }
 
   return { value: trainingDays };
+}
+
+/** Resultado de validar la selección de días de la semana que entrena el atleta. */
+export type TrainingWeekdayValidation = {
+  /** Días elegidos en orden de lunes a domingo; `null` si la selección no es válida. */
+  selection: TrainingWeekdayCode[] | null;
+  error?: string;
+};
+
+/**
+ * Valida la selección de días de la semana (#94): entre 3 y 5 días, sin repetirlos, y devuelve
+ * la selección en el orden canónico de lunes a domingo. El número de días de entrenamiento es
+ * simplemente cuántos se eligen.
+ */
+export function validateTrainingWeekdaySelection(
+  days: readonly TrainingWeekdayCode[],
+): TrainingWeekdayValidation {
+  const unique = [...new Set(days)];
+  if (unique.length !== days.length) {
+    return { selection: null, error: 'No puedes repetir un día de la semana.' };
+  }
+
+  if (unique.length < TRAINING_DAYS_LIMITS.min || unique.length > TRAINING_DAYS_LIMITS.max) {
+    return {
+      selection: null,
+      error: `Elige entre ${TRAINING_DAYS_LIMITS.min} y ${TRAINING_DAYS_LIMITS.max} días de entrenamiento.`,
+    };
+  }
+
+  return { selection: TRAINING_WEEKDAYS.filter((day) => unique.includes(day)) };
+}
+
+/** Resultado de validar la fecha de inicio escrita en el formulario. */
+export type StartDateValidation = {
+  /** Fecha en `AAAA-MM-DD`, o `null` si no se eligió; `error` si el texto no es una fecha. */
+  value: string | null;
+  error?: string;
+};
+
+/**
+ * Valida la fecha de inicio del mesociclo (#94) en formato `AAAA-MM-DD`. El vacío es válido y
+ * significa «sin elegir» (`null`): el calendario arranca hoy. Lo demás tiene que ser una fecha
+ * real del calendario, no solo un patrón bien formado.
+ */
+export function validateStartDate(text: string): StartDateValidation {
+  const trimmed = text.trim();
+  if (trimmed === '') {
+    return { value: null };
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const candidate = new Date(year, month - 1, day);
+    const isRealDate =
+      candidate.getFullYear() === year &&
+      candidate.getMonth() === month - 1 &&
+      candidate.getDate() === day;
+
+    if (isRealDate) {
+      return { value: trimmed };
+    }
+  }
+
+  return { value: null, error: 'Introduce la fecha de inicio como AAAA-MM-DD.' };
+}
+
+/** Hoy en formato `AAAA-MM-DD` (hora local), como punto de partida del campo de fecha. */
+export function todayStartDate(now: Date = new Date()): string {
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
 }
 
 /**

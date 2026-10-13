@@ -85,6 +85,42 @@ public sealed class GeneratePlanEndpointTests
     }
 
     [Fact]
+    public async Task Post_plan_without_a_start_date_uses_the_one_chose_in_the_profile()
+    {
+        using var factory = new BarrappApiFactory();
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            PlanTestData.Profile(3, ["tuesday", "thursday", "saturday"], startDate: new DateOnly(2026, 3, 2)));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.PostAsync("/plan", content: null);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+        Assert.Equal(new DateOnly(2026, 3, 3), plan!.StartDate);
+    }
+
+    [Fact]
+    public async Task Post_plan_with_an_explicit_start_date_overrides_the_one_of_the_profile()
+    {
+        using var factory = new BarrappApiFactory();
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync(
+            "/profile",
+            PlanTestData.Profile(3, ["tuesday", "thursday", "saturday"], startDate: new DateOnly(2026, 3, 2)));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.PostAsJsonAsync("/plan", new { startDate = "2026-04-06" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var plan = await response.Content.ReadFromJsonAsync<PlanResponse>();
+        Assert.NotNull(plan);
+        Assert.Equal(new DateOnly(2026, 4, 7), plan!.StartDate);
+    }
+
+    [Fact]
     public async Task Post_plan_without_a_profile_returns_404_with_a_spanish_detail()
     {
         using var factory = new BarrappApiFactory();

@@ -19,6 +19,10 @@ namespace Barrapp.Application.Features.AthleteProfiles;
 /// no se indican, el perfil usa los días por defecto de su frecuencia; si se indican, tienen que ser
 /// tantos como <paramref name="TrainingDays"/>.
 /// </param>
+/// <param name="StartDate">
+/// Fecha en la que el atleta quiere arrancar el mesociclo (#94), como <c>yyyy-MM-dd</c>; <c>null</c>
+/// si todavía no eligió una, en cuyo caso el calendario arranca hoy.
+/// </param>
 public sealed record SaveAthleteProfileCommand(
     double WeightKilograms,
     double HeightCentimeters,
@@ -26,4 +30,5 @@ public sealed record SaveAthleteProfileCommand(
     double InseamCentimeters,
     int TrainingDays,
     IReadOnlyList<MaximumInput> Maximums,
-    IReadOnlyList<string>? TrainingWeekdays = null) : ICommand<AthleteProfileResponse>;
+    IReadOnlyList<string>? TrainingWeekdays = null,
+    DateOnly? StartDate = null) : ICommand<AthleteProfileResponse>;

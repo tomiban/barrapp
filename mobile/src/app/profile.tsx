@@ -5,21 +5,28 @@ import { Pressable } from 'react-native';
 
 import {
   BASIC_EXERCISES,
+  DEFAULT_TRAINING_WEEKDAYS,
   EXERCISE_PATTERN_LABELS,
   EXERCISE_PATTERNS,
   fetchAthleteProfile,
   saveAthleteProfile,
+  todayStartDate,
+  TRAINING_DAYS_LIMITS,
+  TRAINING_WEEKDAYS,
   validateAthleteProfileDraft,
   validateMaximumDrafts,
-  TRAINING_DAYS_LIMITS,
+  validateStartDate,
+  validateTrainingWeekdaySelection,
+  WEEKDAY_LABELS,
   type AthleteProfile,
   type AthleteProfileFieldErrors,
   type MaximumDraft,
   type MaximumFieldErrors,
+  type TrainingWeekdayCode,
 } from '@/api/athleteProfile';
 import { messageOf } from '@/api/messageOf';
 import { Button } from '@/design-system/Button';
-import { SegmentedControl, type SegmentedOption } from '@/design-system/Chip';
+import { Chip } from '@/design-system/Chip';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { ArrowLeft, Icon } from '@/design-system/Icon';
 import { Box, Stack } from '@/design-system/layout';
@@ -37,16 +44,10 @@ type Feedback = {
   message: string;
 };
 
-/** Una opción por cada valor del rango de días de entrenamiento (3–5). */
-const TRAINING_DAYS_OPTIONS: readonly SegmentedOption[] = Array.from(
-  { length: TRAINING_DAYS_LIMITS.max - TRAINING_DAYS_LIMITS.min + 1 },
-  (_, index) => {
-    const value = String(TRAINING_DAYS_LIMITS.min + index);
-    return { value, label: value };
-  },
-);
-
-const DEFAULT_TRAINING_DAYS = String(TRAINING_DAYS_LIMITS.min);
+/** Selección inicial: los días por defecto de la frecuencia mínima (3). */
+const DEFAULT_WEEKDAY_SELECTION: TrainingWeekdayCode[] = [
+  ...DEFAULT_TRAINING_WEEKDAYS[TRAINING_DAYS_LIMITS.min],
+];
 
 /** Un borrador vacío por cada ejercicio básico. */
 function emptyMaximumDrafts(): Record<string, string> {
@@ -54,9 +55,9 @@ function emptyMaximumDrafts(): Record<string, string> {
 }
 
 /**
- * Pantalla del perfil del atleta: guarda peso, altura, días de entrenamiento por semana y
- * sus máximos por ejercicio básico en el API, y los vuelve a leer para comprobar que la
- * persistencia los conserva. Es la costura de la app con `GET`/`PUT /profile`.
+ * Pantalla del perfil del atleta: guarda peso, altura, los días de la semana que entrena, su fecha
+ * de inicio del mesociclo y sus máximos por ejercicio básico en el API, y los vuelve a leer para
+ * comprobar que la persistencia los conserva. Es la costura de la app con `GET`/`PUT /profile`.
  */
 export default function ProfileScreen() {
   const [loadState, setLoadState] = useState<LoadState>('loading');
@@ -65,7 +66,8 @@ export default function ProfileScreen() {
   const [height, setHeight] = useState('');
   const [armSpan, setArmSpan] = useState('');
   const [inseam, setInseam] = useState('');
-  const [trainingDays, setTrainingDays] = useState(DEFAULT_TRAINING_DAYS);
+  const [weekdays, setWeekdays] = useState<TrainingWeekdayCode[]>(DEFAULT_WEEKDAY_SELECTION);
+  const [startDate, setStartDate] = useState('');
   const [maximumDrafts, setMaximumDrafts] = useState<Record<string, string>>(emptyMaximumDrafts);
   const [fieldErrors, setFieldErrors] = useState<AthleteProfileFieldErrors>({});
   const [maximumErrors, setMaximumErrors] = useState<MaximumFieldErrors>({});
@@ -79,7 +81,12 @@ export default function ProfileScreen() {
       setHeight(String(profile.heightCentimeters));
       setArmSpan(String(profile.armSpanCentimeters));
       setInseam(String(profile.inseamCentimeters));
-      setTrainingDays(String(profile.trainingDays));
+      setWeekdays(
+        profile.trainingWeekdays?.length
+          ? [...profile.trainingWeekdays]
+          : [...(DEFAULT_TRAINING_WEEKDAYS[profile.trainingDays] ?? DEFAULT_WEEKDAY_SELECTION)],
+      );
+      setStartDate(profile.startDate ?? '');
       setMaximumDrafts(
         Object.fromEntries(
           BASIC_EXERCISES.map((exercise) => [
@@ -125,7 +132,16 @@ export default function ProfileScreen() {
     load();
   }, [load]);
 
+  /** Alterna un día de la semana en la selección (#94): el número de días es cuántos se eligen. */
+  const toggleWeekday = useCallback((day: TrainingWeekdayCode, selected: boolean) => {
+    setWeekdays((current) =>
+      selected ? [...current, day] : current.filter((candidate) => candidate !== day),
+    );
+  }, []);
+
   const handleSave = useCallback(async () => {
+    const weekdayValidation = validateTrainingWeekdaySelection(weekdays);
+    const startDateValidation = validateStartDate(startDate);
     const {
       weightKilograms,
       heightCentimeters,
@@ -133,7 +149,7 @@ export default function ProfileScreen() {
       inseamCentimeters,
       trainingDays: selectedTrainingDays,
       errors,
-    } = validateAthleteProfileDraft(weight, height, armSpan, inseam, Number(trainingDays));
+    } = validateAthleteProfileDraft(weight, height, armSpan, inseam, weekdays.length);
 
     const drafts: MaximumDraft[] = BASIC_EXERCISES.map((exercise) => ({
       exerciseCode: exercise.code,
@@ -141,7 +157,11 @@ export default function ProfileScreen() {
     }));
     const maximumValidation = validateMaximumDrafts(drafts);
 
-    setFieldErrors(errors);
+    setFieldErrors({
+      ...errors,
+      trainingDays: weekdayValidation.error ?? errors.trainingDays,
+      startDate: startDateValidation.error,
+    });
     setMaximumErrors(maximumValidation.errors);
     setFeedback(null);
 
@@ -151,6 +171,8 @@ export default function ProfileScreen() {
       armSpanCentimeters === null ||
       inseamCentimeters === null ||
       selectedTrainingDays === null ||
+      weekdayValidation.selection === null ||
+      startDateValidation.error ||
       maximumValidation.maximums === null
     ) {
       return;
@@ -164,7 +186,9 @@ export default function ProfileScreen() {
         armSpanCentimeters,
         inseamCentimeters,
         trainingDays: selectedTrainingDays,
+        trainingWeekdays: weekdayValidation.selection,
         maximums: maximumValidation.maximums,
+        startDate: startDateValidation.value,
       });
 
       // Relee del servidor: la app no se fía de su estado local.
@@ -176,7 +200,7 @@ export default function ProfileScreen() {
     } finally {
       setSaving(false);
     }
-  }, [applyProfile, armSpan, height, inseam, maximumDrafts, trainingDays, weight]);
+  }, [applyProfile, armSpan, height, inseam, maximumDrafts, startDate, weight, weekdays]);
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -268,15 +292,41 @@ export default function ProfileScreen() {
                 <Text variant="labelTechnical" className="text-text-muted">
                   Días de entrenamiento
                 </Text>
-                <SegmentedControl
-                  options={TRAINING_DAYS_OPTIONS}
-                  value={trainingDays}
-                  onChange={setTrainingDays}
-                  label="Días de entrenamiento por semana"
-                  error={fieldErrors.trainingDays}
-                  testID="profile-training-days"
-                />
+                <Text variant="bodySm" className="text-text-muted">
+                  Elige los días de la semana que entrena (entre {TRAINING_DAYS_LIMITS.min} y{' '}
+                  {TRAINING_DAYS_LIMITS.max}).
+                </Text>
+                <Box className="flex-row flex-wrap gap-sm">
+                  {TRAINING_WEEKDAYS.map((day) => (
+                    <Chip
+                      key={day}
+                      label={WEEKDAY_LABELS[day]}
+                      selected={weekdays.includes(day)}
+                      onChange={(selected) => toggleWeekday(day, selected)}
+                      testID={`profile-weekday-${day}`}
+                    />
+                  ))}
+                </Box>
+                {fieldErrors.trainingDays ? (
+                  <Text
+                    variant="bodySm"
+                    className="text-error"
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                    testID="profile-training-weekdays-error"
+                  >
+                    {fieldErrors.trainingDays}
+                  </Text>
+                ) : null}
               </Stack>
+              <TextField
+                label="Fecha de inicio del mesociclo (AAAA-MM-DD)"
+                value={startDate}
+                onChangeText={setStartDate}
+                placeholder={todayStartDate()}
+                error={fieldErrors.startDate}
+                testID="profile-start-date"
+              />
             </Stack>
 
             <Stack gap="sm">
@@ -333,6 +383,16 @@ export default function ProfileScreen() {
                     {persisted.weightKilograms} kg · {persisted.heightCentimeters} cm · Envergadura{' '}
                     {persisted.armSpanCentimeters} cm · Entrepierna {persisted.inseamCentimeters} cm
                     · {persisted.trainingDays} días/semana
+                  </Text>
+                  <Text
+                    variant="bodySm"
+                    className="text-text-muted"
+                    testID="profile-persisted-calendar"
+                  >
+                    {(persisted.trainingWeekdays ?? [])
+                      .map((day) => WEEKDAY_LABELS[day])
+                      .join(' · ')}{' '}
+                    · Inicio {persisted.startDate ?? 'hoy'}
                   </Text>
                   <Text variant="bodySm" testID="profile-persisted-maximums">
                     {BASIC_EXERCISES.map((exercise) => {

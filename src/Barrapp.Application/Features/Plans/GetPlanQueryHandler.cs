@@ -58,13 +58,13 @@ internal sealed class GetPlanQueryHandler(
                 candidate => candidate.UserId == SingleUser.Id && candidate.SkillId == objective.SkillId,
                 cancellationToken);
 
-        // Sin mesociclo persistido ni progreso guardado, el motor practica la primera etapa. No hay fecha
-        // de inicio guardada en este camino, así que el calendario arranca en hoy (#94).
+        // Sin mesociclo persistido ni progreso guardado, el motor practica la primera etapa. El calendario
+        // arranca en la fecha de inicio que eligió el atleta en el perfil (#94) y, si no eligió, en hoy.
         var generation = PlanGenerator.Generate(
             profile,
             objective,
             progress?.StageOrder,
-            DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime),
+            profile.StartDate ?? DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime),
             catalog);
 
         return generation.IsFailure

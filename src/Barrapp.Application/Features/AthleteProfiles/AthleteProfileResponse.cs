@@ -20,6 +20,10 @@ public sealed record MaximumResponse(string ExerciseCode, int Repetitions);
 /// (<c>monday</c>…<c>sunday</c>). Siempre viene informado: si el atleta no eligió, son los días por
 /// defecto de su frecuencia.
 /// </param>
+/// <param name="StartDate">
+/// Fecha en la que el atleta quiere arrancar el mesociclo (#94); <c>null</c> si todavía no eligió,
+/// en cuyo caso el calendario arranca hoy.
+/// </param>
 public sealed record AthleteProfileResponse(
     double WeightKilograms,
     double HeightCentimeters,
@@ -27,4 +31,5 @@ public sealed record AthleteProfileResponse(
     double InseamCentimeters,
     int TrainingDays,
     IReadOnlyList<MaximumResponse> Maximums,
-    IReadOnlyList<string> TrainingWeekdays);
+    IReadOnlyList<string> TrainingWeekdays,
+    DateOnly? StartDate = null);
