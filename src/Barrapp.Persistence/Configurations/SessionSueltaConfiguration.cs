@@ -48,6 +48,7 @@ internal sealed class SessionSueltaConfiguration : IEntityTypeConfiguration<Sess
             items.Property(item => item.RepsMax);
             items.Property(item => item.HoldSecondsMin);
             items.Property(item => item.HoldSecondsMax);
+            items.Property(item => item.RestSeconds).IsRequired();
             items.Property(item => item.Note);
         });
 

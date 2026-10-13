@@ -215,9 +215,12 @@ public static class SoloSessionGenerator
             isHold ? null : stage.Criterion.Target,
             isHold ? null : stage.Criterion.Target,
             isHold ? stage.Criterion.Target : null,
-            isHold ? stage.Criterion.Target : null);
+            isHold ? stage.Criterion.Target : null,
+            SessionItemRest.DefaultFor(SessionItemRole.Skill));
     }
 
+    // La fila hereda el descanso de la rutina de la base de conocimiento que la compuso (#95): es
+    // la única fuente de verdad del descanso, el motor no lo ajusta.
     private static SessionItem? ToStrengthItem(RoutineItem item, IGenerationCatalog catalog) =>
         catalog.FindExercise(item.ExerciseId) is { } exercise
             ? new SessionItem(
@@ -229,6 +232,7 @@ public static class SoloSessionGenerator
                 item.RepsMax,
                 item.HoldSecondsMin,
                 item.HoldSecondsMax,
+                item.RestSeconds,
                 item.Notes)
             : null;
 
@@ -281,7 +285,8 @@ public static class SoloSessionGenerator
                 range.Min,
                 range.Max,
                 null,
-                null));
+                null,
+                SessionItemRest.DefaultFor(SessionItemRole.Strength)));
         }
 
         return Result.Success<IReadOnlyList<SessionItem>>(items);
@@ -304,7 +309,8 @@ public static class SoloSessionGenerator
             range.Min,
             range.Max,
             null,
-            null);
+            null,
+            SessionItemRest.DefaultFor(SessionItemRole.Strength));
     }
 
     private static Result<SessionItem> BuildCore(SoloSessionEnergy energy, IGenerationCatalog catalog)
@@ -322,7 +328,8 @@ public static class SoloSessionGenerator
             null,
             null,
             CoreHoldSecondsMin,
-            CoreHoldSecondsMax));
+            CoreHoldSecondsMax,
+            SessionItemRest.DefaultFor(SessionItemRole.Core)));
     }
 
     private static bool IsStrengthPattern(ExerciseGroup group) => group switch

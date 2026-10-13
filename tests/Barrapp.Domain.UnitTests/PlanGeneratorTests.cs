@@ -279,6 +279,28 @@ public sealed class PlanGeneratorTests
         }
     }
 
+    /// <summary>
+    /// El plan no se compone a partir de rutinas, así que cada fila lleva el descanso por defecto de
+    /// su papel (#95): 120 s al skill, 90 s a la fuerza y 60 s al core.
+    /// </summary>
+    [Theory]
+    [InlineData(SessionItemRole.Skill, 120)]
+    [InlineData(SessionItemRole.Strength, 90)]
+    [InlineData(SessionItemRole.Core, 60)]
+    public void Generate_gives_every_item_the_default_rest_for_its_role(SessionItemRole role, int expectedRestSeconds)
+    {
+        var plan = PlanGenerator.Generate(BuildProfile(3), BuildObjective(), FirstStageOrder, MondayStart, Catalog()).Value;
+
+        var items = plan.Microcycles
+            .SelectMany(microcycle => microcycle.Sessions)
+            .SelectMany(session => session.Items)
+            .Where(item => item.Role == role)
+            .ToList();
+
+        Assert.NotEmpty(items);
+        Assert.All(items, item => Assert.Equal(expectedRestSeconds, item.RestSeconds));
+    }
+
     [Fact]
     public void Generate_starts_each_session_with_the_objective_skill_block()
     {

@@ -128,6 +128,50 @@ public sealed class SoloSessionGeneratorTests
         Assert.Equal(8, strengthItems[0].RepsMax);
     }
 
+    /// <summary>
+    /// Una sola fuente de verdad del descanso (#95): la fila que compone una rutina de la base de
+    /// conocimiento lleva el descanso de esa rutina; la que compone el motor sin rutina de origen
+    /// lleva el default por papel (skill 120 s, fuerza 90 s, core 60 s).
+    /// </summary>
+    [Fact]
+    public void Generate_takes_the_rest_from_the_routine_that_built_the_item()
+    {
+        var session = SoloSessionGenerator.Generate(
+            BuildProfile(),
+            BuildObjective(),
+            stageOrder: null,
+            Parameters(SoloSessionTime.Minutes30, SoloSessionEnergy.Medium, SoloSessionFocus.Skill, pattern: null),
+            Catalog()).Value;
+
+        // El bloque de skill sale de la etapa de la escalera, no de una rutina: default por papel.
+        Assert.Equal(120, session.Items.Single(item => item.Role == SessionItemRole.Skill).RestSeconds);
+
+        // La fuerza de acompañamiento sale de la rutina de patrón del catálogo de prueba (150 s).
+        var strengthItems = session.Items.Where(item => item.Role == SessionItemRole.Strength).ToList();
+        Assert.NotEmpty(strengthItems);
+        Assert.All(strengthItems, item => Assert.Equal(150, item.RestSeconds));
+
+        // El core de cierre tampoco viene de rutina.
+        Assert.Equal(60, session.Items.Single(item => item.Role == SessionItemRole.Core).RestSeconds);
+    }
+
+    /// <summary>El foco de patrón no pasa por ninguna rutina: todo el bloque lleva los defaults.</summary>
+    [Fact]
+    public void Generate_defaults_the_rest_by_role_when_no_routine_built_the_item()
+    {
+        var session = SoloSessionGenerator.Generate(
+            BuildProfile(),
+            BuildObjective(),
+            stageOrder: null,
+            Parameters(SoloSessionTime.Minutes30, SoloSessionEnergy.Medium, SoloSessionFocus.Pattern, ExerciseGroup.Push),
+            Catalog()).Value;
+
+        Assert.All(
+            session.Items.Where(item => item.Role == SessionItemRole.Strength),
+            item => Assert.Equal(90, item.RestSeconds));
+        Assert.Equal(60, session.Items.Single(item => item.Role == SessionItemRole.Core).RestSeconds);
+    }
+
     [Fact]
     public void Generate_with_skill_focus_fails_when_the_stage_is_not_in_the_ladder()
     {
@@ -407,13 +451,15 @@ public sealed class SoloSessionGeneratorTests
                     Intensity = 2,
                     Items =
                     [
+                        // El descanso del catálogo de prueba (150 s) se distingue de cualquier
+                        // default por papel, para probar que la fila se queda con el de su rutina.
                         new RoutineItem
                         {
                             ExerciseId = "push_up",
                             Sets = 3,
                             RepsMin = 5,
                             RepsMax = 8,
-                            RestSeconds = 90,
+                            RestSeconds = 150,
                         },
                         new RoutineItem
                         {
@@ -421,7 +467,7 @@ public sealed class SoloSessionGeneratorTests
                             Sets = 3,
                             RepsMin = 5,
                             RepsMax = 8,
-                            RestSeconds = 90,
+                            RestSeconds = 150,
                         },
                     ],
                 },

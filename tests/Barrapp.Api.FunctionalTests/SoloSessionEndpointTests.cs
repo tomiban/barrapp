@@ -70,6 +70,38 @@ public sealed class SoloSessionEndpointTests(BarrappApiFactory factory)
         Assert.Contains(session.Items, item => item.Role == "core");
     }
 
+    /// <summary>
+    /// El descanso de cada fila sale de la rutina que la compuso (#95): la fuerza de acompañamiento
+    /// viene de la rutina de patrón del skill en la base de conocimiento, y el bloque de skill (que
+    /// sale de la escalera) lleva el default por papel.
+    /// </summary>
+    [Fact]
+    public async Task Post_suelta_with_skill_focus_reports_the_rest_of_the_routine_that_built_each_item()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var response = await client.PostAsJsonAsync(
+            "/sessions/suelta",
+            new { timeMinutes = 30, energy = "media", focus = "skill" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var session = await response.Content.ReadFromJsonAsync<SoloSessionResponse>();
+        Assert.NotNull(session);
+
+        // Etapa 2 (de la escalera, no de rutina): default de skill.
+        Assert.Equal(120, session!.Items.Single(item => item.Role == "skill").RestSeconds);
+
+        // `planche-tuck` es la primera fila de la rutina de patrón de planche en la base de
+        // conocimiento, y esa rutina descansa 180 s.
+        var plancheTuck = session.Items.Single(item => item.Role == "strength" && item.ExerciseId == "planche-tuck");
+        Assert.Equal(180, plancheTuck.RestSeconds);
+
+        Assert.Equal(60, session.Items.Single(item => item.Role == "core").RestSeconds);
+    }
+
     [Fact]
     public async Task Post_suelta_with_surprise_focus_resolves_deterministically()
     {

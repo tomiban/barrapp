@@ -51,5 +51,6 @@ internal static class PlanMappings
         item.RepsMax,
         item.HoldSecondsMin,
         item.HoldSecondsMax,
+        item.RestSeconds,
         item.Note);
 }

@@ -156,7 +156,6 @@ namespace Barrapp.Persistence.Migrations
             modelBuilder.Entity("Barrapp.Domain.Sessions.SessionLogItem", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ClientId")
@@ -385,7 +384,6 @@ namespace Barrapp.Persistence.Migrations
                                 .HasColumnType("TEXT");
 
                             b1.Property<int>("SetNumber")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("INTEGER");
 
                             b1.Property<int?>("ActualRir")
@@ -445,6 +443,9 @@ namespace Barrapp.Persistence.Migrations
                                 .HasColumnType("INTEGER");
 
                             b1.Property<int?>("RepsMin")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("RestSeconds")
                                 .HasColumnType("INTEGER");
 
                             b1.Property<int>("Role")

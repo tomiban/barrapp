@@ -6,8 +6,8 @@ namespace Barrapp.Domain.Sessions;
 
 /// <summary>
 /// Una fila del snapshot de una <see cref="SessionSuelta"/>: el mismo ejercicio, papel, patrón y
-/// prescripción —series y rango de repeticiones o de segundos— que el motor compuso al generar.
-/// Objeto valor sin lógica propia: toda escritura pasa por <see cref="Create"/>.
+/// prescripción —series, rango de repeticiones o de segundos y descanso (#95)— que el motor
+/// compuso al generar. Objeto valor sin lógica propia: toda escritura pasa por <see cref="Create"/>.
 /// </summary>
 /// <remarks>
 /// <see cref="Position"/> preserva el orden de ejecución dentro del snapshot (es la clave junto al
@@ -25,6 +25,7 @@ public sealed class SessionSueltaItem
         int? repsMax,
         int? holdSecondsMin,
         int? holdSecondsMax,
+        int restSeconds,
         string? note)
     {
         Position = position;
@@ -36,6 +37,7 @@ public sealed class SessionSueltaItem
         RepsMax = repsMax;
         HoldSecondsMin = holdSecondsMin;
         HoldSecondsMax = holdSecondsMax;
+        RestSeconds = restSeconds;
         Note = note;
     }
 
@@ -70,6 +72,9 @@ public sealed class SessionSueltaItem
 
     /// <summary>Segundos mantenidos máximos del rango; <c>null</c> cuando se mide en repeticiones.</summary>
     public int? HoldSecondsMax { get; private set; }
+
+    /// <summary>Descanso tras la serie, en segundos, con el que se compuso la fila (#95).</summary>
+    public int RestSeconds { get; private set; }
 
     /// <summary>Nota de la fila para la UI; <c>null</c> cuando no hay nada que explicar.</summary>
     public string? Note { get; private set; }
@@ -120,6 +125,7 @@ public sealed class SessionSueltaItem
             input.RepsMax,
             input.HoldSecondsMin,
             input.HoldSecondsMax,
+            input.RestSeconds,
             input.Note);
     }
 }

@@ -43,6 +43,33 @@ public sealed class SessionSueltaHistoryEndpointTests(BarrappApiFactory factory)
         Assert.Equal(3, entry.Items.Count);
     }
 
+    /// <summary>
+    /// El descanso viaja hasta el historial (#95): la fila persiste el descanso de la rutina que la
+    /// compuso, no un default.
+    /// </summary>
+    [Fact]
+    public async Task A_generated_suelta_keeps_the_rest_of_each_item_in_history()
+    {
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/profile", PlanTestData.Profile(3));
+        await client.PutAsJsonAsync("/profile/objective", new { skillId = "planche" });
+
+        using var generated = await client.PostAsJsonAsync(
+            "/sessions/suelta",
+            new { timeMinutes = 30, energy = "media", focus = "skill" });
+        Assert.Equal(HttpStatusCode.OK, generated.StatusCode);
+
+        var history = await ReadHistoryAsync(client);
+        var entry = history[0]; // Su historia, la más reciente.
+
+        // `planche-tuck` viene de la rutina de patrón de planche (180 s) y el core lleva su
+        // default (60 s); se guardan tal cual se compusieron.
+        Assert.Equal(
+            180,
+            entry.Items.Single(item => item.Role == "strength" && item.ExerciseId == "planche-tuck").RestSeconds);
+        Assert.Equal(60, entry.Items.Single(item => item.Role == "core").RestSeconds);
+    }
+
     [Fact]
     public async Task Recording_a_generated_suelta_updates_its_status_in_history()
     {

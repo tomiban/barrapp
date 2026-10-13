@@ -88,6 +88,10 @@ _Avoid_: RPE, margen
 Unidad de entrenamiento dentro de un microciclo; contiene un bloque de skill y bloques de fuerza por patrón.
 _Avoid_: entrenamiento, workout, día
 
+**Descanso**:
+Segundos de espera tras la serie —o tras el grupo de una *biserie*/*superserie*— que lleva cada fila de sesión. Sale de la *rutina de patrón* que compuso la fila o, si esta no vino de rutina, del default de su *papel* (skill, fuerza o core); la app lo cronometra, no lo inventa.
+_Avoid_: pausa, tiempo entre series, recover
+
 **Día de entrenamiento**:
 Día de la semana, elegido por el atleta, al que el mesociclo asigna una *sesión*.
 _Avoid_: jornada, día de entreno
