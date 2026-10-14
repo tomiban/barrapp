@@ -27,8 +27,9 @@ const StartupContext = createContext<StartupContextValue | null>(null);
  * Lee el perfil y el objetivo una única vez al arrancar y decide si la app abre
  * en el onboarding o en las pestañas (spec 0003, ticket #90).
  *
- * Es tolerante a fallos: si el API no responde al arrancar, deja entrar por el
- * onboarding (donde «Omitir por ahora» no bloquea) en vez de quedarse colgada.
+ * Es tolerante a fallos: si el API no responde al arrancar no sabemos si hay
+ * perfil, así que deja entrar por las pestañas en vez de forzar el onboarding,
+ * que podría sobrescribir un perfil existente.
  */
 export function StartupProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<'loading' | 'ready'>('loading');
@@ -51,9 +52,10 @@ export function StartupProvider({ children }: { children: ReactNode }) {
         }
         setLoadedDecision(resolveStartup({ profile, objective, skipped: false }));
       } catch {
-        // Sin respuesta del API, el onboarding es la entrada segura.
+        // Sin respuesta del API no sabemos si hay perfil: entrar por las pestañas
+        // evita rehacer el onboarding y sobrescribir un perfil existente.
         if (active) {
-          setLoadedDecision('onboarding');
+          setLoadedDecision('tabs');
         }
       } finally {
         if (active) {

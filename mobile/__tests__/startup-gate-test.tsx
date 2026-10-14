@@ -30,15 +30,20 @@ function jsonResponse(status: number, body: unknown): Response {
   } as unknown as Response;
 }
 
-function renderApp(withProfile: boolean) {
+function renderApp(fixture: 'profile' | 'empty' | 'error') {
   global.fetch = jest.fn((input: RequestInfo | URL) => {
+    if (fixture === 'error') {
+      return Promise.reject(new Error('sin conexión'));
+    }
+
     const url = String(input);
+    const hasProfile = fixture === 'profile';
     if (url.endsWith('/profile')) {
-      return Promise.resolve(withProfile ? jsonResponse(200, {}) : jsonResponse(404, {}));
+      return Promise.resolve(hasProfile ? jsonResponse(200, {}) : jsonResponse(404, {}));
     }
     if (url.endsWith('/profile/objective')) {
       return Promise.resolve(
-        withProfile ? jsonResponse(200, { skillId: 'x' }) : jsonResponse(404, {}),
+        hasProfile ? jsonResponse(200, { skillId: 'x' }) : jsonResponse(404, {}),
       );
     }
     return Promise.resolve(jsonResponse(404, {}));
@@ -65,14 +70,21 @@ function renderApp(withProfile: boolean) {
  */
 describe('startup gate', () => {
   it('opens onboarding without a profile', async () => {
-    await renderApp(false);
+    await renderApp('empty');
 
     expect(await screen.findByTestId('onboarding-route')).toBeOnTheScreen();
     expect(screen.queryByTestId('home-route')).toBeNull();
   });
 
   it('opens the tabs with profile and objective', async () => {
-    await renderApp(true);
+    await renderApp('profile');
+
+    expect(await screen.findByTestId('home-route')).toBeOnTheScreen();
+    expect(screen.queryByTestId('onboarding-route')).toBeNull();
+  });
+
+  it('falls back to the tabs when the startup requests fail', async () => {
+    await renderApp('error');
 
     expect(await screen.findByTestId('home-route')).toBeOnTheScreen();
     expect(screen.queryByTestId('onboarding-route')).toBeNull();

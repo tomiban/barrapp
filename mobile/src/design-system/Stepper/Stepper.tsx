@@ -73,6 +73,12 @@ export function Stepper({
   const decreaseDisabled = disabled || atMin;
   const increaseDisabled = disabled || atMax;
 
+  // El valor notificado nunca sale de `[min, max]`: acota también el cálculo, no
+  // sólo el botón, para cubrir un `step` que no divide el rango o un `value` que
+  // arranca fuera de rango.
+  const clamp = (next: number) =>
+    Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(min ?? Number.NEGATIVE_INFINITY, next));
+
   return (
     <View className={cn('gap-xs', className)} testID={testID} {...rest}>
       <Text variant="labelTechnical" className="text-text-muted">
@@ -85,7 +91,7 @@ export function Stepper({
           accessibilityLabel={`Disminuir ${label}`}
           accessibilityState={{ disabled: decreaseDisabled }}
           disabled={decreaseDisabled}
-          onPress={() => onChange(value - step)}
+          onPress={() => onChange(clamp(value - step))}
           className={cn(
             BUTTON_CLASS,
             decreaseDisabled
@@ -119,7 +125,7 @@ export function Stepper({
           accessibilityLabel={`Aumentar ${label}`}
           accessibilityState={{ disabled: increaseDisabled }}
           disabled={increaseDisabled}
-          onPress={() => onChange(value + step)}
+          onPress={() => onChange(clamp(value + step))}
           className={cn(
             BUTTON_CLASS,
             increaseDisabled

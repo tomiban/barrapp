@@ -1,4 +1,9 @@
-import { BASIC_EXERCISES, WEEKDAY_LABELS, type TrainingWeekdayCode } from '@/api/athleteProfile';
+import {
+  BASIC_EXERCISES,
+  TRAINING_WEEKDAYS,
+  WEEKDAY_LABELS,
+  type TrainingWeekdayCode,
+} from '@/api/athleteProfile';
 import { BiomechanicalCard, CardSection } from '@/design-system/BiomechanicalCard';
 import { Stack } from '@/design-system/layout';
 import { Text } from '@/design-system/Text';
@@ -84,7 +89,7 @@ export function ConfirmStep({
         <Text variant="labelTechnical" className="text-primary">
           SEMANA TIPO
         </Text>
-        {weekdays.map((day, index) => (
+        {TRAINING_WEEKDAYS.filter((day) => weekdays.includes(day)).map((day, index) => (
           <Stack
             key={day}
             direction="row"
