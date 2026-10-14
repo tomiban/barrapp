@@ -14,6 +14,7 @@ import { Avatar, Header, Screen } from '@/design-system/Navigation';
 import { ProgressIndicator } from '@/design-system/ProgressIndicator';
 import { Checkbox, Radio } from '@/design-system/Selection';
 import { StatusBadge } from '@/design-system/StatusBadge';
+import { Stepper } from '@/design-system/Stepper';
 import { Text, type TextVariant } from '@/design-system/Text';
 import { TextField } from '@/design-system/TextField';
 import { Timer } from '@/design-system/Timer';
@@ -149,6 +150,36 @@ function TextFieldDemo() {
         onChangeText={setError}
         error="Fuera de rango (0–100)"
         testID="showcase-field-error"
+      />
+    </Stack>
+  );
+}
+
+/** `Stepper` controlado: el valor vive en el consumidor, como en un formulario real. */
+function StepperDemo() {
+  const [weight, setWeight] = useState(78);
+  const [reps, setReps] = useState(60);
+
+  return (
+    <Stack gap="md">
+      <Stepper
+        label="Peso corporal"
+        value={weight}
+        min={30}
+        max={200}
+        unit="KG"
+        onChange={setWeight}
+        testID="showcase-stepper"
+      />
+      <Stepper
+        label="Máximos"
+        value={reps}
+        min={0}
+        max={50}
+        unit="REPS"
+        onChange={setReps}
+        error="El máximo no puede superar 50 reps."
+        testID="showcase-stepper-error"
       />
     </Stack>
   );
@@ -314,6 +345,10 @@ export function ShowcaseScreen() {
 
           <Demo caption="SegmentedControl · selección única">
             <SegmentedDemo />
+          </Demo>
+
+          <Demo caption="Stepper · valor / cota / error">
+            <StepperDemo />
           </Demo>
 
           <Demo caption="Checkbox + Radio · controlados y deshabilitado">
