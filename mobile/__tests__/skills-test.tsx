@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import SkillsScreen from '../src/app/(tabs)/skills';
 
@@ -60,7 +60,10 @@ const CATALOG = {
   ],
 };
 
-/** Skills mínimos con su escalera y una rutina de patrón de apoyo. */
+/**
+ * Skills mínimos con su escalera y una rutina de patrón de apoyo. La escalera de planche tiene
+ * cuatro etapas para cubrir los cuatro estados (superado / actual / bloqueado / meta final).
+ */
 const SKILLS = [
   {
     id: 'planche',
@@ -81,6 +84,20 @@ const SKILLS = [
         exerciseId: 'planche-tuck',
         criterion: { metric: 'seconds', target: 10, sets: 3 },
         notes: 'Rodillas al pecho.',
+      },
+      {
+        order: 3,
+        name: 'Planche straddle',
+        exerciseId: 'planche-straddle',
+        criterion: { metric: 'seconds', target: 8, sets: 3 },
+        notes: 'Piernas abiertas.',
+      },
+      {
+        order: 4,
+        name: 'Planche full',
+        exerciseId: 'planche-full',
+        criterion: { metric: 'seconds', target: 5, sets: 3 },
+        notes: 'Cuerpo recto y paralelo al suelo.',
       },
     ],
     patternRoutines: [
@@ -231,9 +248,12 @@ const ROUTINES = [
 
 /**
  * Mock de `fetch` que reparte por ruta: skills devuelve la escalera, routines los programas
- * generales, progress la etapa actual por skill y el resto, el catálogo de ejercicios.
+ * generales, progress la etapa actual por skill y el resto, el catálogo de ejercicios. El objetivo
+ * devuelve `404` (sin objetivo activo) salvo que se fije `objectiveSkillId`.
  */
-function routeFetch(): jest.Mock {
+function routeFetch(options: { objectiveSkillId?: string | null } = {}): jest.Mock {
+  const objectiveSkillId = options.objectiveSkillId ?? null;
+
   return jest.fn((input: unknown) => {
     const url = String(input);
     if (url.includes('/catalog/progress')) {
@@ -244,6 +264,13 @@ function routeFetch(): jest.Mock {
     }
     if (url.includes('/catalog/routines')) {
       return Promise.resolve(jsonResponse(200, ROUTINES));
+    }
+    if (url.includes('/profile/objective')) {
+      return Promise.resolve(
+        objectiveSkillId
+          ? jsonResponse(200, { skillId: objectiveSkillId })
+          : jsonResponse(404, null),
+      );
     }
     return Promise.resolve(jsonResponse(200, CATALOG));
   });
@@ -276,11 +303,11 @@ describe('SkillsScreen · Ejercicios', () => {
     );
   });
 
-  it('shows the ladder by default and switches to the Rutinas view', async () => {
+  it('shows the ladders by default and switches to the Rutinas view', async () => {
     global.fetch = routeFetch() as unknown as typeof fetch;
 
     await render(<SkillsScreen />);
-    await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
+    await waitFor(() => expect(screen.getByTestId('skills-selector')).toBeOnTheScreen());
 
     await fireEvent.press(screen.getByTestId('skills-section-routines'));
     await waitFor(() =>
@@ -312,7 +339,7 @@ describe('SkillsScreen · Ejercicios', () => {
     await waitFor(() => expect(screen.getByText('El catálogo falló.')).toBeOnTheScreen());
 
     await fireEvent.press(screen.getByTestId('library-skills-retry'));
-    await waitFor(() => expect(screen.getByText('Planche')).toBeOnTheScreen());
+    await waitFor(() => expect(screen.getByTestId('skills-detail-planche')).toBeOnTheScreen());
   });
 });
 
@@ -324,33 +351,75 @@ describe('SkillsScreen · Skills', () => {
     jest.restoreAllMocks();
   });
 
-  it('renders a ladder with its criterion and a supporting pattern routine', async () => {
+  it('renders the selected skill with its code, material, criterion and pattern routine', async () => {
     const fetchMock = routeFetch();
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await render(<SkillsScreen />);
-    await waitFor(() => expect(screen.getByText('Planche')).toBeOnTheScreen());
+    await waitFor(() => expect(screen.getByTestId('skills-detail-planche')).toBeOnTheScreen());
 
-    // Escalera: movimiento y criterio por etapa.
-    expect(screen.getByText('Empuje · Apalancado')).toBeOnTheScreen();
-    expect(screen.getByText('Planche inclinada')).toBeOnTheScreen();
-    expect(screen.getByText('Etapa 1 · 3 × 20 s')).toBeOnTheScreen();
-    // El movimiento agrupado aparece como etapa y, resuelto, como ejercicio de la rutina.
-    expect(screen.getAllByText('Planche agrupada').length).toBeGreaterThan(0);
+    // Detalle: código técnico, material, etapa actual y progreso global.
+    expect(screen.getByText('[SKL.01 - ISOMÉTRICO]')).toBeOnTheScreen();
+    expect(screen.getByText('Sin equipamiento')).toBeOnTheScreen();
+    expect(screen.getByTestId('skills-detail-planche-stage')).toHaveTextContent('Etapa 02 de 04');
+    expect(screen.getByTestId('skills-detail-planche-progress')).toHaveTextContent('50.0%');
 
-    // Rutina de patrón: ejercicio, series, segundos y descanso. El movimiento de skill
-    // se nombra por la etapa; el acondicionamiento, por el catálogo de ejercicios.
+    // Criterio de la etapa actual, con sus series y las dos sesiones consecutivas.
+    expect(screen.getByText('Criterio de etapa objetivo')).toBeOnTheScreen();
+    expect(screen.getByText('[STG.02-REQ]')).toBeOnTheScreen();
+    expect(
+      within(screen.getByTestId('skills-criterion-planche')).getByText('3 × 10 s'),
+    ).toBeOnTheScreen();
+    expect(screen.getByText(/2 sesiones consecutivas\./)).toBeOnTheScreen();
+
+    // Rutina de patrón: ejercicio, series, segundos y descanso. El movimiento de skill se nombra
+    // por la etapa; el acondicionamiento, por el catálogo de ejercicios.
     expect(screen.getAllByText('Modelo R1').length).toBeGreaterThan(0);
     expect(screen.getByText('4 × 5–15 s · descanso 180 s')).toBeOnTheScreen();
     expect(screen.getByText('3 × 5–8 reps · descanso 120 s')).toBeOnTheScreen();
     expect(screen.getByText('Flexiones en pica')).toBeOnTheScreen();
 
-    // El pistol squat se sirve con su criterio en repeticiones.
-    expect(screen.getByText('Pistol squat')).toBeOnTheScreen();
-    expect(screen.getByText('Etapa 1 · 3 × 5 reps')).toBeOnTheScreen();
-
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/catalog/skills'),
+      expect.anything(),
+    );
+  });
+
+  it('changes the selected skill from the selector', async () => {
+    global.fetch = routeFetch() as unknown as typeof fetch;
+
+    await render(<SkillsScreen />);
+    await waitFor(() => expect(screen.getByTestId('skills-detail-planche')).toBeOnTheScreen());
+
+    await fireEvent.press(screen.getByTestId('skills-selector-pistol-squat'));
+
+    await waitFor(() => expect(screen.getByTestId('skills-detail-pistol-squat')).toBeOnTheScreen());
+    // El detalle cambia al skill elegido, con su código dinámico y su criterio en repeticiones.
+    expect(screen.queryByTestId('skills-detail-planche')).not.toBeOnTheScreen();
+    expect(screen.getByText('[SKL.02 - DINÁMICO]')).toBeOnTheScreen();
+    expect(
+      within(screen.getByTestId('skills-criterion-pistol-squat')).getByText('3 × 5 reps'),
+    ).toBeOnTheScreen();
+  });
+
+  it('highlights and opens the objective skill by default', async () => {
+    const fetchMock = routeFetch({ objectiveSkillId: 'pistol-squat' });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await render(<SkillsScreen />);
+    await waitFor(() => expect(screen.getByTestId('skills-detail-pistol-squat')).toBeOnTheScreen());
+
+    // El objetivo se abre por defecto y su chip lo declara con texto, no solo con color; el resto no.
+    expect(screen.getByText('Pistol squat · objetivo')).toBeOnTheScreen();
+    expect(screen.getByTestId('skills-selector-pistol-squat').props.accessibilityLabel).toContain(
+      'objetivo',
+    );
+    expect(screen.getByTestId('skills-selector-planche').props.accessibilityLabel).not.toContain(
+      'objetivo',
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/profile/objective'),
       expect.anything(),
     );
   });
@@ -364,33 +433,37 @@ describe('SkillsScreen · Progreso de skill', () => {
     jest.restoreAllMocks();
   });
 
-  it('highlights the current stage with its criterion and defaults the rest to stage one', async () => {
+  it('resolves every stage state from the athlete progress and defaults to stage one', async () => {
     const fetchMock = routeFetch();
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await render(<SkillsScreen />);
-    await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
+    await waitFor(() => expect(screen.getByTestId('skills-detail-planche')).toBeOnTheScreen());
 
-    // La etapa actual (planche → 2) queda resaltada con su criterio.
+    // Planche está en la etapa 2 de 4: debajo superado, la actual, encima bloqueado y la meta final.
+    expect(screen.getByTestId('library-skill-planche-stage-1').props.accessibilityLabel).toContain(
+      'Superado',
+    );
+    expect(screen.getByTestId('library-skill-planche-stage-2').props.accessibilityLabel).toContain(
+      'Actual',
+    );
+    expect(screen.getByTestId('library-skill-planche-stage-3').props.accessibilityLabel).toContain(
+      'Bloqueado',
+    );
+    expect(screen.getByTestId('library-skill-planche-stage-4').props.accessibilityLabel).toContain(
+      'Meta final',
+    );
+    // La etapa actual lleva marcador; el resto también (el estado va por etiqueta, no solo color).
     expect(
       screen.getByTestId('library-skill-planche-stage-2-state', { includeHiddenElements: true }),
     ).toBeOnTheScreen();
-    expect(screen.getByTestId('library-skill-planche-stage-2').props.accessibilityLabel).toContain(
-      'Etapa actual',
-    );
-    expect(screen.getByText('Etapa 2 · 3 × 10 s')).toBeOnTheScreen();
 
-    // La etapa no actual no se resalta.
+    // Un skill sin fila de progreso parte de la etapa 1 y la muestra como actual.
+    await fireEvent.press(screen.getByTestId('skills-selector-pistol-squat'));
+    await waitFor(() => expect(screen.getByTestId('skills-detail-pistol-squat')).toBeOnTheScreen());
     expect(
-      screen.queryByTestId('library-skill-planche-stage-1-state', { includeHiddenElements: true }),
-    ).not.toBeOnTheScreen();
-
-    // Un skill sin fila de progreso parte de la etapa 1 y también se resalta.
-    expect(
-      screen.getByTestId('library-skill-pistol-squat-stage-1-state', {
-        includeHiddenElements: true,
-      }),
-    ).toBeOnTheScreen();
+      screen.getByTestId('library-skill-pistol-squat-stage-1').props.accessibilityLabel,
+    ).toContain('Actual');
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/catalog/progress'),
@@ -412,7 +485,7 @@ describe('SkillsScreen · Rutinas', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await render(<SkillsScreen />);
-    await waitFor(() => expect(screen.getByTestId('library-skill-planche')).toBeOnTheScreen());
+    await waitFor(() => expect(screen.getByTestId('skills-selector')).toBeOnTheScreen());
 
     await fireEvent.press(screen.getByTestId('skills-section-routines'));
 
