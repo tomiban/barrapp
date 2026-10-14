@@ -60,6 +60,14 @@ describe('ShowcaseScreen', () => {
     expect(screen.getByText('dumbbell')).toBeOnTheScreen();
   });
 
+  it('shows the Stepper in its normal and error states', async () => {
+    await render(<ShowcaseScreen />);
+
+    expect(screen.getByTestId('showcase-stepper-value')).toHaveTextContent('78');
+    expect(screen.getByText('El máximo no puede superar 50 reps.')).toBeOnTheScreen();
+    expect(screen.getByTestId('showcase-stepper-error-increase')).toBeDisabled();
+  });
+
   it('abre el BottomSheet desde su disparador', async () => {
     await render(<ShowcaseScreen />);
 

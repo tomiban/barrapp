@@ -13,6 +13,8 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 
+import { StartupProvider, useStartup } from '@/features/onboarding';
+
 /**
  * Las fuentes se cargan en runtime con `useFonts` (no con el config plugin, que
  * no funciona en Expo Go). En SDK 57 cada peso es una familia propia, así que
@@ -31,23 +33,44 @@ export default function RootLayout() {
     JetBrainsMono_700Bold,
   });
 
+  return (
+    <StartupProvider>
+      <StatusBar style="light" />
+      <RootNavigator fontsReady={loaded || Boolean(error)} />
+    </StartupProvider>
+  );
+}
+
+/**
+ * Navegador raíz (spec 0003, ticket #90). Mantiene el splash nativo hasta que
+ * las fuentes están cargadas *y* el arranque sabe dónde abrir, y deja accesible
+ * la pestaña o el onboarding con `Stack.Protected`: la guarda es una excepción
+ * sobre las rutas, así que el resto de la app (`/profile`, `/showcase`,
+ * `/plan-historial`) sigue disponible en ambos casos.
+ */
+function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
+  const { status, decision } = useStartup();
+  const ready = fontsReady && status === 'ready';
+
   useEffect(() => {
-    if (loaded || error) {
+    if (ready) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [ready]);
 
-  if (!loaded && !error) {
-    // Mantiene visible el splash nativo hasta que las fuentes estén listas.
+  if (!ready) {
     return null;
   }
 
   return (
-    <>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={decision === 'tabs'}>
         <Stack.Screen name="(tabs)" />
-      </Stack>
-    </>
+      </Stack.Protected>
+
+      <Stack.Protected guard={decision === 'onboarding'}>
+        <Stack.Screen name="onboarding" />
+      </Stack.Protected>
+    </Stack>
   );
 }

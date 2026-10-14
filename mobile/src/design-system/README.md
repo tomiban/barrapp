@@ -136,6 +136,18 @@ Selección única controlada. `options: { value, label }[]`, `value`, `onChange`
 Si llega `error`, se muestra bajo el control como texto `error` anunciable
 (`alert`), igual que `TextField`.
 
+### Stepper
+
+Control numérico controlado de `−`/`+` para las medidas y los máximos.
+
+- `label`, `value`, `onChange`; `min?`, `max?`, `step?` (default `1`), `unit?`.
+- Acota el valor a `[min, max]`: deshabilita el botón correspondiente en la cota,
+  así que nunca notifica un valor fuera de rango.
+- `formatValue?` fija los decimales visibles sin cambiar el número notificado;
+  `error?` pinta el valor en `error` y muestra el mensaje como `alert`; `disabled?`.
+- Sin sombras: botones cuadrados de 48 dp con borde activo. Cada botón se anuncia
+  como `Disminuir <label>` / `Aumentar <label>` y el valor con su etiqueta y unidad.
+
 ### Checkbox / Radio
 
 Controles controlados (`checked`, `onChange`, `label?`, `disabled`). Caja de
