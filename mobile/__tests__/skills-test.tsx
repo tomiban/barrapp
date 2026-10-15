@@ -351,7 +351,7 @@ describe('SkillsScreen · Skills', () => {
     jest.restoreAllMocks();
   });
 
-  it('renders the selected skill with its code, material, criterion and pattern routine', async () => {
+  it('renders the selected skill with its code, material, criterion and telemetry', async () => {
     const fetchMock = routeFetch();
     global.fetch = fetchMock as unknown as typeof fetch;
 
@@ -372,12 +372,10 @@ describe('SkillsScreen · Skills', () => {
     ).toBeOnTheScreen();
     expect(screen.getByText(/2 sesiones consecutivas\./)).toBeOnTheScreen();
 
-    // Rutina de patrón: ejercicio, series, segundos y descanso. El movimiento de skill se nombra
-    // por la etapa; el acondicionamiento, por el catálogo de ejercicios.
-    expect(screen.getAllByText('Modelo R1').length).toBeGreaterThan(0);
-    expect(screen.getByText('4 × 5–15 s · descanso 180 s')).toBeOnTheScreen();
-    expect(screen.getByText('3 × 5–8 reps · descanso 120 s')).toBeOnTheScreen();
-    expect(screen.getByText('Flexiones en pica')).toBeOnTheScreen();
+    // Bloques del mockup sin dato real: diagrama, validación por sesiones y telemetría.
+    expect(screen.getByTestId('skills-detail-planche-diagram')).toBeOnTheScreen();
+    expect(screen.getByTestId('skills-validation-planche')).toBeOnTheScreen();
+    expect(screen.getByTestId('skills-stats-planche')).toBeOnTheScreen();
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/catalog/skills'),
@@ -453,9 +451,9 @@ describe('SkillsScreen · Progreso de skill', () => {
     expect(screen.getByTestId('library-skill-planche-stage-4').props.accessibilityLabel).toContain(
       'Meta final',
     );
-    // La etapa actual lleva marcador; el resto también (el estado va por etiqueta, no solo color).
+    // La etapa actual lleva su badge con el progreso; el estado va por etiqueta, no solo color.
     expect(
-      screen.getByTestId('library-skill-planche-stage-2-state', { includeHiddenElements: true }),
+      within(screen.getByTestId('library-skill-planche-stage-2')).getByText('Actual · 85%'),
     ).toBeOnTheScreen();
 
     // Un skill sin fila de progreso parte de la etapa 1 y la muestra como actual.
