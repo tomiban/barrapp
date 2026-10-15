@@ -3,11 +3,13 @@ import { apiError, getApiBaseUrl } from './client';
 /** Unidad del valor registrado; la deriva el API del tipo de ejercicio. */
 export type SessionLogMetric = 'reps' | 'seconds' | null;
 
-/** Una serie de un registro de sesión: número, valor real y esfuerzo (RIR/RPE) opcional. */
+/** Una serie de un registro de sesión: número, valor real, esfuerzo (RIR) y lastre opcionales. */
 export type SessionLogSet = {
   setNumber: number;
   value: number;
   effort: number | null;
+  /** Lastre (sobrecarga) en kilos; `null`/ausente si la serie fue a peso corporal. */
+  loadKg?: number | null;
 };
 
 /** Registro de sesión tal y como lo sirve el API. */
@@ -138,6 +140,7 @@ export async function fetchSessionLogs(signal?: AbortSignal): Promise<SessionLog
         setNumber: set.setNumber,
         value: set.value,
         effort: set.actualRir,
+        loadKg: set.loadKg,
       })),
     })),
   );

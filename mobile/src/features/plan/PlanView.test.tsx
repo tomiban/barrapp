@@ -15,6 +15,7 @@ function item(
     repsMax: null,
     holdSecondsMin: null,
     holdSecondsMax: null,
+    restSeconds: 90,
     ...partial,
   };
 }
