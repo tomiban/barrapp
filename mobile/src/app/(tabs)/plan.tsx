@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { router } from 'expo-router';
 
 import { messageOf } from '@/api/messageOf';
 import { advanceSkillStage } from '@/api/catalog/progress';
 import { closeMesocycle, fetchPlan, type Plan } from '@/api/plan';
+import { fetchSessionLogs, type SessionLog } from '@/api/sessionLogs';
 import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { CloudOff } from '@/design-system/Icon';
@@ -34,12 +36,28 @@ function toLoadState(result: PlanReadResult): LoadState {
 }
 
 /**
+ * Lee los registros del servidor; sin conexión devuelve la lista vacía (las sesiones quedan
+ * «pendientes» en vez de romper la pantalla).
+ */
+async function fetchLogsOrEmpty(signal?: AbortSignal): Promise<SessionLog[]> {
+  try {
+    return await fetchSessionLogs(signal);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error;
+    }
+    return [];
+  }
+}
+
+/**
  * Pantalla de planificación: lee `GET /plan` (el motor lo genera en el servidor a partir del
  * perfil y el objetivo guardados) y, si no hay conexión, sirve la copia guardada en el almacén
  * local. Cada plan fresco se guarda en la caché para la próxima lectura offline.
  */
 export default function PlanScreen() {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const [logs, setLogs] = useState<SessionLog[]>([]);
   const [advanceState, setAdvanceState] = useState<StageAdvanceState>({ status: 'idle' });
   const [closeState, setCloseState] = useState<CloseMesocycleState>({ status: 'idle' });
 
@@ -49,6 +67,9 @@ export default function PlanScreen() {
         const store = await openPlanStore();
         const result = await readPlan(fetchPlan, store, signal);
         setState(toLoadState(result));
+        if (result.source !== 'failure') {
+          setLogs(await fetchLogsOrEmpty(signal));
+        }
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
           return;
@@ -139,7 +160,11 @@ export default function PlanScreen() {
             />
           ) : null}
 
-          <PlanView plan={state.plan} />
+          <PlanView
+            plan={state.plan}
+            logs={logs}
+            onStartSession={() => router.navigate('/entreno')}
+          />
 
           {!state.offline ? (
             <StageAdvanceAction state={advanceState} onAdvance={advance} testID="plan-advance" />
