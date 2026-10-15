@@ -6,7 +6,7 @@ import type { Plan } from '@/api/plan';
 import { Button } from '@/design-system/Button';
 import { Banner, Loading } from '@/design-system/Feedback';
 import { Stack } from '@/design-system/layout';
-import { PlanView } from '@/features/plan/PlanView';
+import { PlanDetail } from '@/features/plan/PlanDetail';
 
 type DetailState =
   { status: 'loading' } | { status: 'ready'; plan: Plan } | { status: 'error'; message: string };
@@ -59,7 +59,7 @@ export function MesocycleDetail({ mesocycleId }: { mesocycleId: string }) {
         </Stack>
       ) : null}
 
-      {state.status === 'ready' ? <PlanView plan={state.plan} /> : null}
+      {state.status === 'ready' ? <PlanDetail plan={state.plan} /> : null}
     </Stack>
   );
 }
