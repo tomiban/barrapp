@@ -8,12 +8,13 @@ import type { SessionLog } from '@/api/sessionLogs';
  * `GET /plan` solo expone el número de semana y sus sesiones, así que el nombre del mesociclo, el
  * periodo y la intensidad (RIR) por semana no llegan del motor. `docs/specs/0003-pantallas.md`
  * recoge RIR 1 (semana 3) y descarga (semana 4) como estados del selector.
- * shortcut: contenido estático del mockup; sustituir por los datos reales del motor cuando se expongan.
+ * shortcut: contenido estático del mockup; sustituir por los datos reales del motor cuando se
+ * expongan. Ver #117.
  */
 export const MESOCYCLE_CODE = 'PLAN 01';
 export const PERIODIZATION_LABEL = 'HIPERTROFIA';
 export const TARGET_RIR = 2;
-/** Duración estimada de una sesión; el DTO del plan no expone una estimación por sesión. */
+/** Duración estimada de una sesión; el DTO del plan no expone una estimación por sesión. Ver #119. */
 export const SESSION_DURATION_MINUTES = 45;
 export const WEEK_INTENSITY_LABEL: Readonly<Record<number, string>> = {
   3: 'RIR 1',
@@ -48,7 +49,8 @@ export function sessionKey(
  *
  * El listado de registros (`GET /session-logs`) no expone el flag `completed` de la sesión, así que
  * «tiene algún registro» es el proxy de «hecha» por ahora.
- * shortcut: proxy por presencia de registros; usar el flag `completed` del `SessionLog` cuando se exponga.
+ * shortcut: proxy por presencia de registros; usar el flag `completed` del `SessionLog` cuando se
+ * exponga. Ver #118.
  */
 export function doneSessionKeys(
   mesocycleId: string | null,
