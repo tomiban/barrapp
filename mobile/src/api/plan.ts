@@ -17,6 +17,8 @@ export type PlanSessionItem = {
   repsMax: number | null;
   holdSecondsMin: number | null;
   holdSecondsMax: number | null;
+  /** Descanso entre series, en segundos; lo cronometra la «Sesión en curso». */
+  restSeconds: number;
   note?: string | null;
 };
 

@@ -3,10 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { messageOf } from '@/api/messageOf';
 import { fetchPlan, type Plan, type PlanSessionItem } from '@/api/plan';
 import {
-  deleteSessionLogItem,
   fetchSessionLogs,
   registerSessionLogItem,
-  updateSessionLogItem,
   type RegisterSessionLogItemInput,
   type SessionLog,
   type SessionLogMetric,
@@ -140,7 +138,7 @@ function registrationFor(
         setNumber: set.setNumber,
         value: set.value,
         actualRir: set.effort,
-        loadKg: null,
+        loadKg: set.loadKg,
       })),
     },
     clientId,
@@ -186,7 +184,11 @@ export default function TrainScreen() {
           const result = await syncPendingSessionLogs(outbox, registerSessionLogItem, (entry) =>
             legacyRequestFor(planResult.plan, {
               ...entry,
-              sets: entry.sets.map((set) => ({ ...set, effort: set.effort })),
+              sets: entry.sets.map((set) => ({
+                ...set,
+                effort: set.effort,
+                loadKg: set.loadKg ?? null,
+              })),
             }),
           );
           if (result.synced > 0) {
@@ -264,6 +266,7 @@ export default function TrainScreen() {
               setNumber: set.setNumber,
               value: set.value,
               effort: set.effort ?? null,
+              loadKg: set.loadKg,
             })),
             ...(request ? { request } : {}),
           });
@@ -272,7 +275,11 @@ export default function TrainScreen() {
         const result = await syncPendingSessionLogs(outbox, registerSessionLogItem, (entry) =>
           legacyRequestFor(plan, {
             ...entry,
-            sets: entry.sets.map((set) => ({ ...set, effort: set.effort })),
+            sets: entry.sets.map((set) => ({
+              ...set,
+              effort: set.effort,
+              loadKg: set.loadKg ?? null,
+            })),
           }),
         );
         await refreshLogs();
@@ -292,58 +299,8 @@ export default function TrainScreen() {
     [refreshLogs, state],
   );
 
-  const handleUpdate = useCallback(
-    async (log: SessionLog, sets: SessionLogSetPayload[]) => {
-      setSaving(true);
-      setFeedback(null);
-      try {
-        if (!log.sessionLogId) {
-          throw new Error('No se pudo identificar la sesión del registro.');
-        }
-        await updateSessionLogItem(
-          log.sessionLogId,
-          log.id,
-          sets.map((set) => ({
-            setNumber: set.setNumber,
-            value: set.value,
-            actualRir: set.effort,
-            loadKg: null,
-          })),
-        );
-        await refreshLogs();
-        setFeedback({ role: 'confirmed', message: 'Registro actualizado.' });
-      } catch (error) {
-        setFeedback({ role: 'error', message: messageOf(error) });
-      } finally {
-        setSaving(false);
-      }
-    },
-    [refreshLogs],
-  );
-
-  /** Elimina un ítem confirmado y recarga los registros. */
-  const handleDelete = useCallback(
-    async (log: SessionLog) => {
-      setSaving(true);
-      setFeedback(null);
-      try {
-        if (!log.sessionLogId) {
-          throw new Error('No se pudo identificar la sesión del registro.');
-        }
-        await deleteSessionLogItem(log.sessionLogId, log.id);
-        await refreshLogs();
-        setFeedback({ role: 'confirmed', message: 'Registro borrado.' });
-      } catch (error) {
-        setFeedback({ role: 'error', message: messageOf(error) });
-      } finally {
-        setSaving(false);
-      }
-    },
-    [refreshLogs],
-  );
-
   return (
-    <Screen header={<AppHeader section="Entreno" />} testID="train-screen">
+    <Screen header={<AppHeader section="GO" />} testID="train-screen" scrollable>
       {state.status === 'loading' ? (
         <Loading label="Preparando la sesión…" testID="train-loading" />
       ) : null}
@@ -373,8 +330,6 @@ export default function TrainScreen() {
             saving={saving}
             feedback={feedback}
             onSave={handleSave}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
           />
         </Stack>
       ) : null}
