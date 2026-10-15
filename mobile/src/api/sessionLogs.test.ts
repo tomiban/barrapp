@@ -131,8 +131,8 @@ describe('fetchSessionLogs', () => {
         microcycleNumber: 1,
         recordedAtUtc: savedSession.recordedAtUtc,
         sets: [
-          { setNumber: 1, value: 10, effort: null },
-          { setNumber: 2, value: 11, effort: 2 },
+          { setNumber: 1, value: 10, effort: null, loadKg: null },
+          { setNumber: 2, value: 11, effort: 2, loadKg: null },
         ],
       },
     ]);

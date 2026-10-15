@@ -23,6 +23,7 @@ const microcycles: Plan['microcycles'] = [
             repsMax: null,
             holdSecondsMin: 30,
             holdSecondsMax: 30,
+            restSeconds: 90,
           },
         ],
       },
