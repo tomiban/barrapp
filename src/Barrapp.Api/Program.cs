@@ -54,6 +54,7 @@ app.MapSoloSessionEndpoints();
 app.MapCatalogEndpoints();
 app.MapSkillProgressEndpoints();
 app.MapSessionLogEndpoints();
+app.MapMetricsEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();
